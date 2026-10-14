@@ -1,0 +1,184 @@
+{
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-F2cUXj",
+  "startedAt": "2026-10-13T20:48:49.490Z",
+  "checks": [
+    "Canceled home and language navigation keep the URL and unsubmitted growth",
+    "Salary preset is dirty; canceled browser back retains draft and original history without duplicates",
+    "Canceled stage/tab navigation retains the unsubmitted draft",
+    "Canceled forward retains draft; confirmed traversal works in both directions",
+    "Offline: edit and save event, view both charts, switch ledger/plan without revision changes",
+    "Browser back/forward remains functional offline",
+    "Reload restores event without generating a new revision"
+  ],
+  "networkErrors": [
+    {
+      "requestId": "98685.534",
+      "timestamp": 392478.194748,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=573zw"
+    },
+    {
+      "requestId": "98685.533",
+      "timestamp": 392478.194778,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "98685.1146",
+      "timestamp": 392491.956231,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/plan?_rsc=2um9d"
+    },
+    {
+      "requestId": "98685.1138",
+      "timestamp": 392491.956294,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=1a28h"
+    },
+    {
+      "requestId": "98685.1137",
+      "timestamp": 392491.956316,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=eqsja"
+    },
+    {
+      "requestId": "98685.1752",
+      "timestamp": 392508.669721,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/plan?_rsc=2um9d"
+    },
+    {
+      "requestId": "98685.1738",
+      "timestamp": 392508.669785,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=1a28h"
+    },
+    {
+      "requestId": "98685.1737",
+      "timestamp": 392508.669808,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=eqsja"
+    }
+  ],
+  "personas": [
+    {
+      "persona": "lin",
+      "events": 0,
+      "endingCents": -11400000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "change-liquid-opening-balance: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "chen",
+      "events": 2,
+      "endingCents": 628136651,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    },
+    {
+      "persona": "zhou",
+      "events": 3,
+      "endingCents": -42000000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    },
+    {
+      "persona": "xu",
+      "events": 2,
+      "endingCents": 56400000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "shift-cash-flow: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "zhao",
+      "events": 1,
+      "endingCents": -172000000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "change-retirement-month: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "tang",
+      "events": 2,
+      "endingCents": -80628853,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    }
+  ],
+  "status": "passed",
+  "recovery": [
+    "Malformed backup leaves the full current plan and revision intact",
+    "Injected storage failure retains edited result; repeated retry saves exactly once and reload restores it",
+    "Existing property and mortgage backup imports unchanged and shows cash/net-worth distinction",
+    "Corrupted active record is rejected; explicit snapshot restore recovers the intact plan",
+    "Two-tab update expires open trial; stale retry cannot overwrite latest plan; reload resolves conflict",
+    "Replacing the active plan with a lower-revision different ID also notifies other tabs and prevents overwrite",
+    "Invalid import, write failure, corrupt record and empty workspace pass mobile-dark and desktop-light accessibility checks"
+  ]
+}

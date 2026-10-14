@@ -1,0 +1,448 @@
+{
+  "shell": {
+    "brand": "一生账本",
+    "basis": "按今天的钱计算",
+    "local": "数据保存在本机"
+  },
+  "new": {
+    "title": "创建你的第一份计划",
+    "description": "快速估算已经安全带入。这里展示的是计算起点；住房、家庭和城市等信息会在正式步骤中继续补充。",
+    "loading": "正在读取本机草稿…",
+    "imported": "已从首页带入",
+    "saved": "已保存在本机",
+    "draft_name": "我的一生账本",
+    "back": "返回首页修改",
+    "empty_title": "没有找到可继续的快速估算",
+    "empty_description": "临时数据可能已过期或已被使用。返回首页重新估算即可，不会影响其他本机草稿。",
+    "empty_action": "返回快速估算",
+    "error_title": "这份本机草稿暂时无法读取",
+    "error_description": "请返回首页重新估算。原始金额没有写入网址，也没有上传。",
+    "result_title": "当前起点",
+    "result_description": "这是基础口径，不含住房、子女、父母、养老金预测和投资收益。正式计划补齐信息后，结果会重新计算。",
+    "status_ok": "规划期暂未出现缺口",
+    "status_gap": "规划期内会出现资金缺口",
+    "first_gap": "首次缺口",
+    "no_gap": "暂未出现",
+    "minimum_balance": "最低余额",
+    "ending_balance": "规划终点结余",
+    "required_income": "目标生活所需月收入",
+    "retirement_balance": "退休时预计资金",
+    "year_suffix": "年",
+    "age_suffix": "岁",
+    "currency": "元",
+    "currency_month": "元/月",
+    "inputs_title": "已带入的信息",
+    "current_age": "当前年龄",
+    "retirement_age": "计划退休",
+    "end_age": "规划到",
+    "monthly_income": "每月到手",
+    "working_expenses": "工作期每月开销",
+    "retirement_self_funded": "退休后每月需自付",
+    "savings": "现有存款",
+    "annual_title": "逐年计算明细",
+    "annual_description": "每一行都由同一计算内核生成，可用于核对结果。",
+    "table_year": "年份 / 年龄",
+    "table_phase": "阶段",
+    "table_income": "收入",
+    "table_expenses": "支出",
+    "table_balance": "年末余额",
+    "phase_working": "工作期",
+    "phase_retired": "退休期",
+    "show_all": "查看全部 {count} 年",
+    "versions": "计算规则 {calculation} · 输入结构 {schema} · 城市数据 {city} · 教育数据 {education}",
+    "next_title": "接下来补齐正式计划",
+    "next_description": "后续会在这里分五步补充计算方向、当前情况、家庭住房、工作退休，并在生成前核对全部信息。"
+  },
+  "workspace": {
+    "shell": {
+      "brand": "一生账本",
+      "basis": "所有金额按今天购买力",
+      "more": "更多操作",
+      "rename": "重命名计划",
+      "export": "导出备份",
+      "export_current": "导出当前数据",
+      "import": "导入备份",
+      "restore": "恢复最近快照",
+      "no_snapshot": "目前没有可恢复的历史快照。",
+      "delete": "删除并重新创建",
+      "delete_confirm": "确定删除当前计划及本机历史快照吗？删除后无法撤销。建议先导出备份。",
+      "rename_prompt": "修改计划名称"
+    },
+    "tabs": {
+      "label": "工作台视图",
+      "overview": "概览",
+      "plan": "规划",
+      "ledger": "年度账本"
+    },
+    "save": {
+      "saved": "已自动保存",
+      "saving": "保存中",
+      "failed": "保存失败",
+      "stale": "结果待更新"
+    },
+    "bootstrap": {
+      "loading": "正在读取本机计划…",
+      "empty_title": "创建你的第一份长期计划",
+      "empty_description": "从首页填写收入与人生规划开始，或者导入之前导出的备份。正式计划只保存在当前浏览器。",
+      "start": "返回首页开始估算",
+      "error_title": "暂时无法读取本机计划"
+    },
+    "overview": {
+      "conclusion_ok": "按照当前输入，规划期内暂未出现资金缺口。",
+      "conclusion_gap": "按照当前输入，规划期内预计会出现持续的资金缺口。",
+      "conclusion_recovered": "虽然规划终点仍有结余，但中间预计会出现资金中断。",
+      "ending": "规划终点预计可用资金为 {amount}。这是当前输入下的情景结果，不是未来保证。",
+      "edit": "修改计划",
+      "status": "资金是否中断",
+      "will_gap": "预计会出现",
+      "no_gap": "暂未出现",
+      "first_gap": "首次缺口",
+      "minimum": "最低可用资金",
+      "required_income": "全程不缺钱所需月收入",
+      "chart_title": "长期资金变化",
+      "chart_description": "趋势图用于看方向，精确金额可在下方表格和账本中核对。",
+      "available": "可用资金",
+      "debt": "债务余额",
+      "net_worth": "净资产",
+      "table_alternative": "查看图表数据",
+      "influences": "对结果影响最大的三项输入",
+      "completeness_basic": "基础估算",
+      "completeness_hint": "你可以继续补充伴侣、孩子、住房、父母与退休安排。",
+      "complete_plan": "继续完善计划"
+    },
+    "plan": {
+      "title": "我的人生计划",
+      "description": "按自己的节奏补充，未填写的阶段可以跳过。",
+      "monthly_income": "当前月收入",
+      "monthly_expense": "当前月总支出",
+      "classified": "已分类",
+      "unallocated": "待分类",
+      "available_cash": "当前可用资金",
+      "current_age": "当前年龄",
+      "retirement_age": "计划退休",
+      "end_age": "规划到",
+      "retirement_self_funded": "退休后每月个人需承担",
+      "retirement_hint": "不自动预测养老金。这里填写扣除养老金等稳定收入后，仍需由个人资金承担的金额。",
+      "original_total": "原支出总额",
+      "confirm_total": "确认明细为新的总额",
+      "return_rate": "可用资金实际年收益率",
+      "gap_rate": "资金缺口实际年成本",
+      "manual_title": "这一组目前使用手动记录",
+      "manual_description": "P2 不自动推算政策或城市数据。相关金额会以用户填写的来源进入计划。",
+      "summary_basics": "年龄与规划时间",
+      "summary_total": "从总额中拆分",
+      "summary_optional": "可选补充",
+      "summary_none": "尚未添加",
+      "summary_defaults": "使用基础假设",
+      "sections": {
+        "basics": "基本信息",
+        "assets": "现在的家底",
+        "income": "收入与工作",
+        "living": "日常生活",
+        "partner": "伴侣",
+        "child": "孩子",
+        "housing": "住房",
+        "parents": "父母",
+        "retirement": "退休",
+        "events": "其他人生事件",
+        "advanced": "高级假设",
+        "career": "职业发展"
+      }
+    },
+    "ledger": {
+      "title": "逐年账本",
+      "description": "每一行都由同一份月度结果汇总，用于核对趋势和精确金额。",
+      "locate_gap": "定位首次缺口",
+      "year": "年份",
+      "phase": "阶段",
+      "working": "工作期",
+      "retired": "退休期",
+      "income": "收入",
+      "expense": "支出",
+      "available": "年末可用资金",
+      "debt": "债务",
+      "net_worth": "净资产",
+      "gap": "本年出现缺口",
+      "no_gap": "本年未出现缺口",
+      "year_detail": "年度收支与资产变化",
+      "categories": "支出分类",
+      "year_filter": "年份范围",
+      "key_years": "关键年份",
+      "all_years": "全部年份",
+      "transition": "退休过渡年",
+      "monthly": "每月收支",
+      "month": "月份"
+    },
+    "categories": {
+      "salary": "工资",
+      "side_income": "副业",
+      "pension": "养老金",
+      "housing": "住房",
+      "living": "日常生活",
+      "child": "孩子",
+      "parent": "父母",
+      "retirement": "退休",
+      "healthcare": "医疗",
+      "tax": "税费",
+      "other": "其他"
+    },
+    "common": {
+      "currency": "元",
+      "per_month": "/月",
+      "age": "岁",
+      "close": "关闭",
+      "retry": "重试"
+    },
+    "errors": {
+      "corrupt": "本地计划数据校验失败，未使用这份数据计算。请恢复最近快照或导入有效备份。",
+      "storage": "浏览器暂时无法打开本地计划存储。请重试或导入备份。",
+      "invalid_plan": "部分输入尚未完成，当前显示上一次有效结果。请检查展开分组中的提示。",
+      "conflict": "计划已在另一个标签页更新。当前修改没有覆盖对方版本。",
+      "import": "无法读取这份备份，当前计划没有改变。",
+      "save": "未能保存到浏览器。当前修改仍在内存中，请重试或导出备份。",
+      "reload": "读取最新版本",
+      "reload_confirm": "读取最新版本会放弃当前未保存修改。请先导出需要保留的数据。继续？"
+    },
+    "trajectory": {
+      "title": "你的人生轨迹",
+      "hint": "从任意一步开始，随时查看结果。",
+      "stages": {
+        "now": "现在",
+        "partner": "伴侣",
+        "child": "孩子",
+        "housing": "住房",
+        "parents": "父母",
+        "retirement": "退休",
+        "career": "职业发展"
+      },
+      "status": {
+        "missing": "暂未计入",
+        "complete": "已计入",
+        "not-applicable": "当前不考虑"
+      }
+    },
+    "feedback": {
+      "title": "这次修改的影响",
+      "unchanged": "已更新，首次缺口和余额不变。",
+      "minimum": "最低可用资金变化",
+      "ending": "终点可用资金变化"
+    },
+    "editor": {
+      "monthly_contribution": "每月分担多少",
+      "monthly_extra": "每月增加多少支出",
+      "short_hint": "已包含在当前收支中的金额不用再填。",
+      "more_settings": "调整时间与其他设置",
+      "plan_hint": "按自己的节奏补充，未填写的阶段可以跳过。",
+      "see_result": "查看结果",
+      "user": "用户填写",
+      "age_error": "请填写整数年龄：当前 18–75 岁，退休晚于当前且不超过 80 岁，终点晚于退休且不超过 120 岁。",
+      "save_time": "更新时间",
+      "assets_hint": "可用资产参与收支滚动；房产等非流动资产只计入净资产。",
+      "liquid": "可用资产",
+      "non_liquid": "非流动资产",
+      "wan": "万",
+      "add_cash": "添加可用资产",
+      "debts": "已记录的债务",
+      "skip": "当前不考虑",
+      "restore": "恢复填写",
+      "skip_disabled": "已有金额计入计划，请先移除相关项目。",
+      "partner_hint": "只记录伴侣对这份个人计划的分担金额或新增开销。已包含在个人收支中的金额无需再填。",
+      "existing_split": "从已有月支出中拆分",
+      "split_hint": "这里的金额包含在工作期月支出总额中。仅分类不会增加开销；超出总额时需要确认。",
+      "additional": "额外收支",
+      "additional_hint": "只添加尚未包含在月收支中的项目，按起止月份额外计入。",
+      "count": "共 {count} 项",
+      "name": "项目名称",
+      "amount": "每次金额（元）",
+      "frequency": "发生频率",
+      "monthly": "每月",
+      "once": "一次性",
+      "yearly": "每年",
+      "direction": "收支方向",
+      "expense": "支出",
+      "income": "收入 / 分担",
+      "start": "开始月份",
+      "end": "结束月份（含当月）",
+      "add_event": "添加项目",
+      "edit": "修改",
+      "remove": "移除",
+      "save": "计入计划",
+      "cancel": "取消",
+      "event_error": "请检查名称、金额和时间：金额大于 0，结束不早于开始，且都在规划期内。",
+      "yearly_hint": "这条年度记录暂保留原样，请通过备份调整。",
+      "real_return": "实际收益",
+      "gap_cost": "缺口成本",
+      "partner_income": "对方分担",
+      "partner_expense": "我额外支出"
+    },
+    "flow": {
+      "choose_stage": "选择人生阶段",
+      "baseline": "当前情况",
+      "next": "接下来",
+      "discard": "还有未计入计划的修改，离开会丢失这些修改。继续离开？",
+      "trust": "按今天购买力估算 · 非收益承诺",
+      "property_included": "已计入现有房产",
+      "hints": {
+        "assets": "从已有的个人基线出发，只调整有变化的部分。",
+        "career": "工作会变化，收入也可以分阶段规划。",
+        "partner": "伴侣会分担多少，或带来哪些额外开支？",
+        "child": "为孩子预留一笔阶段性的养育支出。",
+        "housing": "补充租住、购房等需要额外承担的现金支出。",
+        "parents": "为父母预留你需要承担的支持费用。",
+        "retirement": "退休后，每个月还需要自己支付多少？",
+        "events": "旅行、进修或其他人生大事，单独计入。",
+        "advanced": "所有金额按今天购买力计算，以下是可调整的估算假设。"
+      }
+    },
+    "career": {
+      "kind": "变化类型",
+      "salary": "换工作",
+      "side_income": "副业",
+      "break": "暂停工作",
+      "salary_amount": "新工作每月到手（元/月）",
+      "side_amount": "副业每月净收入（元/月）",
+      "amount_placeholder": "填写金额",
+      "note": "添加备注",
+      "add": "添加另一段收入变化",
+      "replaces": "替换原工资",
+      "additive": "额外收入",
+      "keep": "沿用当前收入",
+      "error": "检查金额和时间：两段换工作安排不能重叠，两段停工安排也不能重叠，且不能超过退休月。停工可以发生在新工作期间；已有收入明细需先分清全部收入。",
+      "hints": {
+        "salary": "这段时间用新工资替换原工资，不重复相加。结束后恢复原收入轨迹。",
+        "side_income": "只填当前收入之外的净收入，可单独设置持续时间。",
+        "break": "这段时间工资计为 0，已有副业保留；结束后恢复原工资轨迹。"
+      },
+      "growth": "每年涨薪",
+      "growth_hint": "先为当前工资设置一个年均涨幅，换工作时再单独填写新工资。",
+      "growth_label": "年均实际涨幅",
+      "flat": "购买力不变",
+      "growth_basis": "这个涨幅怎么算？",
+      "growth_detail": "实际涨幅指扣除通胀后工资购买力的变化，不是名义加薪比例。0% 表示购买力不变；按年均涨幅折算为月度复利，不代表每月实际调薪。只影响当前工资基线，已设置的新工作和副业各自保留自己的增长率。预设值只是输入快捷键，不是收益预测。",
+      "growth_error": "请填写 -99% 到 100% 之间的年均实际涨幅。",
+      "job_growth": "新工作年均实际涨幅（%）"
+    },
+    "charts": {
+      "expenses": "每年花多少",
+      "balances": "可用资金与净资产",
+      "peak": "最高支出出现在 {year} 年，全年 {amount}。",
+      "balance_hint": "看可用资金能支撑到几岁；净资产还包含房产等非现金资产，并扣除债务。",
+      "minimum": "月度最低可用资金：{year} 年，{amount}。曲线展示年末余额。",
+      "groups": {
+        "living": "日常生活",
+        "housing": "住房与贷款",
+        "child": "孩子",
+        "parent": "父母",
+        "other": "其他",
+        "retirement": "退休"
+      },
+      "age_axis": "年龄 · 年末余额",
+      "compare_networth": "对照净资产",
+      "retirement_balance": "退休年末可用资金",
+      "ending_balance": "计算终点可用资金",
+      "same_balances": "净资产与可用资金重合，仅显示一条线",
+      "negative_hint": "零线以下为资金缺口"
+    },
+    "analysis": {
+      "title": "这份计划告诉你什么",
+      "basis": "根据你的输入与固定规则计算，不使用 AI。",
+      "review": "核对相关输入",
+      "actions": "试试不同安排",
+      "actions_hint": "先比较变化，再决定是否应用；这些是试算选项，不是生活建议。",
+      "cause_verified": "控制变量核对：单独移除这笔住房支出后，首次缺口延后或消失。",
+      "rules": {
+        "housing-causes-first-gap": {
+          "title": "住房支出与首次缺口时间接近",
+          "body": "一次性住房支出前后 12 个月内出现了资金缺口，可以试算调整发生时间。"
+        },
+        "housing-child-overlap": {
+          "title": "住房与孩子支出集中在相近阶段",
+          "body": "两项安排的开始时间相隔不超过 24 个月，可能需要在这一阶段预留更多现金。"
+        },
+        "liquidity-gap": {
+          "title": "净资产为正，也可能不够支付当期开销",
+          "body": "有月份出现可用资金为负、净资产为正。房产等非现金资产不会自动用于支付。"
+        },
+        "retirement-transition-gap": {
+          "title": "退休初期出现资金缺口",
+          "body": "首次缺口发生在退休后的第一年，且未计入当时已开始的退休收入。请核对退休后需自付的金额。"
+        },
+        "retirement-spend-sensitive": {
+          "title": "退休支出对长期结果影响较大",
+          "body": "退休支出进入金额增加 10% 时影响终点余额最大的三项输入，可以试算不同预算。"
+        },
+        "zero-return-conservative": {
+          "title": "目前没有计入可用资金的实际收益",
+          "body": "至少 10 年的月份中余额为正，实际年收益率仍为 0%。可以检查假设，但正收益并不保证发生。"
+        },
+        "important-total-unclassified": {
+          "title": "部分支出仍按总额估算",
+          "body": "总额可以用于规划。若要区分住房、孩子等影响，请从已有总额中拆分，不要重复增加一遍。"
+        },
+        "baseline-sustainable": {
+          "title": "当前已计入的安排未出现资金缺口",
+          "body": "各阶段已填写或明确不考虑。这只代表当前输入下的情景，不是未来保证。"
+        }
+      }
+    },
+    "actions": {
+      "delay-housing": {
+        "title": "调整住房支出时间",
+        "tradeoff": "改变的是现金支出的时间，不代表房价不变，也没有自动调整房贷、租金或孩子安排。"
+      },
+      "retirement-budget": {
+        "title": "比较退休后的自付预算",
+        "tradeoff": "更低的支出意味着改变退休生活预算；健康与照护需要不会因此自动降低。"
+      },
+      "retire-later": {
+        "title": "比较不同退休时间",
+        "tradeoff": "基线工作收入与退休支出的分界会变化；独立设置的工作、养老金和其他事件日期不会自动延长。"
+      },
+      "opening-cash": {
+        "title": "核对起始可用资产",
+        "tradeoff": "这里只调整真实可动用的现有资金，不把未来收入或房产估值当作现金。"
+      }
+    },
+    "simulation": {
+      "description": "只修改副本，尚未改变你的正式计划。",
+      "stale": "正式计划已经变化，这次试算已过期。请关闭后重新打开。",
+      "calculate": "查看变化",
+      "error": "这次调整无法计算。请检查金额、时间范围及是否与已有安排冲突。",
+      "comparison": "原计划 → 试算后",
+      "ending": "终点可用资金",
+      "exclusions": "未计入未填写的支出、政策变化或未来不确定事件；不代表确定收益。",
+      "apply": "应用到计划",
+      "discard": "放弃试算",
+      "undo": "撤销本次应用",
+      "fields": {
+        "shift-cash-flow": "推迟月数（负数为提前）",
+        "change-cash-flow-amount": "调整后金额（元）",
+        "change-retirement-month": "新的退休月份",
+        "change-liquid-opening-balance": "起始可用资产（元）"
+      }
+    },
+    "evidence": {
+      "title": "计算依据",
+      "description": "输入、假设和每月计算记录可以在这里核对。",
+      "open": "查看计算依据",
+      "versions": "版本",
+      "sources": "输入来源",
+      "records": "月度计算记录",
+      "date": "输入最后更新",
+      "assumptions": "估算口径",
+      "basis": "按今天购买力；输入增长率和余额收益率均为实际值，不重复叠加通胀。非现金资产不用于自动填补现金缺口。",
+      "month": "查看月份",
+      "no_records": "该月没有独立计算记录。",
+      "user": "用户填写",
+      "system": "系统默认",
+      "external": "外部来源",
+      "agent": "待确认的外部辅助数据",
+      "flow": "收支",
+      "asset": "资产",
+      "debt": "负债",
+      "amount": "金额",
+      "input": "对应输入",
+      "rule": "计算规则"
+    }
+  }
+}

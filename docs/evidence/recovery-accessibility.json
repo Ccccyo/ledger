@@ -1,0 +1,58 @@
+[
+  {
+    "name": "invalid-import",
+    "width": 375,
+    "theme": "dark",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "invalid-import",
+    "width": 1440,
+    "theme": "light",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "save-failure",
+    "width": 375,
+    "theme": "dark",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "save-failure",
+    "width": 1440,
+    "theme": "light",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "corrupt-record",
+    "width": 375,
+    "theme": "dark",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "corrupt-record",
+    "width": 1440,
+    "theme": "light",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "empty-workspace",
+    "width": 375,
+    "theme": "dark",
+    "violations": [],
+    "overflow": false
+  },
+  {
+    "name": "empty-workspace",
+    "width": 1440,
+    "theme": "light",
+    "violations": [],
+    "overflow": false
+  }
+]

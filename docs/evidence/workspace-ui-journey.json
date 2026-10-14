@@ -1,0 +1,165 @@
+{
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-CUWSZ3",
+  "startedAt": "2026-10-13T20:46:34.350Z",
+  "checks": [
+    "Canceled home and language navigation keep the URL and unsubmitted growth",
+    "Salary preset is dirty; canceled browser back retains draft and original history without duplicates",
+    "Canceled stage/tab navigation retains the unsubmitted draft",
+    "Canceled forward retains draft; confirmed traversal works in both directions",
+    "Offline: edit and save event, view both charts, switch ledger/plan without revision changes",
+    "Browser back/forward remains functional offline",
+    "Reload restores event without generating a new revision"
+  ],
+  "networkErrors": [
+    {
+      "requestId": "97789.519",
+      "timestamp": 392346.111237,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=573zw"
+    },
+    {
+      "requestId": "97789.518",
+      "timestamp": 392346.111307,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "97789.619",
+      "timestamp": 392354.872789,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=1a28h"
+    },
+    {
+      "requestId": "97789.618",
+      "timestamp": 392354.872863,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=eqsja"
+    },
+    {
+      "requestId": "97789.712",
+      "timestamp": 392364.176816,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=573zw"
+    },
+    {
+      "requestId": "97789.711",
+      "timestamp": 392364.176912,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "97789.905",
+      "timestamp": 392372.597393,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=573zw"
+    },
+    {
+      "requestId": "97789.904",
+      "timestamp": 392372.597472,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "97789.1291",
+      "timestamp": 392384.899292,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=573zw"
+    },
+    {
+      "requestId": "97789.1290",
+      "timestamp": 392384.899346,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "97789.1677",
+      "timestamp": 392407.872539,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=573zw"
+    },
+    {
+      "requestId": "97789.1676",
+      "timestamp": 392407.872639,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "97789.2251",
+      "timestamp": 392425.346744,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/en?_rsc=1lrnr"
+    },
+    {
+      "requestId": "97789.2250",
+      "timestamp": 392425.346806,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/en?_rsc=1tnw0"
+    },
+    {
+      "requestId": "97789.2830",
+      "timestamp": 392443.707245,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/en?_rsc=1lrnr"
+    },
+    {
+      "requestId": "97789.2829",
+      "timestamp": 392443.707287,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/en?_rsc=1tnw0"
+    },
+    {
+      "requestId": "97789.3409",
+      "timestamp": 392461.912955,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/en?_rsc=1lrnr"
+    },
+    {
+      "requestId": "97789.3408",
+      "timestamp": 392461.913016,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3110/en?_rsc=1tnw0"
+    }
+  ],
+  "uiAudit": {
+    "status": "passed",
+    "screens": 288,
+    "violations": 0
+  },
+  "status": "passed"
+}

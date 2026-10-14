@@ -1,0 +1,55 @@
+{
+  "header": {
+    "id": "header",
+    "brand": { "title": "一生账本", "url": "/" },
+    "nav": {
+      "items": [
+        { "title": "计算器", "url": "/#calculator", "icon": "Calculator" },
+        { "title": "怎么计算", "url": "/#how-it-works", "icon": "Route" },
+        { "title": "能算什么", "url": "/#features", "icon": "ListChecks" },
+        { "title": "常见问题", "url": "/#faq", "icon": "CircleHelp" }
+      ]
+    },
+    "buttons": [],
+    "user_nav": {
+      "show_name": false,
+      "show_credits": false,
+      "show_sign_out": false,
+      "items": []
+    },
+    "show_sign": false,
+    "show_theme": true,
+    "show_locale": true
+  },
+  "footer": {
+    "id": "footer",
+    "brand": {
+      "title": "一生账本",
+      "description": "从个人当前收支出发，把人生计划算成可以逐年核对的现金流。",
+      "url": "/"
+    },
+    "nav": {
+      "items": [
+        {
+          "title": "产品",
+          "children": [
+            { "title": "开始计算", "url": "/#calculator", "target": "_self" },
+            { "title": "怎么计算", "url": "/#how-it-works", "target": "_self" },
+            { "title": "能算什么", "url": "/#features", "target": "_self" },
+            { "title": "常见问题", "url": "/#faq", "target": "_self" }
+          ]
+        }
+      ]
+    },
+    "agreement": {
+      "items": [
+        { "title": "隐私政策", "url": "/privacy-policy" },
+        { "title": "服务条款", "url": "/terms-of-service" }
+      ]
+    },
+    "copyright": "© 2026 一生账本。仅供个人规划参考。",
+    "show_theme": true,
+    "show_locale": true,
+    "show_built_with": false
+  }
+}

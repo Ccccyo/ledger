@@ -1,0 +1,886 @@
+{
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-H8oESp",
+  "startedAt": "2026-10-13T20:52:57.365Z",
+  "checks": [
+    "New worker prepares separately and waits without reloading the current page",
+    "Owned production server stopped; HTTP cache disabled before offline checks",
+    "Prepared landing reloads and hydrates offline before creating a plan",
+    "Landing calculation and first workspace navigation succeed offline",
+    "Canceled home and language navigation keep the URL and unsubmitted growth",
+    "Salary preset is dirty; canceled browser back retains draft and original history without duplicates",
+    "Canceled stage/tab navigation retains the unsubmitted draft",
+    "Canceled forward retains draft; confirmed traversal works in both directions",
+    "Offline: edit and save event, view both charts, switch ledger/plan without revision changes",
+    "Browser back/forward remains functional offline",
+    "Reload restores event without generating a new revision",
+    "Fresh documents reopen offline at 0/10/100ms navigation intervals; saved revision unchanged; cache contains only public shells and static resources",
+    "Waiting version activates after old clients exit; current and preceding shells retained for handover, unrelated cache and IndexedDB retained",
+    "Full browser process restart while server remains stopped restores plan unchanged; English shell also opens offline"
+  ],
+  "networkErrors": [
+    {
+      "requestId": "230.429",
+      "timestamp": 392722.780965,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "230.430",
+      "timestamp": 392722.82374,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.527",
+      "timestamp": 392722.972881,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.528",
+      "timestamp": 392723.195622,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "230.529",
+      "timestamp": 392723.212463,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.530",
+      "timestamp": 392723.219353,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.531",
+      "timestamp": 392723.520767,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.532",
+      "timestamp": 392723.525185,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.533",
+      "timestamp": 392723.630857,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.534",
+      "timestamp": 392723.63931,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.535",
+      "timestamp": 392723.654782,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.536",
+      "timestamp": 392723.659083,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.537",
+      "timestamp": 392723.76166,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.538",
+      "timestamp": 392723.769992,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.540",
+      "timestamp": 392724.810945,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.541",
+      "timestamp": 392724.811065,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.542",
+      "timestamp": 392724.811587,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.543",
+      "timestamp": 392724.817214,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.544",
+      "timestamp": 392724.822069,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.641",
+      "timestamp": 392724.884133,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "230.642",
+      "timestamp": 392724.91512,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "303.96",
+      "timestamp": 392726.194302,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "303.97",
+      "timestamp": 392726.353229,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "316.96",
+      "timestamp": 392726.660942,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "316.97",
+      "timestamp": 392726.823307,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.96",
+      "timestamp": 392727.220369,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.97",
+      "timestamp": 392727.385877,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.199",
+      "timestamp": 392727.583801,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.200",
+      "timestamp": 392727.618454,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "319.296",
+      "timestamp": 392728.320794,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.297",
+      "timestamp": 392728.452125,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.393",
+      "timestamp": 392731.942086,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.394",
+      "timestamp": 392732.069288,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.395",
+      "timestamp": 392732.08306,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.491",
+      "timestamp": 392732.177806,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.492",
+      "timestamp": 392732.215858,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.594",
+      "timestamp": 392732.326027,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.595",
+      "timestamp": 392732.333853,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "319.691",
+      "timestamp": 392732.989669,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.692",
+      "timestamp": 392733.098601,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.693",
+      "timestamp": 392733.114439,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.694",
+      "timestamp": 392733.122134,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.696",
+      "timestamp": 392736.162034,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.697",
+      "timestamp": 392738.301464,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.793",
+      "timestamp": 392738.37718,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.794",
+      "timestamp": 392738.399947,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.894",
+      "timestamp": 392738.523255,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "319.897",
+      "timestamp": 392738.523962,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.993",
+      "timestamp": 392739.193025,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.994",
+      "timestamp": 392739.294084,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.995",
+      "timestamp": 392739.308939,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.996",
+      "timestamp": 392739.315398,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.998",
+      "timestamp": 392741.464997,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.999",
+      "timestamp": 392742.704949,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1000",
+      "timestamp": 392745.028555,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1096",
+      "timestamp": 392745.094919,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1097",
+      "timestamp": 392745.145191,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1199",
+      "timestamp": 392745.261856,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1200",
+      "timestamp": 392745.261901,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "319.1296",
+      "timestamp": 392745.932108,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1297",
+      "timestamp": 392746.031455,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1298",
+      "timestamp": 392746.04489,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1299",
+      "timestamp": 392746.051339,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1301",
+      "timestamp": 392747.166075,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1302",
+      "timestamp": 392748.327673,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1398",
+      "timestamp": 392751.539462,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1399",
+      "timestamp": 392751.638886,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1400",
+      "timestamp": 392751.661365,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1496",
+      "timestamp": 392751.723634,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1497",
+      "timestamp": 392751.747091,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1597",
+      "timestamp": 392751.86601,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1598",
+      "timestamp": 392751.866052,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "319.1696",
+      "timestamp": 392752.557951,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1697",
+      "timestamp": 392752.649842,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1698",
+      "timestamp": 392752.660345,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1699",
+      "timestamp": 392752.664849,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1701",
+      "timestamp": 392753.873461,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1797",
+      "timestamp": 392757.349701,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1798",
+      "timestamp": 392757.446588,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1799",
+      "timestamp": 392757.460013,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1895",
+      "timestamp": 392757.546024,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1896",
+      "timestamp": 392757.582057,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.1996",
+      "timestamp": 392757.697992,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.1997",
+      "timestamp": 392757.698027,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=eqsja"
+    },
+    {
+      "requestId": "319.2095",
+      "timestamp": 392758.367565,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.2096",
+      "timestamp": 392758.48162,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "319.2097",
+      "timestamp": 392758.494848,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.2098",
+      "timestamp": 392758.500977,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.2100",
+      "timestamp": 392761.753497,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.2101",
+      "timestamp": 392764.222144,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.2197",
+      "timestamp": 392764.403011,
+      "type": "Other",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "319.2198",
+      "timestamp": 392764.486378,
+      "type": "Fetch",
+      "errorText": "net::ERR_INTERNET_DISCONNECTED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "633.97",
+      "timestamp": 392766.671028,
+      "type": "Other",
+      "errorText": "net::ERR_CONNECTION_REFUSED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "633.98",
+      "timestamp": 392766.983419,
+      "type": "Fetch",
+      "errorText": "net::ERR_CONNECTION_REFUSED",
+      "canceled": false,
+      "url": "http://localhost:3107/?_rsc=d3c8f"
+    },
+    {
+      "requestId": "633.195",
+      "timestamp": 392767.118168,
+      "type": "Other",
+      "errorText": "net::ERR_CONNECTION_REFUSED",
+      "canceled": false,
+      "url": "http://localhost:3107/favicon.ico"
+    },
+    {
+      "requestId": "633.196",
+      "timestamp": 392767.33817,
+      "type": "Fetch",
+      "errorText": "net::ERR_CONNECTION_REFUSED",
+      "canceled": false,
+      "url": "http://localhost:3107/en?_rsc=1tnw0"
+    }
+  ],
+  "personas": [
+    {
+      "persona": "lin",
+      "events": 0,
+      "endingCents": -11400000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "change-liquid-opening-balance: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "chen",
+      "events": 2,
+      "endingCents": 628136651,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    },
+    {
+      "persona": "zhou",
+      "events": 3,
+      "endingCents": -42000000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    },
+    {
+      "persona": "xu",
+      "events": 2,
+      "endingCents": 56400000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "shift-cash-flow: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "zhao",
+      "events": 1,
+      "endingCents": -172000000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "change-retirement-month: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "tang",
+      "events": 2,
+      "endingCents": -80628853,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    }
+  ],
+  "status": "passed"
+}

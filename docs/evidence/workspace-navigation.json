@@ -1,0 +1,23 @@
+{
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-rvn8xp",
+  "startedAt": "2026-10-13T20:09:40.940Z",
+  "checks": [
+    "Canceled home and language navigation keep the URL and unsubmitted growth",
+    "Salary preset is dirty; canceled browser back retains draft and original history without duplicates",
+    "Canceled stage/tab navigation retains the unsubmitted draft",
+    "Canceled forward retains draft; confirmed traversal works in both directions",
+    "Offline: edit and save event, view both charts, switch ledger/plan without revision changes",
+    "Browser back/forward remains functional offline",
+    "Reload restores event without generating a new revision"
+  ],
+  "networkErrors": [
+    {
+      "requestId": "83765.138",
+      "timestamp": 390123.707672,
+      "type": "Fetch",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true
+    }
+  ],
+  "status": "passed"
+}

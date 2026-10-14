@@ -1,0 +1,179 @@
+{
+  "page": {
+    "show_sections": ["hero", "usage", "features", "faq", "cta"],
+    "sections": {
+      "hero": {
+        "id": "hero",
+        "title": "把一辈子的钱，算成看得懂的逐年账本",
+        "highlight_text": "逐年账本",
+        "description": "输入你当前的收入和支出，先看哪一年可能出现资金缺口，再逐步加入人生大事。",
+        "announcement": { "title": "个人长期收支基线" },
+        "buttons": [
+          {
+            "title": "开始计算",
+            "icon": "Calculator",
+            "url": "#calculator",
+            "target": "_self",
+            "variant": "default"
+          },
+          {
+            "title": "了解怎么算",
+            "icon": "ArrowDown",
+            "url": "#how-it-works",
+            "target": "_self",
+            "variant": "outline"
+          }
+        ],
+        "calculator": {
+          "id": "calculator",
+          "locale": "zh-CN",
+          "title": "个人基线",
+          "timeline_title": "时间范围",
+          "money_title": "你的资金起点与每月收支",
+          "fields": {
+            "age": "当前年龄",
+            "starting_assets": "起始可用资产（估算）",
+            "monthly_income": "个人每月到手",
+            "monthly_spend": "工作期个人月支出",
+            "retirement_spend": "退休后每月需自付",
+            "retire_age": "计划退休",
+            "end_age": "计算到"
+          },
+          "starting_assets_hint": "填写可用于长期规划的存款和现金，不含自住房等暂不变现资产。",
+          "retirement_spend_hint": "扣除预计养老金等稳定退休收入后，仍需自己承担的金额。",
+          "units": {
+            "age": "岁",
+            "currency_month": "元/月",
+            "currency": "元",
+            "currency_ten_thousand": "万"
+          },
+          "p2_calculate": "查看个人基线",
+          "changed_hint": "输入已修改，请重新计算后再进入正式计划。",
+          "error_summary": "请检查标出的输入后重新计算。",
+          "error_messages": {
+            "required": "请填写这一项。",
+            "invalid-number": "请输入有效数字；年龄需为整数。",
+            "out-of-range": "输入超出可计算范围。",
+            "age-order": "请检查年龄顺序。",
+            "retirement-order": "退休年龄需晚于当前年龄。",
+            "end-order": "计算终点需晚于退休年龄。",
+            "calculation": "当前输入无法完成计算，请检查后重试。"
+          },
+          "p2_result_label": "个人基线",
+          "p2_result_ok": "按照当前输入，计算期内暂未出现资金缺口。",
+          "p2_result_gap": "按照当前输入，计算期内会出现资金缺口，并持续到计算终点。",
+          "p2_result_recovered": "计算期间会短暂出现资金缺口，但计算终点恢复为正。",
+          "p2_first_gap": "首次资金缺口",
+          "p2_no_gap": "暂未出现",
+          "p2_ending": "计算终点可用资金",
+          "p2_timeline_summary": "从 {age} 岁开始，{retireAge} 岁停止工作，计算到 {endAge} 岁。",
+          "assumptions_title": "这条基线如何计算",
+          "p2_assumptions": "所有金额均按当前购买力呈现；从你填写的起始可用资产开始；退休前计算你的当前收入和工作期支出，退休后收入按 0、支出使用你填写的每月需自付金额；实际收益率为 0。",
+          "p2_estimate_note": "这只是基于个人起始资产与当前收支、尚未加入住房和其他人生大事的基线。",
+          "continue_title": "把人生大事加进来",
+          "continue_description": "下一步按需补充职业发展、伴侣、孩子、住房、父母和退休。金额不会出现在网址中。",
+          "continue_button": "加入我的人生大事"
+        }
+      },
+      "usage": {
+        "block": "features-step",
+        "id": "how-it-works",
+        "title": "从现在到退休，三步看清",
+        "description": "先建立个人基线，再逐步补充重要的人生计划。",
+        "text_align": "center",
+        "items": [
+          {
+            "title": "填入现在",
+            "description": "记录年龄、个人收入和日常支出，建立计算起点。",
+            "icon": "WalletCards"
+          },
+          {
+            "title": "加入人生计划",
+            "description": "按需加入职业发展、伴侣、孩子、住房、父母和退休安排。",
+            "icon": "Milestone"
+          },
+          {
+            "title": "查看逐年结果",
+            "description": "查看逐年收支、资金余额、首次缺口和可执行建议。",
+            "icon": "ChartNoAxesCombined"
+          }
+        ],
+        "className": "bg-muted/55"
+      },
+      "features": {
+        "id": "features",
+        "layout": "ledger",
+        "title": "不只算一个总数",
+        "description": "把人生计划拆成能核对、能调整、能讨论的长期现金流。",
+        "items": [
+          {
+            "title": "从个人基线开始",
+            "description": "先看当前个人收支会走到哪里，再决定最值得补充的计划。",
+            "icon": "ArrowLeftRight"
+          },
+          {
+            "title": "逐年现金流",
+            "description": "逐年展示收入、支出与余额，并标出最早出现资金缺口的年份。",
+            "icon": "ChartNoAxesCombined"
+          },
+          {
+            "title": "住房计划",
+            "description": "把租房、买房、首付和房贷纳入同一份计划。",
+            "icon": "House"
+          },
+          {
+            "title": "伴侣、孩子、父母与退休",
+            "description": "逐步查看伴侣、孩子、赡养父母和退休生活对长期资金的影响。",
+            "icon": "UsersRound"
+          },
+          {
+            "title": "假设可以核对",
+            "description": "关键输入、计算口径和逐年明细都可以回看。",
+            "icon": "ListChecks"
+          }
+        ]
+      },
+      "faq": {
+        "id": "faq",
+        "title": "常见问题",
+        "description": "先说明计算边界，再看结果。",
+        "items": [
+          {
+            "title": "一生账本是记账软件吗？",
+            "description": "不是。它关注未来几十年的个人收支和人生计划，而不是记录每一笔日常消费。"
+          },
+          {
+            "title": "结果是由 AI 算出来的吗？",
+            "description": "不是。所有核心数字和系统分析都来自确定性程序。未来的规划助手可以解释结果，但不会替代计算引擎。"
+          },
+          {
+            "title": "计算结果是未来预测吗？",
+            "description": "不是。结果是基于当前输入和明确假设的情景估算，并按当前购买力展示，适合用于理解和比较计划。"
+          },
+          {
+            "title": "正式账本可以加入哪些内容？",
+            "description": "可以逐步加入资产明细、职业发展、伴侣、孩子、住房、父母、退休和一次性人生事件。"
+          },
+          {
+            "title": "快速计算会上传我的数据吗？",
+            "description": "不会。首页计算直接在浏览器中完成，进入正式计划时也只在当前浏览器会话内交接。"
+          }
+        ]
+      },
+      "cta": {
+        "id": "cta",
+        "title": "先看清个人基线，再规划人生大事",
+        "description": "用七个真实数字，建立你的第一条长期资金轨迹。",
+        "buttons": [
+          {
+            "title": "开始计算",
+            "url": "#calculator",
+            "target": "_self",
+            "icon": "Calculator"
+          }
+        ],
+        "className": "bg-muted/55"
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "header": {
+    "id": "header",
+    "brand": { "title": "Life Ledger", "url": "/" },
+    "nav": {
+      "items": [
+        { "title": "Calculator", "url": "/#calculator", "icon": "Calculator" },
+        { "title": "How it works", "url": "/#how-it-works", "icon": "Route" },
+        {
+          "title": "What it covers",
+          "url": "/#features",
+          "icon": "ListChecks"
+        },
+        { "title": "FAQ", "url": "/#faq", "icon": "CircleHelp" }
+      ]
+    },
+    "buttons": [],
+    "user_nav": {
+      "show_name": false,
+      "show_credits": false,
+      "show_sign_out": false,
+      "items": []
+    },
+    "show_sign": false,
+    "show_theme": true,
+    "show_locale": true
+  },
+  "footer": {
+    "id": "footer",
+    "brand": {
+      "title": "Life Ledger",
+      "description": "Start with your current cash flow and turn life plans into a year-by-year ledger you can inspect.",
+      "url": "/"
+    },
+    "nav": {
+      "items": [
+        {
+          "title": "Product",
+          "children": [
+            {
+              "title": "Start calculating",
+              "url": "/#calculator",
+              "target": "_self"
+            },
+            {
+              "title": "How it works",
+              "url": "/#how-it-works",
+              "target": "_self"
+            },
+            {
+              "title": "What it covers",
+              "url": "/#features",
+              "target": "_self"
+            },
+            { "title": "FAQ", "url": "/#faq", "target": "_self" }
+          ]
+        }
+      ]
+    },
+    "agreement": {
+      "items": [
+        { "title": "Privacy Policy", "url": "/privacy-policy" },
+        { "title": "Terms of Service", "url": "/terms-of-service" }
+      ]
+    },
+    "copyright": "© 2026 Life Ledger. For personal planning only.",
+    "show_theme": true,
+    "show_locale": true,
+    "show_built_with": false
+  }
+}

@@ -1,0 +1,448 @@
+{
+  "shell": {
+    "brand": "Life Ledger",
+    "basis": "In today's money",
+    "local": "Saved on this device"
+  },
+  "new": {
+    "title": "Create your first plan",
+    "description": "Your quick estimate has been carried over securely. This is the calculation starting point; city, housing and family details will be added in the full planning steps.",
+    "loading": "Reading your local draft…",
+    "imported": "Imported from the homepage",
+    "saved": "Saved on this device",
+    "draft_name": "My Life Ledger",
+    "back": "Edit on the homepage",
+    "empty_title": "No quick estimate was found",
+    "empty_description": "The temporary handoff may have expired or already been used. Run the estimate again; other local drafts are not affected.",
+    "empty_action": "Return to quick estimate",
+    "error_title": "This local draft cannot be read",
+    "error_description": "Return to the homepage and estimate again. Financial amounts were not placed in the URL or uploaded.",
+    "result_title": "Your current starting point",
+    "result_description": "This basic view excludes housing, children, parents, pension forecasts and investment returns. The result will be recalculated as the full plan is completed.",
+    "status_ok": "No shortfall appears in the planning period",
+    "status_gap": "A funding shortfall appears in the planning period",
+    "first_gap": "First shortfall",
+    "no_gap": "None in this plan",
+    "minimum_balance": "Lowest balance",
+    "ending_balance": "Balance at plan end",
+    "required_income": "Monthly income required",
+    "retirement_balance": "Projected funds at retirement",
+    "year_suffix": "",
+    "age_suffix": " years old",
+    "currency": "CNY",
+    "currency_month": "CNY/mo",
+    "inputs_title": "Imported information",
+    "current_age": "Current age",
+    "retirement_age": "Retire at",
+    "end_age": "Plan through",
+    "monthly_income": "Monthly take-home",
+    "working_expenses": "Monthly working-life costs",
+    "retirement_self_funded": "Monthly retirement costs to self-fund",
+    "savings": "Current savings",
+    "annual_title": "Year-by-year calculation",
+    "annual_description": "Every row comes from the same calculation core and can be audited.",
+    "table_year": "Year / age",
+    "table_phase": "Phase",
+    "table_income": "Income",
+    "table_expenses": "Expenses",
+    "table_balance": "Year-end balance",
+    "phase_working": "Working",
+    "phase_retired": "Retired",
+    "show_all": "Show all {count} years",
+    "versions": "Calculation {calculation} · Input schema {schema} · City data {city} · Education data {education}",
+    "next_title": "Next, complete the full plan",
+    "next_description": "The guided flow will add your calculation direction, current situation, family and housing, work and retirement, followed by a final review."
+  },
+  "workspace": {
+    "shell": {
+      "brand": "Life Ledger",
+      "basis": "All amounts in today's money",
+      "more": "More actions",
+      "rename": "Rename plan",
+      "export": "Export backup",
+      "export_current": "Export current data",
+      "import": "Import backup",
+      "restore": "Restore latest snapshot",
+      "no_snapshot": "There is no earlier snapshot to restore yet.",
+      "delete": "Delete and start over",
+      "delete_confirm": "Delete this plan and its local snapshots? This cannot be undone. Export a backup first if you may need it.",
+      "rename_prompt": "Rename this plan"
+    },
+    "tabs": {
+      "label": "Workspace views",
+      "overview": "Overview",
+      "plan": "Plan",
+      "ledger": "Annual ledger"
+    },
+    "save": {
+      "saved": "Autosaved",
+      "saving": "Saving",
+      "failed": "Save failed",
+      "stale": "Result needs updating"
+    },
+    "bootstrap": {
+      "loading": "Reading your local plan…",
+      "empty_title": "Create your first long-term plan",
+      "empty_description": "Start with your income and life-plan assumptions on the homepage, or import a backup. Your formal plan stays in this browser.",
+      "start": "Start on the homepage",
+      "error_title": "Your local plan cannot be read right now"
+    },
+    "overview": {
+      "conclusion_ok": "According to the current inputs, no funding gap appears in the planning period.",
+      "conclusion_gap": "According to the current inputs, a continuing funding gap appears in the planning period.",
+      "conclusion_recovered": "The plan ends with funds available, but an intermediate funding gap still appears.",
+      "ending": "Available funds at the end of the plan are estimated at {amount}. This is a scenario result, not a guarantee.",
+      "edit": "Edit plan",
+      "status": "Funding continuity",
+      "will_gap": "Gap expected",
+      "no_gap": "No gap found",
+      "first_gap": "First gap",
+      "minimum": "Lowest available funds",
+      "required_income": "Monthly income needed to avoid any gap",
+      "chart_title": "Long-term funds",
+      "chart_description": "Use the chart for direction and the table or ledger for exact amounts.",
+      "available": "Available funds",
+      "debt": "Debt",
+      "net_worth": "Net worth",
+      "table_alternative": "View chart data",
+      "influences": "Three inputs with the largest sensitivity impact",
+      "completeness_basic": "Basic estimate",
+      "completeness_hint": "Continue with your partner, children, housing, parents and retirement plans.",
+      "complete_plan": "Complete the plan"
+    },
+    "plan": {
+      "title": "My life plan",
+      "description": "Add the details that matter to you. You can skip any stage.",
+      "monthly_income": "Current monthly income",
+      "monthly_expense": "Current monthly spending",
+      "classified": "Classified",
+      "unallocated": "Unallocated",
+      "available_cash": "Current available funds",
+      "current_age": "Current age",
+      "retirement_age": "Retire at",
+      "end_age": "Plan through",
+      "retirement_self_funded": "Monthly retirement costs to self-fund",
+      "retirement_hint": "Pensions are not forecast automatically. Enter what personal funds must cover after pensions and other stable income.",
+      "original_total": "Original total",
+      "confirm_total": "Confirm details as the new total",
+      "return_rate": "Real annual return on available funds",
+      "gap_rate": "Real annual cost of a cash gap",
+      "manual_title": "This section currently uses manual entries",
+      "manual_description": "P2 does not infer policy or city data. Related amounts enter the plan as user-provided values.",
+      "summary_basics": "Ages and planning timeline",
+      "summary_total": "Break down the total",
+      "summary_optional": "Optional details",
+      "summary_none": "Nothing added",
+      "summary_defaults": "Using basic assumptions",
+      "sections": {
+        "basics": "Basic information",
+        "assets": "Current assets",
+        "income": "Income and work",
+        "living": "Daily living",
+        "partner": "Partner",
+        "child": "Children",
+        "housing": "Housing",
+        "parents": "Parents",
+        "retirement": "Retirement",
+        "events": "Other life events",
+        "advanced": "Assumptions",
+        "career": "Career"
+      }
+    },
+    "ledger": {
+      "title": "Annual ledger",
+      "description": "Every row is aggregated from the same monthly result for exact review.",
+      "locate_gap": "Locate first gap",
+      "year": "Year",
+      "phase": "Phase",
+      "working": "Working",
+      "retired": "Retired",
+      "income": "Income",
+      "expense": "Spending",
+      "available": "Year-end available funds",
+      "debt": "Debt",
+      "net_worth": "Net worth",
+      "gap": "Gap appears this year",
+      "no_gap": "No gap this year",
+      "year_detail": "Annual cash flow and asset changes",
+      "categories": "Spending categories",
+      "year_filter": "Year range",
+      "key_years": "Key years",
+      "all_years": "All years",
+      "transition": "Retirement transition",
+      "monthly": "Monthly cash flow",
+      "month": "Month"
+    },
+    "categories": {
+      "salary": "Salary",
+      "side_income": "Side income",
+      "pension": "Pension",
+      "housing": "Housing",
+      "living": "Everyday living",
+      "child": "Children",
+      "parent": "Parents",
+      "retirement": "Retirement",
+      "healthcare": "Healthcare",
+      "tax": "Tax",
+      "other": "Other"
+    },
+    "common": {
+      "currency": "CNY",
+      "per_month": "/mo",
+      "age": "years",
+      "close": "Close",
+      "retry": "Retry"
+    },
+    "errors": {
+      "corrupt": "The local plan failed integrity checks and was not used for calculation. Restore its latest snapshot or import a valid backup.",
+      "storage": "The browser could not open local plan storage. Retry or import a backup.",
+      "invalid_plan": "Some inputs are incomplete. The last valid result remains visible; review the open section.",
+      "conflict": "This plan changed in another tab. Your current edits did not overwrite that version.",
+      "import": "This backup could not be read. Your current plan was not changed.",
+      "save": "Could not save in this browser. Your changes remain in memory; retry or export a backup.",
+      "reload": "Load latest version",
+      "reload_confirm": "Loading the latest version discards unsaved changes. Export anything you need first. Continue?"
+    },
+    "trajectory": {
+      "title": "Your life path",
+      "hint": "Start anywhere. Check your results at any time.",
+      "stages": {
+        "now": "Now",
+        "partner": "Partner",
+        "child": "Children",
+        "housing": "Housing",
+        "parents": "Parents",
+        "retirement": "Retirement",
+        "career": "Career"
+      },
+      "status": {
+        "missing": "Not included",
+        "complete": "Included",
+        "not-applicable": "Not planned"
+      }
+    },
+    "feedback": {
+      "title": "What this edit changed",
+      "unchanged": "Updated. The first gap and balances are unchanged.",
+      "minimum": "Change in lowest available funds",
+      "ending": "Change in ending funds"
+    },
+    "editor": {
+      "monthly_contribution": "Monthly contribution",
+      "monthly_extra": "Additional monthly spending",
+      "short_hint": "Leave out amounts already included in your current cash flow.",
+      "more_settings": "Timing and other settings",
+      "plan_hint": "Add the details that matter to you. You can skip any stage.",
+      "see_result": "View results",
+      "user": "Your input",
+      "age_error": "Use whole ages: current 18–75, retirement later and no more than 80, end later than retirement and no more than 120.",
+      "save_time": "Update timeline",
+      "assets_hint": "Available assets fund cash flow. Property and other non-liquid assets only contribute to net worth.",
+      "liquid": "Available",
+      "non_liquid": "Non-liquid",
+      "wan": "10k CNY",
+      "add_cash": "Add available assets",
+      "debts": "Recorded debts",
+      "skip": "Not planned",
+      "restore": "Include this stage",
+      "skip_disabled": "Remove the recorded amounts before skipping this stage.",
+      "partner_hint": "Record only a partner's contribution to your plan or additional costs. Do not repeat amounts already included in your personal cash flow.",
+      "existing_split": "Classify existing monthly spending",
+      "split_hint": "These amounts are part of your working-life spending total. Classification alone does not add costs; a larger total requires confirmation.",
+      "additional": "Additional cash flow",
+      "additional_hint": "Add items not already in your monthly totals. They are counted separately for the dates you enter.",
+      "count": "{count} items",
+      "name": "Item name",
+      "amount": "Amount per occurrence (CNY)",
+      "frequency": "Frequency",
+      "monthly": "Monthly",
+      "once": "One time",
+      "yearly": "Yearly",
+      "direction": "Direction",
+      "expense": "Expense",
+      "income": "Income / contribution",
+      "start": "Start month",
+      "end": "End month (inclusive)",
+      "add_event": "Add item",
+      "edit": "Edit",
+      "remove": "Remove",
+      "save": "Apply to plan",
+      "cancel": "Cancel",
+      "event_error": "Check the name, amount and dates: use a positive amount, an end no earlier than the start, and dates within the plan.",
+      "yearly_hint": "This yearly record is kept as imported; edit it through a backup for now.",
+      "real_return": "Real return",
+      "gap_cost": "Gap cost",
+      "partner_income": "Partner contributes",
+      "partner_expense": "I spend more"
+    },
+    "flow": {
+      "choose_stage": "Choose a life stage",
+      "baseline": "Current situation",
+      "next": "Next",
+      "discard": "You have changes that have not been applied. Leave and discard them?",
+      "trust": "In today's money · Not a guaranteed return",
+      "property_included": "Existing property included",
+      "hints": {
+        "assets": "Start from your baseline. Update only what has changed.",
+        "career": "Plan different periods of work and income.",
+        "partner": "What will your partner contribute, or what extra costs will you cover?",
+        "child": "Allow for the periods when you will support a child.",
+        "housing": "Add cash costs for renting, buying, or other housing needs.",
+        "parents": "Set aside the support you expect to provide for your parents.",
+        "retirement": "How much will you need to pay yourself each month after retiring?",
+        "events": "Add travel, education, or another life event.",
+        "advanced": "Amounts are in today's money. Adjust the assumptions behind the estimate."
+      }
+    },
+    "career": {
+      "kind": "Type of change",
+      "salary": "Change jobs",
+      "side_income": "Side income",
+      "break": "Career break",
+      "salary_amount": "New job take-home pay (CNY/month)",
+      "side_amount": "Net side income (CNY/month)",
+      "amount_placeholder": "Enter amount",
+      "note": "Add a note",
+      "add": "Add another income period",
+      "replaces": "Replaces salary",
+      "additive": "Additional income",
+      "keep": "Keep current income",
+      "error": "Check amounts and dates. Job periods must not overlap each other, nor may break periods. Both must end by retirement. A break may occur within a job. Existing income breakdowns must be fully classified.",
+      "hints": {
+        "salary": "Replaces your salary during these months. Your original income path resumes afterward.",
+        "side_income": "Enter net income not already in your baseline, with its own start and end dates.",
+        "break": "Salary is zero during these months. Existing side income continues; your original salary path resumes afterward."
+      },
+      "growth": "Annual raises",
+      "growth_hint": "Set annual growth for your current salary. Enter a new salary separately when changing jobs.",
+      "growth_label": "Annual real salary growth",
+      "flat": "Same purchasing power",
+      "growth_basis": "How is this rate calculated?",
+      "growth_detail": "Real growth is the change in purchasing power after inflation, not the nominal pay rise. 0% preserves purchasing power. The annual rate is compounded monthly; it does not imply monthly pay reviews. This affects the current salary baseline only. Existing new-job and side-income periods retain their own growth rates. Presets are input shortcuts, not forecasts.",
+      "growth_error": "Enter an annual real growth rate between -99% and 100%.",
+      "job_growth": "New job annual real growth (%)"
+    },
+    "charts": {
+      "expenses": "Annual spending",
+      "balances": "Available funds and net worth",
+      "peak": "Spending peaks in {year}, at {amount} for the year.",
+      "balance_hint": "See how long your available funds last. Net worth also includes non-cash assets and deducts debt.",
+      "minimum": "Lowest monthly available funds: {amount} in {year}. Lines show year-end balances.",
+      "groups": {
+        "living": "Living",
+        "housing": "Housing & loans",
+        "child": "Children",
+        "parent": "Parents",
+        "other": "Other",
+        "retirement": "Retirement"
+      },
+      "age_axis": "Age · Year-end balances",
+      "compare_networth": "Compare net worth",
+      "retirement_balance": "Funds at retirement year-end",
+      "ending_balance": "Funds at the plan endpoint",
+      "same_balances": "Net worth matches available funds; one line is shown",
+      "negative_hint": "Below zero indicates a cash shortfall"
+    },
+    "analysis": {
+      "title": "What your plan shows",
+      "basis": "Calculated from your inputs and fixed rules. No AI.",
+      "review": "Review related inputs",
+      "actions": "Explore other arrangements",
+      "actions_hint": "Compare before applying. These are scenarios to explore, not life advice.",
+      "cause_verified": "Controlled check: removing this housing payment delays or removes the first shortfall.",
+      "rules": {
+        "housing-causes-first-gap": {
+          "title": "Housing costs are close to the first shortfall",
+          "body": "The first shortfall occurs within 12 months of a one-off housing payment. You can test a different date."
+        },
+        "housing-child-overlap": {
+          "title": "Housing and child costs start close together",
+          "body": "These arrangements start within 24 months of each other. More cash may be needed during this period."
+        },
+        "liquidity-gap": {
+          "title": "Positive net worth does not guarantee available cash",
+          "body": "Some months have negative available funds despite positive net worth. Non-cash assets are not automatically spent."
+        },
+        "retirement-transition-gap": {
+          "title": "A shortfall appears early in retirement",
+          "body": "The first shortfall is in the first retirement year, without retirement income already active. Review self-funded spending."
+        },
+        "retirement-spend-sensitive": {
+          "title": "Retirement spending strongly affects the endpoint",
+          "body": "A 10% increase in retirement spending ranks among the three largest endpoint impacts. Compare different budgets."
+        },
+        "zero-return-conservative": {
+          "title": "No real return on available funds is assumed",
+          "body": "At least 120 months have positive balances while the real return is 0%. Review the assumption without treating positive returns as guaranteed."
+        },
+        "important-total-unclassified": {
+          "title": "Some expenses are still estimated as a total",
+          "body": "Totals work for planning. To understand individual categories, split existing totals rather than adding the same costs again."
+        },
+        "baseline-sustainable": {
+          "title": "No shortfall under the included arrangements",
+          "body": "Each stage is filled in or explicitly excluded. This is a scenario based on current inputs, not a guarantee."
+        }
+      }
+    },
+    "actions": {
+      "delay-housing": {
+        "title": "Change housing payment timing",
+        "tradeoff": "Only the cash payment date changes. House prices, loans, rent, and child arrangements are not adjusted automatically."
+      },
+      "retirement-budget": {
+        "title": "Compare self-funded retirement budgets",
+        "tradeoff": "Lower spending means a different retirement budget. Healthcare and care needs do not automatically decrease."
+      },
+      "retire-later": {
+        "title": "Compare retirement dates",
+        "tradeoff": "The baseline work-income and retirement-spending boundary changes. Independently scheduled work, pensions, and events keep their own dates."
+      },
+      "opening-cash": {
+        "title": "Review opening available assets",
+        "tradeoff": "Use only existing accessible funds, not expected future earnings or property valuations."
+      }
+    },
+    "simulation": {
+      "description": "Changes are made to a copy, not your saved plan.",
+      "stale": "Your plan has changed. This comparison is out of date; close and reopen it.",
+      "calculate": "Compare results",
+      "error": "This change cannot be calculated. Check amounts, dates, and conflicts with existing periods.",
+      "comparison": "Current plan → Scenario",
+      "ending": "Ending available funds",
+      "exclusions": "Unentered expenses, policy changes, and uncertain future events are excluded. Returns are not guaranteed.",
+      "apply": "Apply to plan",
+      "discard": "Discard scenario",
+      "undo": "Undo this application",
+      "fields": {
+        "shift-cash-flow": "Months to delay (negative brings forward)",
+        "change-cash-flow-amount": "New amount (CNY)",
+        "change-retirement-month": "New retirement month",
+        "change-liquid-opening-balance": "Opening available assets (CNY)"
+      }
+    },
+    "evidence": {
+      "title": "Calculation basis",
+      "description": "Review inputs, assumptions, and monthly calculation records.",
+      "open": "View calculation basis",
+      "versions": "Versions",
+      "sources": "Input sources",
+      "records": "Monthly records",
+      "date": "Inputs last updated",
+      "assumptions": "Assumptions",
+      "basis": "Today's purchasing power. Growth and returns are real rates; inflation is not added again. Non-cash assets do not automatically cover cash shortfalls.",
+      "month": "Select month",
+      "no_records": "No separate records for this month.",
+      "user": "User input",
+      "system": "System default",
+      "external": "External source",
+      "agent": "External assistance awaiting confirmation",
+      "flow": "Cash flow",
+      "asset": "Asset",
+      "debt": "Debt",
+      "amount": "Amount",
+      "input": "Related input",
+      "rule": "Calculation rule"
+    }
+  }
+}
