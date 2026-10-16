@@ -6,7 +6,14 @@ import type {
   MonthlyCalculationResult,
 } from '@/features/life-ledger/calculation';
 import { monthParts } from '@/features/life-ledger/domain';
-import { TrendingDown } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Landmark,
+  Scale,
+  TrendingDown,
+  WalletCards,
+} from 'lucide-react';
 
 import { keyYears } from '../../analysis/chart-data';
 import { WorkspaceDrawer } from '../components/workspace-drawer';
@@ -29,12 +36,31 @@ export function LedgerView({
     ? result.annual
     : result.annual.filter((r) => years.includes(r.year));
   const selected = result.annual.find((row) => row.year === selectedYear);
+  const scale = {
+    income: Math.max(1, ...rows.map((row) => Math.abs(row.incomeCents))),
+    expense: Math.max(1, ...rows.map((row) => Math.abs(row.expenseCents))),
+    available: Math.max(
+      1,
+      ...rows.map((row) => Math.abs(row.closingAvailableCents))
+    ),
+    debt: Math.max(
+      1,
+      ...rows.map((row) => Math.abs(row.closingDebtBalanceCents))
+    ),
+    netWorth: Math.max(
+      1,
+      ...rows.map((row) => Math.abs(row.closingNetWorthCents))
+    ),
+  };
 
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1
+            id="ledger-heading"
+            className="text-2xl font-semibold tracking-tight"
+          >
             {copy.ledger.title}
           </h1>
           <p className="text-muted-foreground mt-2 max-w-[70ch] text-sm leading-relaxed">
@@ -79,16 +105,24 @@ export function LedgerView({
             <thead className="bg-muted/60 text-foreground text-xs">
               <tr>
                 {[
-                  copy.ledger.year,
-                  copy.ledger.phase,
-                  copy.ledger.income,
-                  copy.ledger.expense,
-                  copy.ledger.available,
-                  copy.ledger.debt,
-                  copy.ledger.net_worth,
-                ].map((heading) => (
+                  { heading: copy.ledger.year },
+                  { heading: copy.ledger.phase },
+                  { heading: copy.ledger.income, icon: ArrowDownToLine },
+                  { heading: copy.ledger.expense, icon: ArrowUpFromLine },
+                  { heading: copy.ledger.available, icon: WalletCards },
+                  { heading: copy.ledger.debt, icon: Landmark },
+                  { heading: copy.ledger.net_worth, icon: Scale },
+                ].map(({ heading, icon: Icon }) => (
                   <th key={heading} className="px-5 py-3 font-medium">
-                    {heading}
+                    <span className="inline-flex items-center gap-2">
+                      {Icon && (
+                        <Icon
+                          className="text-muted-foreground size-3.5"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {heading}
+                    </span>
                   </th>
                 ))}
               </tr>
@@ -113,21 +147,57 @@ export function LedgerView({
                   <td className="text-muted-foreground px-5 py-3">
                     {copy.ledger[row.phase]}
                   </td>
-                  <td className="px-5 py-3 tabular-nums">
-                    {formatMoney(row.incomeCents)}
-                  </td>
-                  <td className="px-5 py-3 tabular-nums">
-                    {formatMoney(row.expenseCents)}
-                  </td>
-                  <td className="px-5 py-3 tabular-nums">
-                    {formatMoney(row.closingAvailableCents)}
-                  </td>
-                  <td className="px-5 py-3 tabular-nums">
-                    {formatMoney(row.closingDebtBalanceCents)}
-                  </td>
-                  <td className="px-5 py-3 tabular-nums">
-                    {formatMoney(row.closingNetWorthCents)}
-                  </td>
+                  <MetricCell
+                    value={row.incomeCents}
+                    maximum={scale.income}
+                    formatMoney={formatMoney}
+                    tone="bg-emerald-700/55"
+                    text="text-foreground"
+                  />
+                  <MetricCell
+                    value={row.expenseCents}
+                    maximum={scale.expense}
+                    formatMoney={formatMoney}
+                    tone="bg-orange-700/50"
+                    text="text-foreground"
+                  />
+                  <MetricCell
+                    value={row.closingAvailableCents}
+                    maximum={scale.available}
+                    formatMoney={formatMoney}
+                    tone={
+                      row.closingAvailableCents < 0
+                        ? 'bg-red-600'
+                        : 'bg-sky-700/50'
+                    }
+                    text={
+                      row.closingAvailableCents < 0
+                        ? 'text-destructive'
+                        : 'text-foreground'
+                    }
+                  />
+                  <MetricCell
+                    value={row.closingDebtBalanceCents}
+                    maximum={scale.debt}
+                    formatMoney={formatMoney}
+                    tone="bg-violet-700/45"
+                    text="text-foreground"
+                  />
+                  <MetricCell
+                    value={row.closingNetWorthCents}
+                    maximum={scale.netWorth}
+                    formatMoney={formatMoney}
+                    tone={
+                      row.closingNetWorthCents < 0
+                        ? 'bg-red-600'
+                        : 'bg-teal-700/50'
+                    }
+                    text={
+                      row.closingNetWorthCents < 0
+                        ? 'text-destructive'
+                        : 'text-foreground'
+                    }
+                  />
                 </tr>
               ))}
             </tbody>
@@ -140,7 +210,7 @@ export function LedgerView({
               key={row.year}
               type="button"
               onClick={() => setSelectedYear(row.year)}
-              className="hover:bg-muted focus-visible:ring-primary/30 flex w-full items-center justify-between gap-4 px-4 py-4 text-left focus-visible:ring-4 focus-visible:outline-none"
+              className="hover:bg-muted focus-visible:ring-primary/30 grid w-full grid-cols-[auto_1fr] items-center gap-x-5 gap-y-2 px-4 py-4 text-left focus-visible:ring-4 focus-visible:outline-none"
             >
               <span>
                 <strong className="text-sm">{row.year}</strong>
@@ -150,8 +220,31 @@ export function LedgerView({
                     : copy.ledger.no_gap}
                 </span>
               </span>
-              <span className="text-right text-sm font-semibold tabular-nums">
+              <span
+                className={`text-right text-sm font-semibold tabular-nums ${row.closingAvailableCents < 0 ? 'text-destructive' : 'text-foreground'}`}
+              >
                 {formatMoney(row.closingAvailableCents)}
+              </span>
+              <span
+                className="col-span-2 grid grid-cols-2 gap-1"
+                aria-hidden="true"
+              >
+                <span className="bg-muted h-1.5 overflow-hidden rounded-sm">
+                  <span
+                    className="block h-full bg-emerald-700/55"
+                    style={{
+                      width: `${Math.min(100, (row.incomeCents / scale.income) * 100)}%`,
+                    }}
+                  />
+                </span>
+                <span className="bg-muted h-1.5 overflow-hidden rounded-sm">
+                  <span
+                    className="block h-full bg-orange-700/50"
+                    style={{
+                      width: `${Math.min(100, (row.expenseCents / scale.expense) * 100)}%`,
+                    }}
+                  />
+                </span>
               </span>
             </button>
           ))}
@@ -168,6 +261,37 @@ export function LedgerView({
         />
       )}
     </div>
+  );
+}
+
+function MetricCell({
+  value,
+  maximum,
+  formatMoney,
+  tone,
+  text,
+}: {
+  value: number;
+  maximum: number;
+  formatMoney: (value: number) => string;
+  tone: string;
+  text: string;
+}) {
+  return (
+    <td className="px-5 py-3 tabular-nums">
+      <span className={`font-medium ${text}`}>{formatMoney(value)}</span>
+      <span
+        className="bg-muted mt-2 block h-1 w-full max-w-28 overflow-hidden rounded-sm"
+        aria-hidden="true"
+      >
+        <span
+          className={`block h-full ${tone}`}
+          style={{
+            width: `${Math.min(100, (Math.abs(value) / maximum) * 100)}%`,
+          }}
+        />
+      </span>
+    </td>
   );
 }
 

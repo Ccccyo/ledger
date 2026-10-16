@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, LayoutDashboard, ListChecks } from 'lucide-react';
+import { ChartNoAxesCombined, ListChecks } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -8,9 +8,8 @@ import { WORKSPACE_TABS } from '../navigation';
 import type { WorkspaceCopy, WorkspaceTab } from '../workspace-types';
 
 const icons = {
-  overview: LayoutDashboard,
   plan: ListChecks,
-  ledger: BookOpen,
+  analysis: ChartNoAxesCombined,
 };
 
 export function WorkspaceMobileNav({
@@ -24,7 +23,7 @@ export function WorkspaceMobileNav({
 }) {
   return (
     <nav
-      className="border-border bg-background fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="border-border bg-background fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label={copy.tabs.label}
     >
       {WORKSPACE_TABS.map((id) => {

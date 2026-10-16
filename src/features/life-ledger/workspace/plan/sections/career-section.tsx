@@ -192,6 +192,10 @@ function CareerForm({
 }) {
   const { plan, copy, onChange } = props;
   const [error, setError] = useState(false);
+  const [amountUnit, setAmountUnit] = useState<'yuan' | 'wan'>('yuan');
+  const [amountDraft, setAmountDraft] = useState(
+    flow ? String(flow.amountCents / 100) : ''
+  );
   const parse = (value: FormDataEntryValue | null) => {
     const [y, m] = String(value).split('-').map(Number);
     return monthIndex(y, m);
@@ -206,7 +210,11 @@ function CareerForm({
           const input = {
             id: flow?.id ?? crypto.randomUUID(),
             kind,
-            amount: kind === 'break' ? 0 : Number(data.get('amount')),
+            amount:
+              kind === 'break'
+                ? 0
+                : Number(data.get('amount')) *
+                  (amountUnit === 'wan' ? 10_000 : 1),
             start: parse(data.get('start')),
             end: addMonths(parse(data.get('end')), 1),
             name: String(data.get('name') || copy.career[kind]),
@@ -229,18 +237,47 @@ function CareerForm({
           {kind === 'salary'
             ? copy.career.salary_amount
             : copy.career.side_amount}
-          <input
-            className={control}
-            name="amount"
-            type="number"
-            inputMode="decimal"
-            required
-            min="0.01"
-            max="1000000000"
-            step="0.01"
-            defaultValue={flow ? flow.amountCents / 100 : ''}
-            placeholder={copy.career.amount_placeholder}
-          />
+          <span className="border-input bg-background focus-within:ring-primary/30 flex h-11 items-center rounded-lg border px-3 focus-within:ring-4">
+            <input
+              className="h-full min-w-0 flex-1 bg-transparent outline-none"
+              name="amount"
+              type="number"
+              inputMode="decimal"
+              required
+              min="0.01"
+              max="1000000000"
+              step="0.01"
+              value={amountDraft}
+              onChange={(event) => setAmountDraft(event.target.value)}
+              placeholder={copy.career.amount_placeholder}
+            />
+            <select
+              aria-label={copy.editor.amount_unit}
+              value={amountUnit}
+              onChange={(event) => {
+                const next = event.target.value as 'yuan' | 'wan';
+                const parsed = Number(amountDraft);
+                if (Number.isFinite(parsed) && amountDraft.trim()) {
+                  const yuanValue =
+                    parsed * (amountUnit === 'wan' ? 10_000 : 1);
+                  setAmountDraft(
+                    String(yuanValue / (next === 'wan' ? 10_000 : 1))
+                  );
+                }
+                setAmountUnit(next);
+              }}
+              className="text-muted-foreground bg-transparent text-xs outline-none"
+            >
+              <option value="yuan">
+                {copy.common.currency}
+                {copy.common.per_month}
+              </option>
+              <option value="wan">
+                {copy.editor.ten_thousand}
+                {copy.common.per_month}
+              </option>
+            </select>
+          </span>
         </label>
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

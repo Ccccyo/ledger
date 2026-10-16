@@ -7,25 +7,27 @@ export function AssetsSection({ plan, locale, copy, onChange }: SectionProps) {
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">{copy.editor.assets_hint}</p>
       <div className="grid gap-4 sm:grid-cols-2">
-        {plan.assets.map((asset) => (
-          <NumberField
-            key={asset.id}
-            label={`${asset.name} · ${asset.liquid ? copy.editor.liquid : copy.editor.non_liquid}`}
-            value={asset.openingBalanceCents / 1_000_000}
-            unit={copy.editor.wan}
-            step="0.01"
-            onCommit={(value: number) =>
-              onChange((current) => ({
-                ...current,
-                assets: current.assets.map((a) =>
-                  a.id === asset.id
-                    ? { ...a, openingBalanceCents: yuan(value * 10_000) }
-                    : a
-                ),
-              }))
-            }
-          />
-        ))}
+        {plan.assets
+          .filter((asset) => !asset.purchase)
+          .map((asset) => (
+            <NumberField
+              key={asset.id}
+              label={`${asset.name} · ${asset.liquid ? copy.editor.liquid : copy.editor.non_liquid}`}
+              value={asset.openingBalanceCents / 1_000_000}
+              unit={copy.editor.wan}
+              step="0.01"
+              onCommit={(value: number) =>
+                onChange((current) => ({
+                  ...current,
+                  assets: current.assets.map((a) =>
+                    a.id === asset.id
+                      ? { ...a, openingBalanceCents: yuan(value * 10_000) }
+                      : a
+                  ),
+                }))
+              }
+            />
+          ))}
       </div>
       {plan.assets.length === 0 && (
         <button
@@ -54,14 +56,17 @@ export function AssetsSection({ plan, locale, copy, onChange }: SectionProps) {
           {copy.editor.add_cash}
         </button>
       )}
-      {plan.liabilities.length > 0 && (
+      {plan.liabilities.some((item) => !item.originatesAtStart) && (
         <div className="border-border border-t pt-4">
           <p className="mb-2 text-sm font-medium">{copy.editor.debts}</p>
-          {plan.liabilities.map((item) => (
-            <p key={item.id} className="text-muted-foreground text-sm">
-              {item.name} · {moneyFormatter(locale)(item.openingPrincipalCents)}
-            </p>
-          ))}
+          {plan.liabilities
+            .filter((item) => !item.originatesAtStart)
+            .map((item) => (
+              <p key={item.id} className="text-muted-foreground text-sm">
+                {item.name} ·{' '}
+                {moneyFormatter(locale)(item.openingPrincipalCents)}
+              </p>
+            ))}
         </div>
       )}
     </div>

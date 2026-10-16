@@ -10,29 +10,30 @@ import {
 } from './navigation';
 
 describe('P2.1 workspace navigation', () => {
-  it('recognizes exactly the three public workspace tabs', () => {
-    assert.deepEqual(WORKSPACE_TABS, ['overview', 'plan', 'ledger']);
-    assert.equal(resolveWorkspaceTab('overview'), 'overview');
+  it('recognizes the two public workspace tabs and migrates legacy tabs', () => {
+    assert.deepEqual(WORKSPACE_TABS, ['plan', 'analysis']);
+    assert.equal(resolveWorkspaceTab('overview'), 'analysis');
     assert.equal(resolveWorkspaceTab('plan'), 'plan');
-    assert.equal(resolveWorkspaceTab('ledger'), 'ledger');
-    assert.equal(resolveWorkspaceTab('unknown'), 'overview');
-    assert.equal(resolveWorkspaceTab(null), 'overview');
+    assert.equal(resolveWorkspaceTab('analysis'), 'analysis');
+    assert.equal(resolveWorkspaceTab('ledger'), 'analysis');
+    assert.equal(resolveWorkspaceTab('unknown'), 'plan');
+    assert.equal(resolveWorkspaceTab(null), 'plan');
   });
 
   it('changes only the tab query and preserves safe view state', () => {
     assert.equal(
-      createWorkspaceTabHref('tab=plan&section=housing&year=2048', 'ledger'),
-      '/plan?tab=ledger&section=housing&year=2048'
+      createWorkspaceTabHref('tab=plan&section=housing&year=2048', 'analysis'),
+      '/plan?tab=analysis&section=housing&year=2048'
     );
   });
   it('preserves the current localized route for client-only offline navigation', () => {
     assert.equal(
-      createWorkspaceTabHref('tab=overview', 'plan', '/en/plan'),
+      createWorkspaceTabHref('tab=analysis', 'plan', '/en/plan'),
       '/en/plan?tab=plan'
     );
     assert.equal(
-      createWorkspaceTabHref('section=career', 'ledger', '/plan'),
-      '/plan?section=career&tab=ledger'
+      createWorkspaceTabHref('section=career', 'analysis', '/plan'),
+      '/plan?section=career&tab=analysis'
     );
   });
 });
@@ -79,7 +80,7 @@ it('cancelled history traversal restores the same entry without discarding forwa
     });
     assert.equal((history.state as { router: string }).router, 'preserved');
     pushWorkspaceHistory('/plan?tab=plan');
-    pushWorkspaceHistory('/plan?tab=ledger');
+    pushWorkspaceHistory('/plan?tab=analysis');
     history.go(-2);
     assert.equal(position, 2);
     assert.equal(entries.length, 3);

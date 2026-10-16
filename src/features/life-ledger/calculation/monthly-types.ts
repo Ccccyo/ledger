@@ -92,10 +92,10 @@ export interface MonthlyCalculationSummary {
 }
 
 export interface MonthlyCalculationVersions {
-  calculation: '2.1.0';
+  calculation: '2.2.0';
   schema: '2.0.0';
   data: string;
-  rules: 'monthly-cashflow-career-2026-10';
+  rules: 'monthly-cashflow-housing-2026-10';
 }
 
 export interface MonthlyCalculationResult {

@@ -32,6 +32,7 @@ export function annualChartData(result: MonthlyCalculationResult) {
       ageStart: row.ageStart,
       ageEnd: row.ageEnd,
       expense: row.expenseCents,
+      income: row.incomeCents,
       available: row.closingAvailableCents,
       netWorth: row.closingNetWorthCents,
       debt: row.closingDebtBalanceCents,

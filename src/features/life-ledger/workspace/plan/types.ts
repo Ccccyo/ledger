@@ -10,6 +10,7 @@ export const PLAN_SECTIONS = [
   'partner',
   'child',
   'housing',
+  'investment',
   'parents',
   'retirement',
   'events',

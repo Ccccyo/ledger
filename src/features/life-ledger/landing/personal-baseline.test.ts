@@ -9,6 +9,7 @@ import {
   createPersonalBaselineDraft,
   createPersonalBaselinePlan,
   parsePersonalBaselineDraft,
+  PERSONAL_BASELINE_DEFAULTS,
 } from './personal-baseline';
 
 const CONTEXT = {
@@ -18,6 +19,27 @@ const CONTEXT = {
 };
 
 describe('P2.1 personal Landing baseline', () => {
+  it('starts with the customer baseline shown on the landing page', () => {
+    assert.deepEqual(PERSONAL_BASELINE_DEFAULTS, {
+      currentAge: 30,
+      startingAvailableAssetsWan: 0,
+      monthlyIncomeYuan: 20_000,
+      monthlyExpenseYuan: 10_000,
+      monthlyRetirementSelfFundedYuan: 5_000,
+      retirementAge: 60,
+      endAge: 90,
+    });
+    assert.deepEqual(createPersonalBaselineDraft(), {
+      currentAge: '30',
+      startingAvailableAssetsWan: '0',
+      monthlyIncomeYuan: '20000',
+      monthlyExpenseYuan: '10000',
+      monthlyRetirementSelfFundedYuan: '5000',
+      retirementAge: '60',
+      endAge: '90',
+    });
+  });
+
   it('parses seven personal fields without coercing empty values', () => {
     const valid = parsePersonalBaselineDraft(
       createPersonalBaselineDraft({

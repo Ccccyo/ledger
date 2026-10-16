@@ -20,7 +20,11 @@ export type PlanPatch =
       type: 'change-liquid-opening-balance';
       assetId: string;
       openingBalanceCents: MoneyCents;
-    };
+    }
+  | { type: 'shift-purchase'; purchaseId: string; monthDelta: number }
+  | { type: 'remove-purchase'; purchaseId: string }
+  | { type: 'shift-relocation'; relocationId: string; monthDelta: number }
+  | { type: 'remove-relocation'; relocationId: string };
 
 export function applyPlanPatch(plan: LifePlan, patch: PlanPatch): LifePlan {
   let found = false;
@@ -29,6 +33,12 @@ export function applyPlanPatch(plan: LifePlan, patch: PlanPatch): LifePlan {
     patch.type === 'shift-cash-flow' ||
     patch.type === 'change-cash-flow-amount'
   ) {
+    if (
+      plan.assets.some(
+        (a) => a.purchase?.downPaymentFlowId === patch.cashFlowId
+      )
+    )
+      throw new Error('Edit linked purchases through the housing calculator');
     const edit = (flow: CashFlowItem): CashFlowItem => {
       if (flow.id !== patch.cashFlowId) return flow;
       found = true;
@@ -88,6 +98,14 @@ export function applyPlanPatch(plan: LifePlan, patch: PlanPatch): LifePlan {
         f.endMonthExclusive === plan.retirementMonth
           ? patch.retirementMonth
           : f.endMonthExclusive,
+      growthStartMonth:
+        f.growthStartMonth === plan.retirementMonth
+          ? patch.retirementMonth
+          : f.growthStartMonth,
+      growthEndMonthExclusive:
+        f.growthEndMonthExclusive === plan.retirementMonth
+          ? patch.retirementMonth
+          : f.growthEndMonthExclusive,
     });
     next.retirementMonth = patch.retirementMonth;
     next.cashFlowBuckets = next.cashFlowBuckets.map((b) => ({
@@ -95,9 +113,131 @@ export function applyPlanPatch(plan: LifePlan, patch: PlanPatch): LifePlan {
       summary: b.summary ? move(b.summary) : undefined,
       details: b.details.map(move),
     }));
-    // Explicitly dated independent events stay unchanged.
+    // Career salary replacements are bounded by retirement. Other explicitly
+    // dated independent events stay unchanged.
+    next.standaloneCashFlows = next.standaloneCashFlows.map((flow) =>
+      flow.incomeTreatment === 'replace-salary' &&
+      flow.endMonthExclusive === plan.retirementMonth
+        ? {
+            ...flow,
+            endMonthExclusive: patch.retirementMonth,
+            growthEndMonthExclusive:
+              flow.growthEndMonthExclusive === plan.retirementMonth
+                ? patch.retirementMonth
+                : flow.growthEndMonthExclusive,
+          }
+        : flow
+    );
+  } else if (
+    patch.type === 'shift-purchase' ||
+    patch.type === 'remove-purchase'
+  ) {
+    const asset = next.assets.find((item) => item.id === patch.purchaseId);
+    if (!asset?.purchase) throw new Error('Purchase not found');
+    found = true;
+    const flowId = asset.purchase.downPaymentFlowId;
+    const liabilityId = asset.purchase.liabilityId;
+    if (patch.type === 'remove-purchase') {
+      next.assets = next.assets.filter((item) => item.id !== asset.id);
+      next.standaloneCashFlows = next.standaloneCashFlows.filter(
+        (item) => item.id !== flowId
+      );
+      next.liabilities = next.liabilities.filter(
+        (item) => item.id !== liabilityId
+      );
+    } else {
+      const shiftMonth = (month: MonthIndex) =>
+        addMonths(month, patch.monthDelta);
+      next.assets = next.assets.map((item) =>
+        item.id === asset.id && item.acquiredMonth !== undefined
+          ? { ...item, acquiredMonth: shiftMonth(item.acquiredMonth) }
+          : item
+      );
+      next.standaloneCashFlows = next.standaloneCashFlows.map((item) =>
+        item.id === flowId
+          ? {
+              ...item,
+              startMonth: shiftMonth(item.startMonth),
+              endMonthExclusive: shiftMonth(item.endMonthExclusive),
+              frequency:
+                item.frequency.kind === 'once'
+                  ? {
+                      kind: 'once' as const,
+                      postingMonth: shiftMonth(item.frequency.postingMonth),
+                    }
+                  : item.frequency,
+            }
+          : item
+      );
+      next.liabilities = next.liabilities.map((item) =>
+        item.id === liabilityId
+          ? {
+              ...item,
+              startMonth: shiftMonth(item.startMonth),
+              endMonthExclusive: shiftMonth(item.endMonthExclusive),
+            }
+          : item
+      );
+    }
+  } else if (
+    patch.type === 'shift-relocation' ||
+    patch.type === 'remove-relocation'
+  ) {
+    const relocation = next.metadata.relocations?.find(
+      (item) => item.id === patch.relocationId
+    );
+    if (!relocation) throw new Error('Relocation not found');
+    found = true;
+    const flowIds = new Set(
+      [
+        relocation.movingExpenseFlowId,
+        relocation.housingAdjustmentFlowId,
+        relocation.livingAdjustmentFlowId,
+        relocation.incomeAdjustmentFlowId,
+      ].filter((id): id is string => Boolean(id))
+    );
+    if (patch.type === 'remove-relocation') {
+      next.standaloneCashFlows = next.standaloneCashFlows.filter(
+        (item) => !flowIds.has(item.id)
+      );
+      next.metadata.relocations = next.metadata.relocations?.filter(
+        (item) => item.id !== relocation.id
+      );
+    } else {
+      const shiftMonth = (month: MonthIndex) =>
+        addMonths(month, patch.monthDelta);
+      next.standaloneCashFlows = next.standaloneCashFlows.map((item) =>
+        flowIds.has(item.id)
+          ? {
+              ...item,
+              startMonth: shiftMonth(item.startMonth),
+              endMonthExclusive:
+                item.frequency.kind === 'once'
+                  ? shiftMonth(item.endMonthExclusive)
+                  : item.endMonthExclusive,
+              frequency:
+                item.frequency.kind === 'once'
+                  ? {
+                      kind: 'once' as const,
+                      postingMonth: shiftMonth(item.frequency.postingMonth),
+                    }
+                  : item.frequency,
+            }
+          : item
+      );
+      next.metadata.relocations = next.metadata.relocations?.map((item) =>
+        item.id === relocation.id
+          ? { ...item, moveMonth: shiftMonth(item.moveMonth) }
+          : item
+      );
+    }
   }
-  if (!found || !validateLifePlan(next).valid)
-    throw new Error('Invalid patch or target');
+  const validation = validateLifePlan(next);
+  if (!found || !validation.valid)
+    throw new Error(
+      !found
+        ? 'Invalid patch target'
+        : `Invalid patch: ${validation.issues[0]?.code ?? 'validation failed'}`
+    );
   return next;
 }

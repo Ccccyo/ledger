@@ -18,6 +18,8 @@ export function generateActions(
   const housing = stageFlows(plan, 'housing').find(
     (f) =>
       f.frequency.kind === 'once' &&
+      f.direction === 'expense' &&
+      !plan.assets.some((a) => a.purchase?.downPaymentFlowId === f.id) &&
       f.endMonthExclusive + 12 <= plan.endMonthExclusive
   );
   if (housing && insights.some((i) => i.target === 'housing'))

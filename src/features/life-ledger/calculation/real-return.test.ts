@@ -4,14 +4,8 @@ import { it } from 'node:test';
 import { addMonths, basisPoints, createQuickLifePlan, yuan } from '../domain';
 import { calculateMonthlyLifePlan } from './monthly';
 
-// Independent 12-month golden values: opening 10,000 yuan, no cash flows,
-// effective annual return converted to monthly, rounding each month to cents.
-for (const [bps, firstReturn, closing] of [
-  [0, 0, 1000000],
-  [1200, 9489, 1120001],
-  [-1200, -10596, 879999],
-]) {
-  it(`real liquid return ${bps}bps compounds once in today's purchasing power`, () => {
+for (const bps of [0, 1200, -1200]) {
+  it(`keeps the formal ledger at principal value when the legacy liquid return is ${bps}bps`, () => {
     const base = createQuickLifePlan({
       id: `real-return-${bps}`,
       currentSavingsYuan: 10000,
@@ -30,8 +24,8 @@ for (const [bps, firstReturn, closing] of [
     };
     const result = calculateMonthlyLifePlan(plan);
     assert.equal(result.monthly.length, 12);
-    assert.equal(result.monthly[0].liquidReturnCents, firstReturn);
-    assert.equal(result.summary.endingAvailableCents, closing);
+    assert.ok(result.monthly.every((row) => row.liquidReturnCents === 0));
+    assert.equal(result.summary.endingAvailableCents, yuan(10_000));
     assert.ok(
       result.monthly.every(
         (row) => row.incomeCents === 0 && row.expenseCents === 0
@@ -60,4 +54,23 @@ it('negative available funds use the explicit gap cost, not the positive balance
   assert.equal(result.monthly[0].closingAvailableCents, -yuan(1000));
   // IEEE -0 is possible for a negative balance multiplied by zero; both mean no cost.
   assert.equal(Math.abs(result.monthly[1].liquidReturnCents), 0);
+});
+
+it('keeps non-liquid assets at principal value even when an old asset return is present', () => {
+  const base = createQuickLifePlan({ id: 'asset-principal-only' });
+  const property = {
+    ...base.assets[0],
+    id: 'property',
+    kind: 'property' as const,
+    liquid: false,
+    openingBalanceCents: yuan(1_000_000),
+    annualReturnBps: basisPoints(2000),
+  };
+  const result = calculateMonthlyLifePlan({
+    ...base,
+    assets: [property],
+  });
+  assert.ok(
+    result.monthly.every((row) => row.nonLiquidAssetsCents === yuan(1_000_000))
+  );
 });

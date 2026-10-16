@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { Trash2 } from 'lucide-react';
 
 import { extractLifeTrajectory } from '../../analysis/extract-life-trajectory';
 import {
@@ -10,6 +11,7 @@ import {
   type CashFlowCategory,
   type CashFlowItem,
 } from '../../domain';
+import { markPlanDraftChanged, requestPlanNavigation } from '../navigation';
 import {
   belongsToStage,
   saveStageEvent,
@@ -34,8 +36,10 @@ export function StageEditor({
 }: SectionProps & { stage: EventStage }) {
   const { plan, copy, locale, onChange } = props;
   const [editing, setEditing] = useState<string | null>(null);
-  const rows = plan.standaloneCashFlows.filter((f) =>
-    belongsToStage(plan, f, stage)
+  const rows = plan.standaloneCashFlows.filter(
+    (f) =>
+      belongsToStage(plan, f, stage) &&
+      !plan.assets.some((a) => a.purchase?.downPaymentFlowId === f.id)
   );
   const node = extractLifeTrajectory(plan).find((n) => n.stage === stage);
   const excluded = node?.status === 'not-applicable';
@@ -89,7 +93,7 @@ export function StageEditor({
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">
                       {formatMonth(flow.startMonth)}
-                      {flow.frequency.kind === 'monthly'
+                      {flow.frequency.kind !== 'once'
                         ? ' — ' +
                           formatMonth(addMonths(flow.endMonthExclusive, -1))
                         : ''}{' '}
@@ -97,15 +101,17 @@ export function StageEditor({
                     </p>
                   </div>
                   <div className="flex gap-4">
-                    {flow.frequency.kind !== 'yearly' && (
+                    {
                       <button
                         type="button"
                         className={textButton}
-                        onClick={() => setEditing(flow.id)}
+                        onClick={() => {
+                          if (requestPlanNavigation()) setEditing(flow.id);
+                        }}
                       >
                         {copy.editor.edit}
                       </button>
-                    )}
+                    }
                     <button
                       type="button"
                       className={textButton}
@@ -129,6 +135,7 @@ export function StageEditor({
       )}
       {rows.length === 0 || editing === 'new' ? (
         <EventForm
+          key={`new-${rows.length}`}
           {...props}
           stage={stage}
           onClose={() => setEditing(null)}
@@ -137,13 +144,34 @@ export function StageEditor({
         />
       ) : (
         editing === null && (
-          <button
-            type="button"
-            className={textButton}
-            onClick={() => setEditing('new')}
-          >
-            {copy.editor.add_event}
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              className="border-primary/40 text-primary hover:bg-primary/5 focus-visible:ring-primary/30 min-h-11 rounded-lg border px-4 text-sm font-medium focus-visible:ring-4 focus-visible:outline-none"
+              onClick={() => setEditing('new')}
+            >
+              {stage === 'events'
+                ? copy.editor.add_another_event
+                : copy.editor.add_event}
+            </button>
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-destructive focus-visible:ring-primary/30 inline-flex min-h-11 items-center gap-2 rounded-md px-2 text-sm focus-visible:ring-4 focus-visible:outline-none"
+              onClick={() => {
+                if (!window.confirm(copy.editor.clear_confirm)) return;
+                const ids = new Set(rows.map((row) => row.id));
+                onChange((current) => ({
+                  ...current,
+                  standaloneCashFlows: current.standaloneCashFlows.filter(
+                    (flow) => !ids.has(flow.id)
+                  ),
+                }));
+              }}
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+              {copy.editor.clear_all}
+            </button>
+          </div>
         )
       )}
       {category && (
@@ -187,13 +215,22 @@ function EventForm({
 }) {
   const { plan, copy, onChange } = props;
   const [frequency, setFrequency] = useState(
-    flow?.frequency.kind === 'once' ? 'once' : 'monthly'
+    flow?.frequency.kind ?? (stage === 'events' ? 'once' : 'monthly')
   );
   const [direction, setDirection] = useState<'income' | 'expense'>(
     flow?.direction ?? (stage === 'partner' ? 'income' : 'expense')
   );
-  const [advanced, setAdvanced] = useState(false);
+  const [amountUnit, setAmountUnit] = useState<'yuan' | 'wan'>('yuan');
+  const [amountDraft, setAmountDraft] = useState(
+    flow ? String(flow.amountCents / 100) : ''
+  );
   const [error, setError] = useState(false);
+  const [name, setName] = useState(flow?.name ?? '');
+  const presets = copy.editor.presets[stage] as Record<string, string>;
+  const [preset, setPreset] = useState(
+    Object.keys(presets).find((key) => presets[key] === flow?.name) ??
+      (flow ? 'custom' : '')
+  );
   const [start, setStart] = useState(
     formatMonth(flow?.startMonth ?? plan.baseMonth)
   );
@@ -211,18 +248,19 @@ function EventForm({
       const input = {
         id: flow?.id ?? crypto.randomUUID(),
         name: String(
-          data.get('name') ||
+          name ||
             (stage === 'partner'
               ? copy.editor[`partner_${direction}`]
               : copy.plan.sections[stage])
         ),
-        amountYuan: Number(data.get('amount')),
+        amountYuan:
+          Number(data.get('amount')) * (amountUnit === 'wan' ? 10_000 : 1),
         start: parseMonth(start),
         end:
           frequency === 'once'
             ? plan.endMonthExclusive
             : addMonths(parseMonth(end), 1),
-        frequency: frequency as 'once' | 'monthly',
+        frequency: frequency as 'once' | 'monthly' | 'yearly',
         direction,
       };
       saveStageEvent(plan, stage, input);
@@ -230,135 +268,186 @@ function EventForm({
       onClose();
     } catch {
       setError(true);
-      setAdvanced(true);
     }
   };
   const label =
-    frequency === 'once'
+    frequency !== 'monthly'
       ? copy.editor.amount
       : direction === 'income'
         ? copy.editor.monthly_contribution
         : copy.editor.monthly_extra;
   return (
     <form onSubmit={submit} noValidate className="max-w-xl space-y-3">
-      {stage === 'partner' && (
-        <fieldset className="mb-5">
-          <legend className="sr-only">{copy.editor.direction}</legend>
-          <div className="flex flex-wrap gap-2">
-            {(['income', 'expense'] as const).map((value) => (
-              <label key={value} className="cursor-pointer">
-                <input
-                  type="radio"
-                  name="partner-direction"
-                  value={value}
-                  checked={direction === value}
-                  onChange={() => setDirection(value)}
-                  className="peer sr-only"
-                />
-                <span className="border-border text-muted-foreground peer-checked:border-primary peer-checked:text-primary peer-checked:bg-primary/5 peer-focus-visible:ring-primary/30 flex min-h-11 items-center rounded-lg border px-3 text-sm peer-focus-visible:ring-4">
-                  {copy.editor[`partner_${value}`]}
-                </span>
-              </label>
+      <div className="grid items-start gap-3 sm:grid-cols-2">
+        <label
+          className={`grid gap-1.5 text-sm ${stage === 'child' ? 'sm:col-span-2' : ''}`}
+        >
+          {copy.editor.project_name}
+          <select
+            className={control}
+            name="preset"
+            value={preset}
+            onChange={(e) => {
+              const key = e.target.value;
+              setPreset(key);
+              if (key && key !== 'custom') {
+                setName(presets[key]);
+                setFrequency(
+                  ['travel', 'school'].includes(key)
+                    ? 'yearly'
+                    : [
+                          'birth',
+                          'second',
+                          'study',
+                          'car',
+                          'gift',
+                          'wedding',
+                          'renovation',
+                          'medical',
+                          'repair',
+                          'bonus',
+                        ].includes(key)
+                      ? 'once'
+                      : 'monthly'
+                );
+                setDirection(
+                  ['gift', 'support', 'rent_income', 'bonus'].includes(key)
+                    ? 'income'
+                    : 'expense'
+                );
+              }
+              markPlanDraftChanged();
+            }}
+          >
+            <option value="" disabled>
+              {copy.editor.event_examples}
+            </option>
+            {Object.entries(presets).map(([key, title]) => (
+              <option key={key} value={key}>
+                {title}
+              </option>
             ))}
-          </div>
-        </fieldset>
-      )}
-      <label className="block">
-        <span className="mb-2 block text-sm font-medium">{label}</span>
-        <div className="border-input bg-background focus-within:ring-primary/30 flex h-12 max-w-sm items-center rounded-lg border px-3 focus-within:ring-4">
-          <input
-            name="amount"
-            type="number"
-            inputMode="decimal"
-            required
-            min="0.01"
-            max="1000000000"
-            step="0.01"
-            aria-invalid={error}
-            defaultValue={flow ? flow.amountCents / 100 : ''}
-            placeholder="0"
-            className="h-full min-w-0 flex-1 bg-transparent text-lg tabular-nums outline-none"
-          />
-          <span className="text-muted-foreground text-xs">
-            {copy.common.currency}
-            {frequency === 'monthly' ? copy.common.per_month : ''}
-          </span>
-        </div>
-      </label>
-      <details
-        open={advanced}
-        onToggle={(event) => setAdvanced(event.currentTarget.open)}
-      >
-        <summary className="text-muted-foreground cursor-pointer py-1 text-xs">
-          {copy.editor.more_settings}
-        </summary>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2 text-xs">
-            {copy.editor.name}
+            <option value="custom">{copy.editor.custom_name}</option>
+          </select>
+        </label>
+        {stage !== 'child' && (
+          <label className="grid gap-1.5 text-sm">
+            {copy.editor.direction}
+            <select
+              className={control}
+              value={direction}
+              onChange={(e) => setDirection(e.target.value as typeof direction)}
+            >
+              {(['income', 'expense'] as const).map((value) => (
+                <option key={value} value={value}>
+                  {stage === 'partner'
+                    ? copy.editor[`partner_${value}`]
+                    : stage === 'parents'
+                      ? copy.editor[`parents_${value}`]
+                      : stage === 'housing'
+                        ? copy.editor[`housing_${value}`]
+                        : copy.editor[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {preset === 'custom' && (
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            {copy.editor.optional_name}
             <input
               className={control}
               name="name"
               maxLength={80}
-              defaultValue={flow?.name ?? ''}
-              placeholder={
-                stage === 'partner'
-                  ? copy.editor[`partner_${direction}`]
-                  : copy.plan.sections[stage]
-              }
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={copy.plan.sections[stage]}
             />
           </label>
-          <label className="grid gap-2 text-xs">
-            {copy.editor.frequency}
+        )}
+        <label className="grid gap-1.5 text-sm">
+          {label}
+          <div className="border-input bg-background focus-within:ring-primary/30 flex h-11 min-w-0 items-center rounded-lg border px-3 focus-within:ring-4">
+            <input
+              name="amount"
+              type="number"
+              inputMode="decimal"
+              required
+              min="0.01"
+              max="1000000000"
+              step="0.01"
+              aria-invalid={error}
+              value={amountDraft}
+              onChange={(event) => setAmountDraft(event.target.value)}
+              placeholder="0"
+              className="h-full min-w-0 flex-1 bg-transparent text-base tabular-nums outline-none"
+            />
             <select
-              className={control}
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-            >
-              <option value="monthly">{copy.editor.monthly}</option>
-              <option value="once">{copy.editor.once}</option>
-            </select>
-          </label>
-          {stage === 'events' && (
-            <label className="grid gap-2 text-xs">
-              {copy.editor.direction}
-              <select
-                className={control}
-                value={direction}
-                onChange={(e) =>
-                  setDirection(e.target.value as 'income' | 'expense')
+              aria-label={copy.editor.amount_unit}
+              value={amountUnit}
+              onChange={(event) => {
+                const next = event.target.value as 'yuan' | 'wan';
+                const parsed = Number(amountDraft);
+                if (Number.isFinite(parsed) && amountDraft.trim()) {
+                  const yuanValue =
+                    parsed * (amountUnit === 'wan' ? 10_000 : 1);
+                  setAmountDraft(
+                    String(yuanValue / (next === 'wan' ? 10_000 : 1))
+                  );
                 }
-              >
-                <option value="income">{copy.editor.income}</option>
-                <option value="expense">{copy.editor.expense}</option>
-              </select>
-            </label>
-          )}
-          <label className="grid gap-2 text-xs">
-            {copy.editor.start}
+                setAmountUnit(next);
+              }}
+              className="text-muted-foreground bg-transparent text-xs outline-none"
+            >
+              <option value="yuan">
+                {copy.common.currency}
+                {frequency === 'monthly' ? copy.common.per_month : ''}
+              </option>
+              <option value="wan">
+                {copy.editor.ten_thousand}
+                {frequency === 'monthly' ? copy.common.per_month : ''}
+              </option>
+            </select>
+          </div>
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          {copy.editor.frequency}
+          <select
+            className={control}
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value as typeof frequency)}
+          >
+            <option value="monthly">{copy.editor.monthly}</option>
+            <option value="once">{copy.editor.once}</option>
+            <option value="yearly">{copy.editor.yearly}</option>
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          {copy.editor.start}
+          <input
+            className={control}
+            type="month"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            min={formatMonth(plan.baseMonth)}
+            max={formatMonth(addMonths(plan.endMonthExclusive, -1))}
+          />
+        </label>
+        {frequency !== 'once' && (
+          <label className="grid gap-1.5 text-sm">
+            {copy.editor.end}
             <input
               className={control}
               type="month"
-              value={start}
-              onChange={(e) => setStart(e.target.value)}
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
               min={formatMonth(plan.baseMonth)}
               max={formatMonth(addMonths(plan.endMonthExclusive, -1))}
             />
           </label>
-          {frequency === 'monthly' && (
-            <label className="grid gap-2 text-xs">
-              {copy.editor.end}
-              <input
-                className={control}
-                type="month"
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-                min={formatMonth(plan.baseMonth)}
-                max={formatMonth(addMonths(plan.endMonthExclusive, -1))}
-              />
-            </label>
-          )}
-        </div>
-      </details>
+        )}
+      </div>
+      <p className="text-muted-foreground text-xs">{copy.editor.short_hint}</p>
       {error && (
         <p role="alert" className="text-destructive text-sm">
           {copy.editor.event_error}
@@ -377,7 +466,13 @@ function EventForm({
           </button>
         )}
         {allowCancel && (
-          <button type="button" className={textButton} onClick={onClose}>
+          <button
+            type="button"
+            className={textButton}
+            onClick={() => {
+              if (requestPlanNavigation()) onClose();
+            }}
+          >
             {copy.editor.cancel}
           </button>
         )}

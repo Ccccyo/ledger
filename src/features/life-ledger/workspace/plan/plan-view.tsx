@@ -17,6 +17,7 @@ import { ChildSection } from './sections/child-section';
 import { EventsSection } from './sections/events-section';
 import { HousingSection } from './sections/housing-section';
 import { IncomeSection } from './sections/income-section';
+import { InvestmentSection } from './sections/investment-section';
 import { LivingSection } from './sections/living-section';
 import { ParentsSection } from './sections/parents-section';
 import { PartnerSection } from './sections/partner-section';
@@ -32,6 +33,7 @@ const sections: Record<PlanSectionId, ComponentType<SectionProps>> = {
   partner: PartnerSection,
   child: ChildSection,
   housing: HousingSection,
+  investment: InvestmentSection,
   parents: ParentsSection,
   retirement: RetirementSection,
   events: EventsSection,
@@ -49,6 +51,7 @@ const navigation: PlanSectionId[] = [
   'partner',
   'child',
   'housing',
+  'investment',
   'parents',
   'retirement',
   'events',
@@ -61,11 +64,13 @@ export function PlanView({
   openSection,
   onOpenSection,
   onOverview,
+  embedded = false,
   ...props
 }: SectionProps & {
   openSection: PlanSectionId | '';
   onOpenSection: (id: PlanSectionId | '') => void;
   onOverview: () => void;
+  embedded?: boolean;
 }) {
   const active = openSection || 'assets';
   const group = currentSections.includes(active) ? 'assets' : active;
@@ -108,30 +113,32 @@ export function PlanView({
   }, [props.copy.flow.discard]);
   const index = navigation.indexOf(group);
   return (
-    <div className="mx-auto max-w-6xl">
-      <header className="mb-7 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">{props.copy.plan.title}</h1>
-        <button
-          type="button"
-          onClick={() => {
-            if (!dirty.current || window.confirm(props.copy.flow.discard)) {
-              dirty.current = false;
-              onOverview();
-            }
-          }}
-          className={cn(
-            button,
-            'hover:bg-muted flex min-h-11 shrink-0 items-center gap-2 px-3'
-          )}
-        >
-          {props.copy.editor.see_result}
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </button>
-      </header>
-      <div className="grid items-start gap-5 md:grid-cols-[176px_minmax(0,1fr)] md:gap-10">
+    <div className={cn('mx-auto', !embedded && 'max-w-6xl')}>
+      {!embedded && (
+        <header className="mb-7 flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold">{props.copy.plan.title}</h1>
+          <button
+            type="button"
+            onClick={() => {
+              if (!dirty.current || window.confirm(props.copy.flow.discard)) {
+                dirty.current = false;
+                onOverview();
+              }
+            }}
+            className={cn(
+              button,
+              'hover:bg-muted flex min-h-11 shrink-0 items-center gap-2 px-3'
+            )}
+          >
+            {props.copy.editor.see_result}
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </button>
+        </header>
+      )}
+      <div className="grid items-start gap-5 md:grid-cols-[152px_minmax(0,1fr)] md:gap-6">
         <nav
           aria-label={props.copy.trajectory.title}
-          className="md:sticky md:top-32"
+          className={cn('md:sticky', embedded ? 'md:top-16' : 'md:top-32')}
         >
           <label className="grid gap-2 text-sm md:hidden">
             <span className="sr-only">{props.copy.flow.choose_stage}</span>
@@ -182,10 +189,10 @@ export function PlanView({
         </nav>
         <div className="min-w-0">
           <section
-            className="bg-background border-border rounded-xl border px-5 py-6 sm:p-8"
+            className="bg-background border-border rounded-xl border p-4 sm:p-6"
             aria-labelledby="plan-stage-heading"
           >
-            <header className="mb-7">
+            <header className="mb-5">
               <h2 id="plan-stage-heading" className="text-xl font-semibold">
                 {label(group)}
               </h2>

@@ -24,18 +24,26 @@ import { moneyFormatter } from '../plan/fields';
 import type { WorkspaceCopy } from '../workspace-types';
 
 type Row = ReturnType<typeof annualChartData>[number];
+type ChartMilestone = {
+  year: number;
+  age: number | null;
+  labels: string[];
+};
+
 export function BalanceChart({
   rows,
   retirement,
   firstGapYear,
   copy,
   locale,
+  milestones,
 }: {
   rows: Row[];
   retirement: number;
   firstGapYear: number | null;
   copy: WorkspaceCopy;
   locale: string;
+  milestones: ChartMilestone[];
 }) {
   const different = rows.some((r) => r.available !== r.netWorth);
   const [compare, setCompare] = useState<boolean | null>(null);
@@ -68,13 +76,13 @@ export function BalanceChart({
   };
   return (
     <>
-      <dl className="border-border mt-5 flex flex-wrap gap-x-10 gap-y-4 border-y py-4">
+      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
         {checkpoints.map(({ row, label }) => (
           <div key={row.year}>
             <dt className="text-muted-foreground text-xs">
               {label} · {ageTick(row.year)}
             </dt>
-            <dd className="mt-1 text-lg font-semibold tabular-nums">
+            <dd className="mt-0.5 text-base font-semibold tabular-nums">
               {locale.startsWith('zh')
                 ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(row.available / 1e6)} 万元`
                 : money(row.available)}
@@ -82,7 +90,7 @@ export function BalanceChart({
           </div>
         ))}
       </dl>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         <span className="text-muted-foreground">{copy.charts.age_axis}</span>
         {different ? (
           <label className="flex min-h-11 cursor-pointer items-center gap-2">
@@ -192,17 +200,6 @@ export function BalanceChart({
               stroke="var(--muted-foreground)"
               strokeWidth={1.3}
             />
-            <ReferenceLine
-              x={retirement}
-              stroke="var(--muted-foreground)"
-              strokeDasharray="4 5"
-              label={{
-                value: copy.plan.sections.retirement,
-                position: 'insideTopRight',
-                fill: 'var(--muted-foreground)',
-                fontSize: 11,
-              }}
-            />
             {firstGapYear !== null && (
               <ReferenceLine
                 x={firstGapYear}
@@ -221,6 +218,17 @@ export function BalanceChart({
                 }}
               />
             )}
+            {milestones.map((milestone) => (
+              <ReferenceDot
+                key={milestone.year}
+                x={milestone.year}
+                y={0}
+                r={3}
+                fill="var(--primary)"
+                stroke="var(--background)"
+                strokeWidth={1.5}
+              />
+            ))}
             <Area
               dataKey="available"
               name={copy.overview.available}
@@ -257,6 +265,33 @@ export function BalanceChart({
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      {milestones.length > 0 && (
+        <div className="border-border mt-1 flex flex-col gap-2 border-t pt-3 text-xs sm:flex-row sm:items-start sm:gap-4">
+          <span className="text-muted-foreground shrink-0 font-medium">
+            {copy.timeline.title}
+          </span>
+          <ol className="flex min-w-0 flex-wrap gap-x-5 gap-y-2">
+            {milestones.map((milestone) => (
+              <li
+                key={milestone.year}
+                className="flex min-w-0 items-baseline gap-2"
+              >
+                <span className="bg-primary size-1.5 shrink-0 rounded-full" />
+                <span className="text-muted-foreground shrink-0 tabular-nums">
+                  {milestone.age === null
+                    ? milestone.year
+                    : locale.startsWith('zh')
+                      ? `${milestone.age}岁`
+                      : `Age ${milestone.age}`}
+                </span>
+                <span className="min-w-0 font-medium">
+                  {milestone.labels.join(locale.startsWith('zh') ? '、' : ', ')}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       <div className="mt-3 mb-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
         <span className="inline-flex items-center gap-2">
           <span className="bg-primary h-0.5 w-5" />

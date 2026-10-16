@@ -1,7 +1,7 @@
 'use client';
 
 import type { KeyboardEvent } from 'react';
-import { BookOpen, LayoutDashboard, ListChecks } from 'lucide-react';
+import { ChartNoAxesCombined, ListChecks } from 'lucide-react';
 
 import { cn } from '@/shared/lib/utils';
 
@@ -9,9 +9,8 @@ import { WORKSPACE_TABS } from '../navigation';
 import type { WorkspaceCopy, WorkspaceTab } from '../workspace-types';
 
 const icons = {
-  overview: LayoutDashboard,
   plan: ListChecks,
-  ledger: BookOpen,
+  analysis: ChartNoAxesCombined,
 };
 
 export function WorkspaceTabs({
@@ -25,14 +24,25 @@ export function WorkspaceTabs({
 }) {
   return (
     <nav
-      className="border-border bg-background sticky top-16 z-30 hidden border-b md:block"
+      className="border-border bg-background/95 sticky top-16 z-30 hidden border-b backdrop-blur md:block"
       aria-label={copy.tabs.label}
     >
       <div
-        className="container flex h-12 items-end gap-7"
+        className="bg-muted/35 relative mx-auto grid h-16 w-full max-w-[1800px] grid-cols-2 p-2 sm:px-6"
         role="tablist"
         aria-label={copy.tabs.label}
       >
+        <span
+          aria-hidden="true"
+          className="bg-border absolute top-4 bottom-4 left-1/2 w-px"
+        />
+        <span
+          aria-hidden="true"
+          className={cn(
+            'bg-background absolute top-2 bottom-2 left-2 w-[calc(50%-0.5rem)] rounded-xl shadow-[0_10px_28px_-20px_rgba(15,118,78,0.7)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:left-6 sm:w-[calc(50%-1.5rem)]',
+            tab === 'analysis' && 'translate-x-full'
+          )}
+        />
         {WORKSPACE_TABS.map((id) => {
           const Icon = icons[id];
           return (
@@ -47,10 +57,10 @@ export function WorkspaceTabs({
               onClick={() => onChange(id)}
               onKeyDown={(event) => handleTabKeyDown(event, id, onChange)}
               className={cn(
-                'focus-visible:ring-primary/30 relative inline-flex h-12 items-center gap-2 text-sm font-medium transition-colors focus-visible:ring-4 focus-visible:outline-none',
+                'focus-visible:ring-primary/30 relative z-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-colors duration-200 focus-visible:ring-4 focus-visible:outline-none',
                 tab === id
-                  ? 'text-foreground after:bg-primary after:absolute after:right-0 after:bottom-0 after:left-0 after:h-0.5'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-foreground [&_svg]:text-primary'
+                  : 'text-muted-foreground hover:bg-muted/55 hover:text-foreground'
               )}
             >
               <Icon className="size-4" aria-hidden="true" />

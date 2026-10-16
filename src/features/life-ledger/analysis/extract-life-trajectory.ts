@@ -117,7 +117,17 @@ export function extractLifeTrajectory(plan: LifePlan): LifeTrajectoryNode[] {
                 Math.min(
                   ...flows.map((f) => f.startMonth),
                   ...mortgages.map((l) => l.startMonth),
-                  ...(property || growth ? [plan.baseMonth] : [])
+                  ...(property
+                    ? plan.assets
+                        .filter(
+                          (a) =>
+                            a.kind === 'property' &&
+                            a.confirmation === 'confirmed' &&
+                            a.openingBalanceCents > 0
+                        )
+                        .map((a) => a.acquiredMonth ?? plan.baseMonth)
+                    : []),
+                  ...(growth ? [plan.baseMonth] : [])
                 )
               ) as MonthIndex)
             : null;

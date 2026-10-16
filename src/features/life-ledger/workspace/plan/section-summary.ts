@@ -30,7 +30,13 @@ export function sectionSummary(
     return `${money(bucket?.summary?.amountCents ?? 0)}${copy.common.per_month}`;
   }
   if (id === 'advanced')
-    return `${copy.editor.real_return} ${plan.assumptions.annualLiquidReturnBps / 100}% · ${copy.editor.gap_cost} ${plan.assumptions.annualCashGapCostBps / 100}%`;
+    return `${copy.editor.gap_cost} ${plan.assumptions.annualCashGapCostBps / 100}%`;
+  if (id === 'investment') {
+    const investments = plan.metadata.investmentScenarios ?? [];
+    return investments.length
+      ? copy.editor.count.replace('{count}', String(investments.length))
+      : copy.trajectory.status.missing;
+  }
   if (id === 'career') {
     const growth = salaryGrowthBps(plan);
     const changes = plan.standaloneCashFlows.filter(

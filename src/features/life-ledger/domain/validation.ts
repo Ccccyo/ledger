@@ -5,6 +5,7 @@ import type {
   MoneyCents,
   MonthIndex,
 } from './types';
+import { addMonths } from './primitives';
 
 export type PlanIssueCode =
   | 'UNSUPPORTED_SCHEMA'
@@ -21,7 +22,9 @@ export type PlanIssueCode =
   | 'INVALID_CONFIRMED_TOTAL'
   | 'RETIREMENT_OUTSIDE_PLAN'
   | 'INVALID_LIFE_STAGE'
-  | 'INVALID_CAREER_CHANGE';
+  | 'INVALID_CAREER_CHANGE'
+  | 'INVALID_INVESTMENT'
+  | 'INVALID_RELOCATION';
 
 export interface PlanIssue {
   code: PlanIssueCode;
@@ -115,6 +118,19 @@ function validateFlow(
   ) {
     issues.push(
       issue('INVALID_RATE', `${path}.annualGrowthBps`, 'plan.rate.invalid')
+    );
+  }
+  if (
+    (flow.growthStartMonth !== undefined ||
+      flow.growthEndMonthExclusive !== undefined) &&
+    (!Number.isSafeInteger(flow.growthStartMonth) ||
+      !Number.isSafeInteger(flow.growthEndMonthExclusive) ||
+      flow.growthStartMonth! < flow.startMonth ||
+      flow.growthEndMonthExclusive! > flow.endMonthExclusive ||
+      flow.growthStartMonth! >= flow.growthEndMonthExclusive!)
+  ) {
+    issues.push(
+      issue('INVALID_MONTH_RANGE', `${path}.growth`, 'plan.time.invalidRange')
     );
   }
   if (flow.frequency.kind === 'yearly') {
@@ -317,7 +333,24 @@ export function validateLifePlan(plan: LifePlan): PlanValidationResult {
       );
     }
   }
-  if (overrides.length && plan.cashFlowBuckets.some((b) => b.direction === 'income' && b.mode === 'detailed' && b.summary && b.details.reduce((sum,f) => sum + f.amountCents,0) < b.summary.amountCents)) issues.push(issue('INVALID_CAREER_CHANGE','cashFlowBuckets','plan.career.classifySalaryFirst'));
+  if (
+    overrides.length &&
+    plan.cashFlowBuckets.some(
+      (b) =>
+        b.direction === 'income' &&
+        b.mode === 'detailed' &&
+        b.summary &&
+        b.details.reduce((sum, f) => sum + f.amountCents, 0) <
+          b.summary.amountCents
+    )
+  )
+    issues.push(
+      issue(
+        'INVALID_CAREER_CHANGE',
+        'cashFlowBuckets',
+        'plan.career.classifySalaryFirst'
+      )
+    );
   if (
     plan.cashFlowBuckets.some((b) =>
       [b.summary, ...b.details].some((f) => f?.incomeTreatment !== undefined)
@@ -365,6 +398,51 @@ export function validateLifePlan(plan: LifePlan): PlanValidationResult {
   }
 
   plan.assets.forEach((asset, index) => {
+    if (asset.purchase !== undefined) {
+      const purchase = asset.purchase;
+      const down = plan.standaloneCashFlows.find(
+        (f) => f.id === purchase?.downPaymentFlowId
+      );
+      const loan = plan.liabilities.find((l) => l.id === purchase?.liabilityId);
+      if (
+        !purchase ||
+        typeof purchase.downPaymentFlowId !== 'string' ||
+        asset.acquiredMonth === undefined ||
+        asset.kind !== 'property' ||
+        asset.liquid ||
+        (down &&
+          (down.category !== 'housing' ||
+            down.direction !== 'expense' ||
+            down.frequency.kind !== 'once' ||
+            down.startMonth !== asset.acquiredMonth)) ||
+        (purchase.liabilityId !== undefined &&
+          (!loan ||
+            loan.startMonth !== asset.acquiredMonth ||
+            !loan.originatesAtStart))
+      )
+        issues.push(
+          issue(
+            'INVALID_MONTH_RANGE',
+            `assets.${index}.purchase`,
+            'plan.time.invalidRange'
+          )
+        );
+    }
+    if (
+      asset.acquiredMonth !== undefined &&
+      (!validMonth(asset.acquiredMonth) ||
+        asset.acquiredMonth < plan.baseMonth ||
+        asset.acquiredMonth >= plan.endMonthExclusive ||
+        asset.liquid ||
+        asset.kind !== 'property')
+    )
+      issues.push(
+        issue(
+          'INVALID_MONTH_RANGE',
+          `assets.${index}.acquiredMonth`,
+          'plan.time.invalidRange'
+        )
+      );
     if (!validMoney(asset.openingBalanceCents))
       issues.push(
         issue(
@@ -385,7 +463,136 @@ export function validateLifePlan(plan: LifePlan): PlanValidationResult {
         )
       );
   });
+
+  const investmentScenarios = plan.metadata?.investmentScenarios;
+  if (
+    investmentScenarios !== undefined &&
+    !Array.isArray(investmentScenarios)
+  ) {
+    issues.push(
+      issue(
+        'INVALID_INVESTMENT',
+        'metadata.investmentScenarios',
+        'plan.investment.invalid'
+      )
+    );
+  } else {
+    (investmentScenarios ?? []).forEach((scenario, index, scenarios) => {
+      const path = `metadata.investmentScenarios.${index}`;
+      const asset = plan.assets.find((item) => item.id === scenario.assetId);
+      const invalidLegacyAsset =
+        scenario.assetId !== undefined &&
+        (!asset ||
+          asset.kind !== 'investment' ||
+          !asset.liquid ||
+          asset.annualReturnBps !== 0 ||
+          scenario.principalCents !== asset.openingBalanceCents);
+      if (seenIds.has(scenario.id))
+        issues.push(issue('DUPLICATE_ID', `${path}.id`, 'plan.duplicateId'));
+      seenIds.add(scenario.id);
+      if (
+        !scenario.name?.trim() ||
+        invalidLegacyAsset ||
+        !validMoney(scenario.principalCents) ||
+        scenario.principalCents <= 0 ||
+        !['low', 'medium', 'high', 'custom'].includes(scenario.riskLevel) ||
+        !Number.isSafeInteger(scenario.lowerAnnualReturnBps) ||
+        !Number.isSafeInteger(scenario.upperAnnualReturnBps) ||
+        scenario.lowerAnnualReturnBps < -10_000 ||
+        scenario.upperAnnualReturnBps > 20_000 ||
+        scenario.lowerAnnualReturnBps > scenario.upperAnnualReturnBps ||
+        !validMonth(scenario.startMonth) ||
+        !validMonth(scenario.endMonthExclusive) ||
+        scenario.startMonth < plan.baseMonth ||
+        scenario.startMonth >= scenario.endMonthExclusive ||
+        scenario.endMonthExclusive > plan.endMonthExclusive ||
+        scenarios.some(
+          (other, otherIndex) =>
+            otherIndex !== index &&
+            scenario.assetId !== undefined &&
+            other.assetId === scenario.assetId &&
+            other.startMonth < scenario.endMonthExclusive &&
+            scenario.startMonth < other.endMonthExclusive
+        )
+      )
+        issues.push(
+          issue('INVALID_INVESTMENT', path, 'plan.investment.invalid')
+        );
+    });
+  }
+
+  const relocations = plan.metadata?.relocations;
+  if (relocations !== undefined && !Array.isArray(relocations)) {
+    issues.push(
+      issue(
+        'INVALID_RELOCATION',
+        'metadata.relocations',
+        'plan.relocation.invalid'
+      )
+    );
+  } else {
+    const referencedFlowIds = new Set<string>();
+    (relocations ?? []).forEach((relocation, index) => {
+      const path = `metadata.relocations.${index}`;
+      if (seenIds.has(relocation.id))
+        issues.push(issue('DUPLICATE_ID', `${path}.id`, 'plan.duplicateId'));
+      seenIds.add(relocation.id);
+      let invalid =
+        !relocation.id?.trim() ||
+        !relocation.targetCity?.trim() ||
+        relocation.targetCity.trim().length > 80 ||
+        (relocation.currentCity?.trim().length ?? 0) > 80 ||
+        !validMonth(relocation.moveMonth) ||
+        relocation.moveMonth < plan.baseMonth ||
+        relocation.moveMonth >= plan.endMonthExclusive ||
+        (relocation.source !== undefined &&
+          (!relocation.source.kind || !relocation.source.label));
+      const references = [
+        [relocation.movingExpenseFlowId, 'moving'] as const,
+        [relocation.housingAdjustmentFlowId, 'housing'] as const,
+        [relocation.livingAdjustmentFlowId, 'living'] as const,
+        [relocation.incomeAdjustmentFlowId, 'income'] as const,
+      ];
+      for (const [flowId, kind] of references) {
+        if (!flowId) continue;
+        const flow = plan.standaloneCashFlows.find((item) => item.id === flowId);
+        if (referencedFlowIds.has(flowId)) invalid = true;
+        referencedFlowIds.add(flowId);
+        if (
+          !flow ||
+          flow.confirmation !== 'confirmed' ||
+          flow.startMonth !== relocation.moveMonth ||
+          (kind === 'moving' &&
+            (flow.direction !== 'expense' ||
+              flow.category !== 'housing' ||
+              flow.frequency.kind !== 'once' ||
+              flow.endMonthExclusive !== addMonths(relocation.moveMonth, 1))) ||
+          (kind !== 'moving' &&
+            (flow.frequency.kind !== 'monthly' ||
+              flow.endMonthExclusive !== plan.endMonthExclusive)) ||
+          (kind === 'housing' && flow.category !== 'housing') ||
+          (kind === 'living' && flow.category !== 'living') ||
+          (kind === 'income' &&
+            !['side_income', 'other'].includes(flow.category))
+        )
+          invalid = true;
+      }
+      if (invalid)
+        issues.push(
+          issue('INVALID_RELOCATION', path, 'plan.relocation.invalid')
+        );
+    });
+  }
   plan.liabilities.forEach((liability, index) => {
+    if (
+      (liability.originatesAtStart !== undefined &&
+        typeof liability.originatesAtStart !== 'boolean') ||
+      (liability.interestMethod !== undefined &&
+        liability.interestMethod !== 'nominal-monthly')
+    )
+      issues.push(
+        issue('INVALID_RATE', `liabilities.${index}`, 'plan.rate.invalid')
+      );
     if (
       !validMoney(liability.openingPrincipalCents) ||
       !validMoney(liability.monthlyPaymentCents)

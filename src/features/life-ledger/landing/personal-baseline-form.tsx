@@ -66,6 +66,13 @@ export interface PersonalBaselineCalculatorConfig {
   p2_first_gap: string;
   p2_no_gap: string;
   p2_ending: string;
+  p3_chart_title: string;
+  p3_chart_hint: string;
+  p3_chart_available: string;
+  p3_chart_retirement: string;
+  p3_chart_first_gap: string;
+  p3_chart_table: string;
+  p3_chart_year: string;
   p2_timeline_summary: string;
   assumptions_title: string;
   p2_assumptions: string;
@@ -90,6 +97,8 @@ type FieldDefinition = {
   maximum: number;
   step: number;
   hint?: string;
+  money?: boolean;
+  canonicalUnit?: 'yuan' | 'wan';
 };
 
 export function PersonalBaselineCalculator({
@@ -110,6 +119,12 @@ export function PersonalBaselineCalculator({
   const [issues, setIssues] = useState<PersonalBaselineIssue[]>([]);
   const [calculationError, setCalculationError] = useState(false);
   const [submission, setSubmission] = useState<Submission | null>(null);
+  const [moneyUnits, setMoneyUnits] = useState<Record<string, 'yuan' | 'wan'>>({
+    startingAvailableAssetsWan: 'wan',
+    monthlyIncomeYuan: 'yuan',
+    monthlyExpenseYuan: 'yuan',
+    monthlyRetirementSelfFundedYuan: 'yuan',
+  });
 
   const calculatorId = config.id || 'calculator';
   const issueByField = useMemo(
@@ -161,6 +176,8 @@ export function PersonalBaselineCalculator({
       maximum: 100_000,
       step: 1,
       hint: config.starting_assets_hint,
+      money: true,
+      canonicalUnit: 'wan',
     },
     {
       key: 'monthlyIncomeYuan',
@@ -169,6 +186,8 @@ export function PersonalBaselineCalculator({
       minimum: 0,
       maximum: 10_000_000,
       step: 100,
+      money: true,
+      canonicalUnit: 'yuan',
     },
     {
       key: 'monthlyExpenseYuan',
@@ -177,6 +196,8 @@ export function PersonalBaselineCalculator({
       minimum: 0,
       maximum: 10_000_000,
       step: 100,
+      money: true,
+      canonicalUnit: 'yuan',
     },
     {
       key: 'monthlyRetirementSelfFundedYuan',
@@ -186,6 +207,8 @@ export function PersonalBaselineCalculator({
       maximum: 10_000_000,
       step: 100,
       hint: config.retirement_spend_hint,
+      money: true,
+      canonicalUnit: 'yuan',
     },
   ];
 
@@ -262,10 +285,10 @@ export function PersonalBaselineCalculator({
     if (!navigator.onLine) {
       // A document navigation can use the prepared shell without an RSC fetch.
       window.location.assign(
-        `${locale === defaultLocale ? '' : `/${locale}`}/plan`
+        `${locale === defaultLocale ? '' : `/${locale}`}/plan?tab=plan`
       );
     } else {
-      router.push('/plan');
+      router.push('/plan?tab=plan');
     }
   };
 
@@ -277,10 +300,19 @@ export function PersonalBaselineCalculator({
     maximum,
     step,
     hint,
+    money,
+    canonicalUnit = 'yuan',
   }: FieldDefinition) => {
     const issue = issueByField.get(key);
     const errorId = `${calculatorId}-${key}-error`;
     const hintId = `${calculatorId}-${key}-hint`;
+    const displayUnit = moneyUnits[key] ?? canonicalUnit;
+    const canonicalFactor = canonicalUnit === 'wan' ? 10_000 : 1;
+    const displayFactor = displayUnit === 'wan' ? 10_000 : 1;
+    const displayValue =
+      money && draft[key] !== ''
+        ? String((Number(draft[key]) * canonicalFactor) / displayFactor)
+        : draft[key];
     return (
       <label key={key} className="grid min-w-0 content-start gap-1.5">
         <span className="text-muted-foreground text-xs font-medium">
@@ -296,16 +328,23 @@ export function PersonalBaselineCalculator({
         >
           <input
             type="number"
-            min={minimum}
-            max={maximum}
-            step={step}
+            min={money ? (minimum * canonicalFactor) / displayFactor : minimum}
+            max={money ? (maximum * canonicalFactor) / displayFactor : maximum}
+            step={money && displayUnit === 'wan' ? 0.01 : step}
             inputMode={step === 1 ? 'numeric' : 'decimal'}
-            value={draft[key]}
+            value={displayValue}
             aria-invalid={Boolean(issue)}
             aria-describedby={issue ? errorId : hint ? hintId : undefined}
             onChange={(inputEvent) => {
               const value = inputEvent.target.value;
-              setDraft((current) => ({ ...current, [key]: value }));
+              const canonicalValue =
+                money && value !== ''
+                  ? String((Number(value) * displayFactor) / canonicalFactor)
+                  : value;
+              setDraft((current) => ({
+                ...current,
+                [key]: canonicalValue,
+              }));
               setIssues((current) =>
                 current.filter((currentIssue) => currentIssue.field !== key)
               );
@@ -313,9 +352,40 @@ export function PersonalBaselineCalculator({
             }}
             className="text-foreground h-full min-w-0 flex-1 appearance-none border-0 bg-transparent text-base font-medium tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
-          <span className="text-muted-foreground ml-1 shrink-0 text-[11px]">
-            {unit}
-          </span>
+          {money ? (
+            <select
+              aria-label={locale.startsWith('zh') ? '金额单位' : 'Amount unit'}
+              value={displayUnit}
+              onChange={(event) =>
+                setMoneyUnits((current) => ({
+                  ...current,
+                  [key]: event.target.value as 'yuan' | 'wan',
+                }))
+              }
+              className="text-muted-foreground ml-1 shrink-0 bg-transparent text-[11px] outline-none"
+            >
+              <option value="yuan">
+                {locale.startsWith('zh') ? '元' : 'CNY'}
+                {key !== 'startingAvailableAssetsWan'
+                  ? locale.startsWith('zh')
+                    ? '/月'
+                    : '/mo'
+                  : ''}
+              </option>
+              <option value="wan">
+                {locale.startsWith('zh') ? '万' : '10k CNY'}
+                {key !== 'startingAvailableAssetsWan'
+                  ? locale.startsWith('zh')
+                    ? '/月'
+                    : '/mo'
+                  : ''}
+              </option>
+            </select>
+          ) : (
+            <span className="text-muted-foreground ml-1 shrink-0 text-[11px]">
+              {unit}
+            </span>
+          )}
         </span>
         {issue && (
           <span

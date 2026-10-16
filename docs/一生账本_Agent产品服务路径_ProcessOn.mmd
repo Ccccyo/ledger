@@ -1,0 +1,90 @@
+flowchart TB
+
+%% ProcessOn Mermaid 可编辑版
+%% 横向：业务时间顺序；纵向：后台、规则/编排、Agent、前台/人工、数据
+
+subgraph PHASE["业务时间线"]
+  direction LR
+  P1["① 建立个人基线"] --> P2["② 补充人生安排"] --> P3["③ 生成正式账本"] --> P4["④ 发现与解释问题"] --> P5["⑤ 方案试算与比较"] --> P6["⑥ 确认调整与沉淀"]
+end
+
+subgraph BACKEND["后台"]
+  direction LR
+  B1["基线计划服务<br/>年龄 · 收入 · 支出 · 资产<br/>退休与规划期限"] ~~~
+  B2["人生事件中心<br/>职业 · 家庭 · 住房 · 投资<br/>换城市 · 退休安排"] ~~~
+  B3["正式账本引擎<br/>逐月收支 · 资产负债<br/>年度快照 · 资金缺口"] ~~~
+  B4["分析与查询服务<br/>图表 · 关键年份 · 影响项<br/>Agent 只读工具"] ~~~
+  B5["方案试算中心<br/>计划副本 · 确定性重算<br/>基线与方案差异"] ~~~
+  B6["版本与交付服务<br/>确认写入 · 自动保存 · 撤销<br/>DeepSeek 仅增强表达"]
+end
+
+subgraph ORCH["规则 / 编排"]
+  direction LR
+  R1["基线校验<br/>必填字段 · 金额单位<br/>年龄与时间范围"] ~~~
+  R2["人生事件编排<br/>事件时间 · 金额 · 频率<br/>防重复与辅助数据确认"] ~~~
+  R3["统一计算口径<br/>今天购买力 · 月度时间轴<br/>贷款、资产与现金流规则"] ~~~
+  R4["问题识别规则<br/>缺口 · 压力年份 · 事件重叠<br/>事实、原因与依据映射"] ~~~
+  R5["试算护栏<br/>PlanPatch 白名单 · 步数限制<br/>正式计划不变 · 结果校验"] ~~~
+  R6["确认与回流<br/>过期检查 · 幂等写入<br/>Bad Case 分级与回收"]
+end
+
+subgraph AGENT["Agent"]
+  direction LR
+  subgraph CONTEXT["可信业务上下文准备"]
+    direction LR
+    A1["读取个人基线<br/>不补数"] ~~~
+    A2["读取人生事件<br/>不虚构"] ~~~
+    A3["读取正式账本<br/>不计算金额"]
+  end
+  A4["识别与解释<br/>识别意图 · 缺失字段 · 风险<br/>查询年份、事件与原因"] --> A5["规划 · 执行 · 校验<br/>拆步骤 · 调工具 · 读取结果<br/>比较方案并核对数字依据"] --> A6["回答或变更提案<br/>结论 · 依据 · 风险 · 差异<br/>只给预览，确认后才写入"]
+  A3 --> A4
+  G4["不确定：只追问一个关键字段"] -.-> A4
+  G5["失败或无依据：修正或停止"] -.-> A5
+  G6["涉及修改：必须用户确认"] -.-> A6
+end
+
+subgraph HUMAN["前台 / 人工"]
+  direction LR
+  H1["填写个人基线<br/>7 项核心数据，先获得结果"] ~~~
+  H2["补充人生安排<br/>按现实顺序填写，也可跳过"] ~~~
+  H3["查看即时结果<br/>每次保存后立即重新计算"] ~~~
+  H4["发现问题并提问<br/>查看图表、关键年份和原因"] ~~~
+  H5["提出变化并比较<br/>比较改善、代价和未计入项"] ~~~
+  H6["确认调整或保留<br/>明确确认后才改变正式计划"]
+end
+
+subgraph DATA["数据"]
+  direction LR
+  D1["个人基线<br/>年龄 · 收支 · 可用资产<br/>退休假设 · 基线版本"] ~~~
+  D2["人生事件模型<br/>职业 · 家庭 · 住房 · 投资<br/>时间 · 金额 · 来源 · 状态"] ~~~
+  D3["正式账本结果<br/>月度明细 · 年度快照<br/>首次缺口 · 终点资金 · 净资产"] ~~~
+  D4["问题与证据<br/>关键年份 · 主要影响项<br/>工具结果 · 结论来源"] ~~~
+  D5["临时方案对比<br/>基线值 · 方案值 · 差异<br/>校验报告 · 执行轨迹"] ~~~
+  D6["正式版本与经验<br/>账本新版本 · 修改记录<br/>审计轨迹 · Bad Case · 回归集"]
+end
+
+classDef phase fill:#F2F4FF,stroke:#6677CC,color:#27304F,stroke-width:1.5px;
+classDef backend fill:#EEF3FF,stroke:#7182A6,color:#1F2937,stroke-width:1.2px;
+classDef orchestration fill:#F7F8FA,stroke:#87909E,color:#1F2937,stroke-width:1.2px;
+classDef agent fill:#F0EDFF,stroke:#7969D8,color:#292447,stroke-width:1.5px;
+classDef human fill:#F0FAF5,stroke:#68A486,color:#183D2D,stroke-width:1.2px;
+classDef data fill:#F7F8FA,stroke:#87909E,color:#1F2937,stroke-width:1.2px;
+classDef guard fill:#FFF7D6,stroke:#C99A34,color:#5D4615,stroke-width:1.2px;
+
+class P1,P2,P3,P4,P5,P6 phase;
+class B1,B2,B3,B4,B5,B6 backend;
+class R1,R2,R3,R4,R5,R6 orchestration;
+class A1,A2,A3,A4,A5,A6 agent;
+class H1,H2,H3,H4,H5,H6 human;
+class D1,D2,D3,D4,D5,D6 data;
+class G4,G5,G6 guard;
+
+style PHASE fill:#FFFFFF,stroke:#D8DDE8,stroke-width:1px
+style BACKEND fill:#FBFCFF,stroke:#CBD4E5,stroke-width:1px
+style ORCH fill:#FFFFFF,stroke:#D8DDE2,stroke-width:1px
+style AGENT fill:#FAF8FF,stroke:#B9ADEA,stroke-width:1.5px
+style CONTEXT fill:#F6F2FF,stroke:#A89CE3,stroke-width:1px
+style HUMAN fill:#FBFEFC,stroke:#C8DDD2,stroke-width:1px
+style DATA fill:#FFFFFF,stroke:#D8DDE2,stroke-width:1px
+
+linkStyle 0,1,2,3,4 stroke:#7B8495,stroke-width:1.4px;

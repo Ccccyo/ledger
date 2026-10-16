@@ -1,15 +1,12 @@
 import type { WorkspaceTab } from './workspace-types';
 
-export const WORKSPACE_TABS: readonly WorkspaceTab[] = [
-  'overview',
-  'plan',
-  'ledger',
-];
+export const WORKSPACE_TABS: readonly WorkspaceTab[] = ['plan', 'analysis'];
 
 export function resolveWorkspaceTab(value: string | null): WorkspaceTab {
+  if (value === 'overview' || value === 'ledger') return 'analysis';
   return WORKSPACE_TABS.includes(value as WorkspaceTab)
     ? (value as WorkspaceTab)
-    : 'overview';
+    : 'plan';
 }
 
 export function createWorkspaceTabHref(

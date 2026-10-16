@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { MonthlyCalculationResult } from '@/features/life-ledger/calculation';
-import { monthParts, type LifePlan } from '@/features/life-ledger/domain';
+import type { LifePlan } from '@/features/life-ledger/domain';
 import { downloadPlanBackup } from '@/features/life-ledger/storage';
 import {
   AlertTriangle,
@@ -23,25 +23,15 @@ import {
   Trash2,
   WalletCards,
 } from 'lucide-react';
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 import { Link } from '@/core/i18n/navigation';
 import { LocaleSelector, ThemeToggler } from '@/shared/blocks/common';
 import { cn } from '@/shared/lib/utils';
 
+import { AgentPanel } from './agent/agent-panel';
 import { EvidenceDrawer } from './components/evidence-drawer';
 import { WorkspaceMobileNav } from './components/workspace-mobile-nav';
 import { WorkspaceTabs } from './components/workspace-tabs';
-import { LedgerView } from './ledger/ledger-view';
 import {
   createWorkspaceTabHref,
   installWorkspaceHistoryGuard,
@@ -49,10 +39,11 @@ import {
   requestPlanNavigation,
   resolveWorkspaceTab,
 } from './navigation';
+import { AnnualSnapshotExplorer } from './overview/annual-snapshot';
+import { LifeStageExpenses } from './overview/life-stage-expenses';
 import { LifeTrajectory } from './overview/life-trajectory';
-import { PlanCharts } from './overview/plan-charts';
+import { ScenarioChart } from './overview/scenario-chart';
 import { SystemAnalysis } from './overview/system-analysis';
-import { PlanChangeFeedback } from './plan/plan-change-feedback';
 import { PlanView } from './plan/plan-view';
 import { resolvePlanSection } from './plan/types';
 import { useWorkspace, WorkspaceProvider } from './workspace-provider';
@@ -94,16 +85,7 @@ function PlanWorkspaceSurface({
     []
   );
   const {
-    state: {
-      boot,
-      plan,
-      result,
-      saveStatus,
-      calculationError,
-      storageError,
-      resultChange,
-      pendingChange,
-    },
+    state: { boot, plan, result, saveStatus, calculationError, storageError },
     initialize,
     updatePlan,
     persistPlan,
@@ -117,7 +99,16 @@ function PlanWorkspaceSurface({
   const openPlanSection = (section: string) => {
     if (!requestPlanNavigation()) return;
     const params = new URLSearchParams(searchParams.toString());
-    params.set('section', section);
+    const relocationPrefix = 'housing:relocation:';
+    if (section.startsWith(relocationPrefix)) {
+      params.set('section', 'housing');
+      params.set('housing', 'relocation');
+      params.set('relocation', section.slice(relocationPrefix.length));
+    } else {
+      params.set('section', section);
+      params.delete('housing');
+      params.delete('relocation');
+    }
     pushWorkspaceHistory(
       createWorkspaceTabHref(
         params.toString(),
@@ -246,55 +237,79 @@ function PlanWorkspaceSurface({
           </div>
         </div>
       )}
-      <main className="container py-7 sm:py-10">
-        {tab === 'overview' && (
-          <PlanChangeFeedback
-            compact
-            change={resultChange}
-            pending={pendingChange}
-            copy={copy}
-            locale={locale}
-          />
-        )}
-        {tab === 'overview' && (
-          <section
-            id="workspace-panel-overview"
-            role="tabpanel"
-            aria-labelledby="workspace-tab-overview"
-          >
-            <OverviewView
-              locale={locale}
-              copy={copy}
-              result={result}
-              onEdit={() => switchTab('plan')}
-              onNavigate={openPlanSection}
-            />
-          </section>
-        )}
+      <main className="mx-auto w-full max-w-[1800px] px-4 pt-2 pb-4 sm:px-6">
         {tab === 'plan' && (
           <section
             id="workspace-panel-plan"
             role="tabpanel"
             aria-labelledby="workspace-tab-plan"
+            className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-left-2 motion-safe:duration-200"
           >
-            <PlanView
-              locale={locale}
-              copy={copy}
-              plan={plan}
-              openSection={openSection}
-              onOpenSection={openPlanSection}
-              onOverview={() => switchTab('overview')}
-              onChange={updatePlan}
-            />
+            <div className="grid items-start gap-5 xl:h-[calc(100dvh-10rem)] xl:min-h-[640px] xl:grid-cols-[minmax(0,1.08fr)_minmax(540px,0.92fr)] xl:overflow-hidden">
+              <section
+                className="border-border bg-background min-w-0 rounded-xl border xl:h-full xl:overflow-y-auto"
+                aria-labelledby="planning-editor-heading"
+              >
+                <div className="bg-background sticky top-0 z-20 px-4 pt-4 sm:px-5">
+                  <PaneHeading
+                    id="planning-editor-heading"
+                    label={copy.workspace_pages.plan_title}
+                  />
+                </div>
+                <div className="px-4 pb-5 sm:px-5">
+                  <PlanView
+                    embedded
+                    locale={locale}
+                    copy={copy}
+                    plan={plan}
+                    openSection={openSection}
+                    onOpenSection={openPlanSection}
+                    onOverview={() => switchTab('analysis')}
+                    onChange={updatePlan}
+                  />
+                </div>
+              </section>
+              <section
+                className="border-border bg-muted/20 min-w-0 rounded-xl border xl:h-full xl:overflow-y-auto xl:overscroll-contain"
+                aria-labelledby="planning-preview-heading"
+              >
+                <div className="bg-background/95 sticky top-0 z-20 px-4 pt-4 backdrop-blur sm:px-5">
+                  <PaneHeading
+                    id="planning-preview-heading"
+                    label={copy.workspace_pages.preview}
+                  />
+                </div>
+                <div className="px-4 pb-5 sm:px-5">
+                  <OverviewView
+                    compact
+                    locale={locale}
+                    copy={copy}
+                    result={result}
+                    onEdit={() => switchTab('plan')}
+                    onNavigate={openPlanSection}
+                  />
+                </div>
+              </section>
+            </div>
           </section>
         )}
-        {tab === 'ledger' && (
+        {tab === 'analysis' && (
           <section
-            id="workspace-panel-ledger"
+            id="workspace-panel-analysis"
             role="tabpanel"
-            aria-labelledby="workspace-tab-ledger"
+            aria-labelledby="workspace-tab-analysis"
+            className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200"
           >
-            <LedgerView locale={locale} copy={copy} result={result} />
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+              <OverviewView
+                locale={locale}
+                copy={copy}
+                result={result}
+                onEdit={() => switchTab('plan')}
+                onNavigate={openPlanSection}
+              />
+              <AgentPanel copy={copy} locale={locale} result={result} />
+            </div>
           </section>
         )}
       </main>
@@ -466,104 +481,73 @@ function MenuButton({ icon: Icon, onClick, children, destructive }: any) {
   );
 }
 
-function OverviewView({ locale, copy, result, onEdit, onNavigate }: any) {
-  const formatMoney = moneyFormatter(locale);
-  const summary = result.summary as MonthlyCalculationResult['summary'];
-  const endingPositive = summary.endingAvailableCents >= 0;
-  const conclusion = !summary.hasAnyGap
-    ? copy.overview.conclusion_ok
-    : endingPositive
-      ? copy.overview.conclusion_recovered
-      : copy.overview.conclusion_gap;
-  const metrics = [
-    {
-      label: copy.simulation.ending,
-      value: formatMoney(summary.endingAvailableCents),
-    },
-    {
-      label: copy.overview.first_gap,
-      value: summary.firstGapMonth
-        ? formatMonthLabel(summary.firstGapMonth, locale)
-        : '—',
-    },
-    {
-      label: copy.overview.minimum,
-      value: formatMoney(summary.minimumAvailableCents),
-    },
-  ];
+function PaneHeading({ id, label }: { id: string; label: string }) {
   return (
-    <div className="mx-auto max-w-6xl space-y-10">
-      <section>
-        <h1 className="max-w-4xl text-2xl leading-tight font-semibold tracking-[-0.025em] sm:text-3xl">
-          {conclusion}
-        </h1>
-        <p className="text-muted-foreground mt-3 max-w-3xl text-sm leading-relaxed sm:text-base">
-          {copy.overview.ending.replace(
-            '{amount}',
-            formatMoney(summary.endingAvailableCents)
-          )}
-        </p>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/30 mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg px-4 text-sm font-semibold focus-visible:ring-4 focus-visible:outline-none active:translate-y-px"
-        >
-          <PencilLine className="size-4" />
-          {copy.overview.edit}
-        </button>
-      </section>
+    <h2
+      id={id}
+      className="border-border text-foreground mb-4 border-b pb-3 text-xl font-bold tracking-tight"
+    >
+      {label}
+    </h2>
+  );
+}
 
-      <LifeTrajectory
-        plan={result.input}
-        copy={copy}
-        locale={locale}
-        onNavigate={onNavigate}
-      />
-
-      <dl className="border-border grid border-y sm:grid-cols-3">
-        {metrics.map((metric, index) => (
-          <div
-            key={metric.label}
-            className={cn(
-              'py-5 sm:px-5 lg:py-6',
-              index > 0 && 'border-border max-sm:border-t sm:border-l',
-              index === 2 && 'max-sm:border-t'
-            )}
-          >
-            <dt className="text-muted-foreground text-xs font-medium">
-              {metric.label}
-            </dt>
-            <dd className="mt-2 text-lg font-semibold tracking-tight tabular-nums">
-              {metric.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-
-      <PlanCharts result={result} copy={copy} locale={locale} />
-
-      <SystemAnalysis
+function OverviewView({
+  locale,
+  copy,
+  result,
+  onEdit,
+  onNavigate,
+  compact = false,
+}: {
+  locale: string;
+  copy: WorkspaceCopy;
+  result: MonthlyCalculationResult;
+  onEdit: () => void;
+  onNavigate: (section: string) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={cn('space-y-6', !compact && 'mx-auto max-w-6xl')}>
+      <AnnualSnapshotExplorer
+        key={result.inputHash}
         result={result}
         copy={copy}
         locale={locale}
-        onNavigate={onNavigate}
+        plan={result.input}
+        condensed={compact}
+        initialMode={compact ? 'trend' : 'snapshot'}
       />
-
-      <section className="border-border flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-semibold">{copy.overview.completeness_basic}</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {copy.overview.completeness_hint}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="border-border bg-background hover:bg-muted inline-flex min-h-10 items-center justify-center rounded-lg border px-3.5 text-sm font-medium"
-        >
-          {copy.overview.complete_plan}
-        </button>
-      </section>
+      {!compact && (
+        <>
+          <LifeTrajectory
+            plan={result.input}
+            copy={copy}
+            locale={locale}
+            onNavigate={onNavigate}
+          />
+          <LifeStageExpenses result={result} copy={copy} locale={locale} />
+          <ScenarioChart result={result} copy={copy} locale={locale} />
+          <SystemAnalysis result={result} copy={copy} onNavigate={onNavigate} />
+          <section className="border-border flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold">
+                {copy.overview.completeness_basic}
+              </h2>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {copy.overview.completeness_hint}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="border-border bg-background hover:bg-muted inline-flex min-h-10 items-center justify-center rounded-lg border px-3.5 text-sm font-medium active:scale-[0.98]"
+            >
+              {copy.overview.complete_plan}
+            </button>
+          </section>
+        </>
+      )}
     </div>
   );
 }
@@ -661,24 +645,4 @@ function EmptyWorkspace({
       </section>
     </main>
   );
-}
-
-function moneyFormatter(locale: string) {
-  const formatter = new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
-    maximumFractionDigits: 0,
-  });
-  return (value: number) =>
-    `${formatter.format(Math.round(value / 100))} ${locale === 'zh' ? '元' : 'CNY'}`;
-}
-
-function compactMoney(value: number) {
-  if (Math.abs(value) >= 10_000) return `${Math.round(value / 10_000)}万`;
-  return `${Math.round(value)}`;
-}
-
-function formatMonthLabel(month: number, locale: string) {
-  const parts = monthParts(month as LifePlan['baseMonth']);
-  return locale === 'zh'
-    ? `${parts.year} 年 ${parts.month} 月`
-    : `${parts.year}-${String(parts.month).padStart(2, '0')}`;
 }

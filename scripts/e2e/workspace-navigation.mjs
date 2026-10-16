@@ -140,7 +140,11 @@ try {
       ),
     'Chrome startup'
   );
-  const pages = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+  const pages = await (
+    await fetch(`http://127.0.0.1:${port}/json`, {
+      signal: AbortSignal.timeout(10000),
+    })
+  ).json();
   socket = new WebSocket(
     pages.find((p) => p.type === 'page').webSocketDebuggerUrl
   );
@@ -203,7 +207,7 @@ try {
   };
   inspectPage = () =>
     evaluate(
-      '({url:location.href,text:document.body.innerText.slice(0,6000)})'
+      '({url:location.href,text:document.body.innerText.slice(0,6000),inputs:[...document.querySelectorAll("#calculator input")].map(e=>({name:e.name,value:e.value,valid:e.checkValidity()}))})'
     );
   inspectOffline = () =>
     evaluate(`(async()=>{
@@ -215,7 +219,7 @@ try {
   })()`);
   const click = async (selector) => {
     const point = await evaluate(
-      `(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.scrollIntoView({block:'center'});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`
+      `(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.scrollIntoView({block:'center',behavior:'instant'});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`
     );
     await send('Input.dispatchMouseEvent', {
       type: 'mousePressed',
@@ -235,6 +239,15 @@ try {
       () => evaluate(`!!document.querySelector(${JSON.stringify(selector)})`),
       selector
     );
+  const showLongTermTrend = async () => {
+    await ready('#annual-snapshot-title');
+    await evaluate(`(()=>{
+      const section=document.querySelector('#annual-snapshot-title').closest('section');
+      const button=section.querySelectorAll('[role=group] button')[1];
+      if(button?.getAttribute('aria-pressed')!=='true') button?.click();
+    })()`);
+    await ready('#balance-chart-heading');
+  };
   const fill = (selector, value) =>
     evaluate(
       `(()=>{const input=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`
@@ -276,6 +289,8 @@ try {
     7
   );
   await delay(500);
+  if (process.argv.includes('--events'))
+    console.log('Submitting landing baseline');
   if (process.argv.includes('--offline')) {
     await waitFor(
       () => evaluate('!!navigator.serviceWorker.controller'),
@@ -335,6 +350,14 @@ try {
       'Prepared landing reloads and hydrates offline before creating a plan'
     );
   }
+  await waitFor(
+    () =>
+      evaluate(
+        "Object.keys(document.querySelector('#calculator form') || {}).some(k=>k.startsWith('__reactProps'))"
+      ),
+    'landing hydration'
+  );
+  await delay(500);
   await click('#calculator button[type=submit]');
   await waitFor(
     () =>
@@ -504,7 +527,7 @@ try {
   );
   await click('#workspace-tab-overview');
   await selected('overview');
-  await ready('#balance-chart-heading');
+  await showLongTermTrend();
   await click('#workspace-tab-ledger');
   await selected('ledger');
   assert.ok(
@@ -546,7 +569,7 @@ try {
       await send('Page.navigate', { url: 'about:blank' });
       if (pause) await delay(pause);
       await send('Page.navigate', { url: `${origin}/plan?tab=overview` });
-      await ready('#balance-chart-heading');
+      await showLongTermTrend();
       assert.equal((await record()).revision, saved.revision);
     }
     const cached = await evaluate(
@@ -577,9 +600,22 @@ try {
       delay,
     });
   }
+  if (process.argv.includes('--events')) {
+    const { runLifeEventsJourney } = await import('./life-events-journey.mjs');
+    evidence.lifeEvents = await runLifeEventsJourney({
+      evaluate,
+      fill,
+      ready,
+      record,
+      waitFor,
+      send,
+      origin,
+      delay,
+    });
+  }
   if (process.argv.includes('--balance')) {
     await send('Page.navigate', { url: `${origin}/plan?tab=overview` });
-    await ready('#balance-chart-heading');
+    await showLongTermTrend();
     await fs.mkdir('docs/evidence', { recursive: true });
     for (const width of [375, 1440]) {
       await send('Emulation.setDeviceMetricsOverride', {
@@ -653,7 +689,7 @@ try {
     await send('Network.setCacheDisabled', { cacheDisabled: true });
     await assert.rejects(fetch(origin));
     await send('Page.navigate', { url: `${origin}/plan?tab=overview` });
-    await ready('#balance-chart-heading');
+    await showLongTermTrend();
     assert.deepEqual(await record(), beforeRestart);
     const activeCaches = await evaluate('caches.keys()');
     const shells = activeCaches.filter((k) =>
@@ -666,7 +702,7 @@ try {
       'Waiting version activates after old clients exit; current and preceding shells retained for handover, unrelated cache and IndexedDB retained'
     );
     await send('Page.navigate', { url: `${origin}/en/plan?tab=overview` });
-    await ready('#balance-chart-heading');
+    await showLongTermTrend();
     assert.equal(await evaluate('document.documentElement.lang'), 'en');
     assert.deepEqual(await record(), beforeRestart);
     evidence.checks.push(
@@ -700,15 +736,19 @@ try {
   process.exitCode = 1;
 } finally {
   const output = path.resolve(
-    process.argv.includes('--balance')
-      ? 'docs/evidence/workspace-balance.json'
-      : process.argv.includes('--audit')
-        ? 'docs/evidence/workspace-ui-journey.json'
-        : process.argv.includes('--offline')
-          ? 'docs/evidence/workspace-offline.json'
-          : process.argv.includes('--recovery')
-            ? 'docs/evidence/workspace-recovery.json'
-            : 'docs/evidence/workspace-navigation.json'
+    process.argv.includes('--events')
+      ? offlineRun
+        ? 'docs/evidence/workspace-events-offline.json'
+        : 'docs/evidence/workspace-events.json'
+      : process.argv.includes('--balance')
+        ? 'docs/evidence/workspace-balance.json'
+        : process.argv.includes('--audit')
+          ? 'docs/evidence/workspace-ui-journey.json'
+          : process.argv.includes('--offline')
+            ? 'docs/evidence/workspace-offline.json'
+            : process.argv.includes('--recovery')
+              ? 'docs/evidence/workspace-recovery.json'
+              : 'docs/evidence/workspace-navigation.json'
   );
   await fs.mkdir(path.dirname(output), { recursive: true });
   await fs.writeFile(output, JSON.stringify(evidence, null, 2));

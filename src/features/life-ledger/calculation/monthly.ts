@@ -27,10 +27,10 @@ import type {
 } from './monthly-types';
 
 export const MONTHLY_CALCULATION_VERSIONS = Object.freeze({
-  calculation: '2.1.0' as const,
+  calculation: '2.2.0' as const,
   schema: '2.0.0' as const,
   data: '2026.10.0',
-  rules: 'monthly-cashflow-career-2026-10' as const,
+  rules: 'monthly-cashflow-housing-2026-10' as const,
 });
 
 export class LifeLedgerMonthlyCalculationError
@@ -74,11 +74,13 @@ function occurs(flow: CashFlowItem, month: MonthIndex) {
 }
 
 function amountAt(flow: CashFlowItem, month: MonthIndex) {
-  return growMoney(
-    flow.amountCents,
-    flow.annualGrowthBps,
-    month - flow.startMonth
+  const growthStart = flow.growthStartMonth ?? flow.startMonth;
+  const growthEnd = flow.growthEndMonthExclusive ?? flow.endMonthExclusive;
+  const elapsedGrowthMonths = Math.max(
+    0,
+    Math.min(month, growthEnd) - growthStart
   );
+  return growMoney(flow.amountCents, flow.annualGrowthBps, elapsedGrowthMonths);
 }
 
 function effectiveFlowsAt(
@@ -87,8 +89,11 @@ function effectiveFlowsAt(
   month: MonthIndex
 ) {
   const active = flows.filter((flow) => occurs(flow, month));
-  const replacements = active.filter((flow) => flow.incomeTreatment === 'replace-salary');
-  const replacement = replacements.find((flow) => flow.amountCents === 0) ?? replacements[0];
+  const replacements = active.filter(
+    (flow) => flow.incomeTreatment === 'replace-salary'
+  );
+  const replacement =
+    replacements.find((flow) => flow.amountCents === 0) ?? replacements[0];
   if (!replacement) return active;
   return active.filter(
     (flow) =>
@@ -123,18 +128,30 @@ function simulate(
   const nonLiquid = new Map(
     plan.assets
       .filter((asset) => !asset.liquid)
-      .map((asset) => [asset.id, asset.openingBalanceCents] as const)
+      .map(
+        (asset) =>
+          [
+            asset.id,
+            asset.acquiredMonth !== undefined &&
+            asset.acquiredMonth > plan.baseMonth
+              ? moneyCents(0)
+              : asset.openingBalanceCents,
+          ] as const
+      )
   );
   const debts = new Map(
     plan.liabilities.map(
-      (liability) => [liability.id, liability.openingPrincipalCents] as const
+      (liability) =>
+        [
+          liability.id,
+          liability.originatesAtStart && liability.startMonth > plan.baseMonth
+            ? moneyCents(0)
+            : liability.openingPrincipalCents,
+        ] as const
     )
   );
   const monthly: MonthlyLedgerRow[] = [];
   const traces: CalculationTraceEntry[] = [];
-  const liquidPositiveRate = monthlyRateFromAnnualBps(
-    plan.assumptions.annualLiquidReturnBps
-  );
   const liquidNegativeRate = monthlyRateFromAnnualBps(
     plan.assumptions.annualCashGapCostBps
   );
@@ -150,8 +167,7 @@ function simulate(
     const expenseByCategory: CategoryTotals = {};
     const openingAvailable = available;
     const liquidReturn = roundMoney(
-      openingAvailable *
-        (openingAvailable >= 0 ? liquidPositiveRate : liquidNegativeRate)
+      openingAvailable * (openingAvailable >= 0 ? 0 : liquidNegativeRate)
     );
     if (liquidReturn !== 0) {
       const id = `month:${month}:liquid-return`;
@@ -210,16 +226,31 @@ function simulate(
     for (const liability of plan.liabilities) {
       let principal = debts.get(liability.id) ?? moneyCents(0);
       if (
+        liability.originatesAtStart &&
+        month === liability.startMonth &&
+        month > plan.baseMonth
+      )
+        principal = liability.openingPrincipalCents;
+      if (
         principal > 0 &&
         month >= liability.startMonth &&
         month < liability.endMonthExclusive
       ) {
         const interest = roundMoney(
-          principal * monthlyRateFromAnnualBps(liability.annualInterestBps)
+          principal *
+            (liability.interestMethod === 'nominal-monthly'
+              ? liability.annualInterestBps / 120_000
+              : monthlyRateFromAnnualBps(liability.annualInterestBps))
         );
         const payable = addMoney(principal, interest);
         const payment = moneyCents(
-          Math.min(payable, liability.monthlyPaymentCents)
+          Math.min(
+            payable,
+            liability.originatesAtStart &&
+              month === liability.endMonthExclusive - 1
+              ? payable
+              : liability.monthlyPaymentCents
+          )
         );
         principal = addMoney(payable, -payment);
         expenses = addMoney(expenses, payment);
@@ -261,10 +292,11 @@ function simulate(
 
     let nonLiquidAssets = moneyCents(0);
     for (const asset of plan.assets.filter((value) => !value.liquid)) {
-      const opening = nonLiquid.get(asset.id) ?? moneyCents(0);
-      const assetReturn = roundMoney(
-        opening * monthlyRateFromAnnualBps(asset.annualReturnBps)
-      );
+      const opening =
+        asset.acquiredMonth === month && month > plan.baseMonth
+          ? asset.openingBalanceCents
+          : (nonLiquid.get(asset.id) ?? moneyCents(0));
+      const assetReturn = moneyCents(0);
       const closing = addMoney(opening, assetReturn);
       nonLiquid.set(asset.id, closing);
       nonLiquidAssets = addMoney(nonLiquidAssets, closing);
@@ -434,6 +466,11 @@ function cloneWithPerturbation(
   id: string
 ): LifePlan {
   const increase = (value: MoneyCents) => roundMoney(value * 1.1);
+  const sourceAsset =
+    type === 'asset' ? plan.assets.find((asset) => asset.id === id) : undefined;
+  const perturbedAssetBalance = sourceAsset
+    ? increase(sourceAsset.openingBalanceCents)
+    : undefined;
   return {
     ...plan,
     cashFlowBuckets: plan.cashFlowBuckets.map((bucket) => ({
@@ -470,7 +507,7 @@ function cloneWithPerturbation(
     ),
     assets: plan.assets.map((asset) =>
       type === 'asset' && asset.id === id
-        ? { ...asset, openingBalanceCents: increase(asset.openingBalanceCents) }
+        ? { ...asset, openingBalanceCents: perturbedAssetBalance! }
         : asset
     ),
     liabilities: plan.liabilities.map((liability) =>
@@ -481,6 +518,14 @@ function cloneWithPerturbation(
           }
         : liability
     ),
+    metadata: {
+      ...plan.metadata,
+      investmentScenarios: plan.metadata.investmentScenarios?.map((scenario) =>
+        scenario.assetId === id && perturbedAssetBalance !== undefined
+          ? { ...scenario, principalCents: perturbedAssetBalance }
+          : scenario
+      ),
+    },
   };
 }
 

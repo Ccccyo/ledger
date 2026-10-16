@@ -1,6 +1,6 @@
 {
-  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-CUWSZ3",
-  "startedAt": "2026-10-13T20:46:34.350Z",
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-MpRyin",
+  "startedAt": "2026-10-14T11:51:29.179Z",
   "checks": [
     "Canceled home and language navigation keep the URL and unsubmitted growth",
     "Salary preset is dirty; canceled browser back retains draft and original history without duplicates",
@@ -12,154 +12,24 @@
   ],
   "networkErrors": [
     {
-      "requestId": "97789.519",
-      "timestamp": 392346.111237,
-      "type": "Other",
+      "requestId": "34168.142",
+      "timestamp": 437711.053382,
+      "type": "Fetch",
       "errorText": "net::ERR_ABORTED",
       "canceled": true,
-      "url": "http://localhost:3110/?_rsc=573zw"
-    },
-    {
-      "requestId": "97789.518",
-      "timestamp": 392346.111307,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=d3c8f"
-    },
-    {
-      "requestId": "97789.619",
-      "timestamp": 392354.872789,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=1a28h"
-    },
-    {
-      "requestId": "97789.618",
-      "timestamp": 392354.872863,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=eqsja"
-    },
-    {
-      "requestId": "97789.712",
-      "timestamp": 392364.176816,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=573zw"
-    },
-    {
-      "requestId": "97789.711",
-      "timestamp": 392364.176912,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=d3c8f"
-    },
-    {
-      "requestId": "97789.905",
-      "timestamp": 392372.597393,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=573zw"
-    },
-    {
-      "requestId": "97789.904",
-      "timestamp": 392372.597472,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=d3c8f"
-    },
-    {
-      "requestId": "97789.1291",
-      "timestamp": 392384.899292,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=573zw"
-    },
-    {
-      "requestId": "97789.1290",
-      "timestamp": 392384.899346,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=d3c8f"
-    },
-    {
-      "requestId": "97789.1677",
-      "timestamp": 392407.872539,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=573zw"
-    },
-    {
-      "requestId": "97789.1676",
-      "timestamp": 392407.872639,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/?_rsc=d3c8f"
-    },
-    {
-      "requestId": "97789.2251",
-      "timestamp": 392425.346744,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/en?_rsc=1lrnr"
-    },
-    {
-      "requestId": "97789.2250",
-      "timestamp": 392425.346806,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/en?_rsc=1tnw0"
-    },
-    {
-      "requestId": "97789.2830",
-      "timestamp": 392443.707245,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/en?_rsc=1lrnr"
-    },
-    {
-      "requestId": "97789.2829",
-      "timestamp": 392443.707287,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/en?_rsc=1tnw0"
-    },
-    {
-      "requestId": "97789.3409",
-      "timestamp": 392461.912955,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/en?_rsc=1lrnr"
-    },
-    {
-      "requestId": "97789.3408",
-      "timestamp": 392461.913016,
-      "type": "Other",
-      "errorText": "net::ERR_ABORTED",
-      "canceled": true,
-      "url": "http://localhost:3110/en?_rsc=1tnw0"
+      "url": "http://localhost:3000/plan?_rsc=2um9d"
     }
   ],
   "uiAudit": {
-    "status": "passed",
+    "status": "issues-found",
     "screens": 288,
-    "violations": 0
+    "violations": 25
   },
-  "status": "passed"
+  "status": "failed",
+  "error": "AssertionError [ERR_ASSERTION]: UI audit must pass\n+ actual - expected\n\n+ 'issues-found'\n- 'passed'",
+  "page": {
+    "url": "http://localhost:3000/en/plan?tab=ledger",
+    "text": "Life Ledger\n我的一生账本\nAutosaved\nAll amounts in today's money\nEnglish\nOverview\nPlan\nAnnual ledger\nAnnual ledger\n\nEvery row is aggregated from the same monthly result for exact review.\n\nKey years\nAll years\nYear\tPhase\t\nIncome\t\nSpending\t\nYear-end available funds\t\nDebt\t\nNet worth\n2026\n30 years\n\tWorking\t66,000 CNY\n\t30,000 CNY\n\t36,000 CNY\n\t0 CNY\n\t36,000 CNY\n\n2056\n60 years\n\tRetirement transition\t198,000 CNY\n\t105,000 CNY\n\t4,305,000 CNY\n\t0 CNY\n\t4,305,000 CNY\n\n2086\n90 years\n\tRetired\t0 CNY\n\t45,000 CNY\n\t2,520,000 CNY\n\t0 CNY\n\t2,520,000 CNY\n30k",
+    "inputs": []
+  }
 }

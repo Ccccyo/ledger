@@ -108,6 +108,15 @@ export async function runUiAudit({
     'living',
     'basics',
   ];
+  const showLongTermTrend = async () => {
+    await ready('#annual-snapshot-title');
+    await evaluate(`(()=>{
+      const section=document.querySelector('#annual-snapshot-title').closest('section');
+      const button=section.querySelectorAll('[role=group] button')[1];
+      if(button?.getAttribute('aria-pressed')!=='true') button?.click();
+    })()`);
+    await ready('#balance-chart-heading');
+  };
   for (const locale of ['zh', 'en']) {
     const copy = JSON.parse(
       await fs.readFile(
@@ -148,7 +157,7 @@ export async function runUiAudit({
         await send('Page.navigate', {
           url: `${origin}${prefix}/plan?tab=overview`,
         });
-        await ready('#balance-chart-heading');
+        await showLongTermTrend();
         await ready('header button[aria-label^="Switch to"]');
         for (const target of [theme === 'dark' ? 'light' : 'dark', theme]) {
           await evaluate(
@@ -220,7 +229,7 @@ export async function runUiAudit({
         await evaluate(
           `history.pushState(null,'',${JSON.stringify(`${prefix}/plan?tab=overview`)});window.dispatchEvent(new Event('life-ledger:history-pushed'))`
         );
-        await ready('#balance-chart-heading');
+        await showLongTermTrend();
         const drawers = [
           { name: 'trial', title: copy.actions['retirement-budget'].title },
           { name: 'evidence', title: copy.evidence.open },

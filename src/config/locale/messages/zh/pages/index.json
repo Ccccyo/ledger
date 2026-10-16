@@ -39,8 +39,8 @@
             "retire_age": "计划退休",
             "end_age": "计算到"
           },
-          "starting_assets_hint": "填写可用于长期规划的存款和现金，不含自住房等暂不变现资产。",
-          "retirement_spend_hint": "扣除预计养老金等稳定退休收入后，仍需自己承担的金额。",
+          "starting_assets_hint": "存款和现金，不含自住房等暂不变现资产。",
+          "retirement_spend_hint": "扣除预计养老金后，仍需自己承担的金额。",
           "units": {
             "age": "岁",
             "currency_month": "元/月",
@@ -66,12 +66,19 @@
           "p2_first_gap": "首次资金缺口",
           "p2_no_gap": "暂未出现",
           "p2_ending": "计算终点可用资金",
+          "p3_chart_title": "你的长期资金轨迹",
+          "p3_chart_hint": "先看趋势；进入正式计划后，可以拖动年份查看每一年的资金来源与去向。",
+          "p3_chart_available": "年末可用资金",
+          "p3_chart_retirement": "退休",
+          "p3_chart_first_gap": "首次资金缺口",
+          "p3_chart_table": "查看逐年数据",
+          "p3_chart_year": "年份 / 年龄",
           "p2_timeline_summary": "从 {age} 岁开始，{retireAge} 岁停止工作，计算到 {endAge} 岁。",
           "assumptions_title": "这条基线如何计算",
           "p2_assumptions": "所有金额均按当前购买力呈现；从你填写的起始可用资产开始；退休前计算你的当前收入和工作期支出，退休后收入按 0、支出使用你填写的每月需自付金额；实际收益率为 0。",
           "p2_estimate_note": "这只是基于个人起始资产与当前收支、尚未加入住房和其他人生大事的基线。",
           "continue_title": "把人生大事加进来",
-          "continue_description": "下一步按需补充职业发展、伴侣、孩子、住房、父母和退休。金额不会出现在网址中。",
+          "continue_description": "下一步按需补充职业发展、家人、孩子、住房、父母和退休。金额不会出现在网址中。",
           "continue_button": "加入我的人生大事"
         }
       },
@@ -89,7 +96,7 @@
           },
           {
             "title": "加入人生计划",
-            "description": "按需加入职业发展、伴侣、孩子、住房、父母和退休安排。",
+            "description": "按需加入职业发展、家人、孩子、住房、父母和退休安排。",
             "icon": "Milestone"
           },
           {
@@ -122,8 +129,8 @@
             "icon": "House"
           },
           {
-            "title": "伴侣、孩子、父母与退休",
-            "description": "逐步查看伴侣、孩子、赡养父母和退休生活对长期资金的影响。",
+            "title": "家人、孩子、父母与退休",
+            "description": "逐步查看家人、孩子、赡养父母和退休生活对长期资金的影响。",
             "icon": "UsersRound"
           },
           {
@@ -152,7 +159,7 @@
           },
           {
             "title": "正式账本可以加入哪些内容？",
-            "description": "可以逐步加入资产明细、职业发展、伴侣、孩子、住房、父母、退休和一次性人生事件。"
+            "description": "可以逐步加入资产明细、职业发展、家人、孩子、住房、父母、退休和一次性人生事件。"
           },
           {
             "title": "快速计算会上传我的数据吗？",

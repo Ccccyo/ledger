@@ -39,11 +39,11 @@ export function SimulationDrawer({
       ? String(patch.monthDelta)
       : patch.type === 'change-retirement-month'
         ? formatMonth(patch.retirementMonth)
-        : String(
-            (patch.type === 'change-cash-flow-amount'
-              ? patch.amountCents
-              : patch.openingBalanceCents) / 100
-          );
+        : patch.type === 'change-cash-flow-amount'
+          ? String(patch.amountCents / 100)
+          : patch.type === 'change-liquid-opening-balance'
+            ? String(patch.openingBalanceCents / 100)
+            : '';
   const [value, setValue] = useState(initial);
   const [comparison, setComparison] = useState<SimulationComparison | null>(
     null
@@ -65,9 +65,11 @@ export function SimulationDrawer({
       return { ...patch, retirementMonth: monthIndex(y, m) };
     }
     const amount = moneyCents(Math.round(Number(value) * 100));
-    return patch.type === 'change-cash-flow-amount'
-      ? { ...patch, amountCents: amount }
-      : { ...patch, openingBalanceCents: amount };
+    if (patch.type === 'change-cash-flow-amount')
+      return { ...patch, amountCents: amount };
+    if (patch.type === 'change-liquid-opening-balance')
+      return { ...patch, openingBalanceCents: amount };
+    throw new Error('Unsupported action patch');
   };
   const gap = (n: number | null) =>
     n === null ? copy.overview.no_gap : formatMonth(n as LifePlan['baseMonth']);

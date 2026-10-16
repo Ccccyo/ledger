@@ -1,4 +1,9 @@
-import { moneyCents, type CashFlowCategory, type LifePlan } from '../../domain';
+import {
+  basisPoints,
+  moneyCents,
+  type CashFlowCategory,
+  type LifePlan,
+} from '../../domain';
 
 export function findBucket(plan: LifePlan, suffix: string) {
   return plan.cashFlowBuckets.find((bucket) => bucket.id.endsWith(suffix));
@@ -23,6 +28,41 @@ export function updateBucketSummary(
         : bucket
     ),
     metadata: { ...plan.metadata, updatedAt: new Date().toISOString() },
+  };
+}
+
+export function updateRetirementPension(
+  plan: LifePlan,
+  amountCents: number,
+  name = '养老金及稳定收入'
+): LifePlan {
+  const existing = plan.standaloneCashFlows.find(
+    (flow) =>
+      flow.ownerId === plan.primaryMemberId && flow.category === 'pension'
+  );
+  const remaining = plan.standaloneCashFlows.filter(
+    (flow) => flow.id !== existing?.id
+  );
+  if (amountCents === 0) return { ...plan, standaloneCashFlows: remaining };
+  return {
+    ...plan,
+    standaloneCashFlows: [
+      ...remaining,
+      {
+        id: existing?.id ?? `${plan.id}:retirement-pension`,
+        name,
+        ownerId: plan.primaryMemberId,
+        direction: 'income',
+        category: 'pension',
+        amountCents: moneyCents(amountCents),
+        frequency: { kind: 'monthly' },
+        startMonth: plan.retirementMonth,
+        endMonthExclusive: plan.endMonthExclusive,
+        annualGrowthBps: basisPoints(0),
+        source: { kind: 'user', label: '用户填写' },
+        confirmation: 'confirmed',
+      },
+    ],
   };
 }
 
@@ -149,5 +189,14 @@ export function updateAges(
               : flow.endMonthExclusive,
       })),
     })),
+    standaloneCashFlows: plan.standaloneCashFlows.map((flow) =>
+      flow.category === 'pension' && flow.ownerId === plan.primaryMemberId
+        ? {
+            ...flow,
+            startMonth: retirementMonth,
+            endMonthExclusive,
+          }
+        : flow
+    ),
   };
 }

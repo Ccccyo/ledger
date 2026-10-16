@@ -153,7 +153,12 @@ export function createQuickLifePlan(values: QuickPlanValues = {}): LifePlan {
       calculation: '2.0.0',
       data: '2026.10.0',
     },
-    metadata: { createdAt: now, updatedAt: now },
+    metadata: {
+      createdAt: now,
+      updatedAt: now,
+      investmentScenarios: [],
+      relocations: [],
+    },
   };
 }
 

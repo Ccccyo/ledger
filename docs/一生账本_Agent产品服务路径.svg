@@ -1,0 +1,230 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .title { font: 700 34px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #20242d; }
+      .subtitle { font: 400 15px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #697386; }
+      .lane { font: 700 18px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #303642; }
+      .phase { font: 700 16px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #343947; }
+      .node-title { font: 700 17px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #252a35; }
+      .node-sub { font: 400 13px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #697386; }
+      .chip-title { font: 700 12px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #5f4a10; }
+      .chip-sub { font: 400 11px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #75621f; }
+      .legend { font: 500 13px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; fill: #586174; }
+      .box { stroke: #252a35; stroke-width: 1.6; rx: 12; }
+      .soft-box { stroke: #505767; stroke-width: 1.2; rx: 10; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#303642"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#20242d" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="#fbfbfc"/>
+
+  <text x="76" y="65" class="title">一生账本业务与 Agent 服务路径</text>
+  <text x="76" y="94" class="subtitle">从建立个人基线到确认调整：横向为真实业务流程，纵向为后台、编排、Agent、人工与数据的协作。</text>
+
+  <!-- Phase header -->
+  <line x1="210" y1="140" x2="1808" y2="140" stroke="#d7dbe4" stroke-width="1"/>
+  <g>
+    <rect x="210" y="117" width="240" height="46" rx="23" fill="#f2f3f7"/>
+    <text x="330" y="146" text-anchor="middle" class="phase">① 建立个人基线</text>
+    <rect x="480" y="117" width="240" height="46" rx="23" fill="#f2f3f7"/>
+    <text x="600" y="146" text-anchor="middle" class="phase">② 补充人生安排</text>
+    <rect x="750" y="117" width="240" height="46" rx="23" fill="#f2f3f7"/>
+    <text x="870" y="146" text-anchor="middle" class="phase">③ 生成正式账本</text>
+    <rect x="1020" y="117" width="240" height="46" rx="23" fill="#f2f3f7"/>
+    <text x="1140" y="146" text-anchor="middle" class="phase">④ 发现与解释问题</text>
+    <rect x="1290" y="117" width="240" height="46" rx="23" fill="#f2f3f7"/>
+    <text x="1410" y="146" text-anchor="middle" class="phase">⑤ 方案试算与比较</text>
+    <rect x="1560" y="117" width="240" height="46" rx="23" fill="#f2f3f7"/>
+    <text x="1680" y="146" text-anchor="middle" class="phase">⑥ 确认调整与沉淀</text>
+  </g>
+
+  <!-- Lane guides -->
+  <line x1="184" y1="177" x2="184" y2="994" stroke="#cfd4df"/>
+  <line x1="466" y1="177" x2="466" y2="994" stroke="#e3e6ed" stroke-dasharray="4 7"/>
+  <line x1="736" y1="177" x2="736" y2="994" stroke="#e3e6ed" stroke-dasharray="4 7"/>
+  <line x1="1006" y1="177" x2="1006" y2="994" stroke="#e3e6ed" stroke-dasharray="4 7"/>
+  <line x1="1276" y1="177" x2="1276" y2="994" stroke="#e3e6ed" stroke-dasharray="4 7"/>
+  <line x1="1546" y1="177" x2="1546" y2="994" stroke="#e3e6ed" stroke-dasharray="4 7"/>
+  <line x1="1816" y1="177" x2="1816" y2="994" stroke="#e3e6ed" stroke-dasharray="4 7"/>
+
+  <!-- Backend lane -->
+  <text x="75" y="241" class="lane">后台</text>
+  <rect x="210" y="188" width="240" height="100" fill="#eef3ff" class="box"/>
+  <text x="330" y="226" text-anchor="middle" class="node-title">基线计划服务</text>
+  <text x="330" y="252" text-anchor="middle" class="node-sub">年龄 · 收入 · 支出 · 资产</text>
+  <text x="330" y="273" text-anchor="middle" class="node-sub">退休与规划期限</text>
+
+  <rect x="480" y="188" width="240" height="100" fill="#eef3ff" class="box"/>
+  <text x="600" y="226" text-anchor="middle" class="node-title">人生事件中心</text>
+  <text x="600" y="252" text-anchor="middle" class="node-sub">职业 · 家庭 · 住房 · 投资</text>
+  <text x="600" y="273" text-anchor="middle" class="node-sub">换城市 · 退休安排</text>
+
+  <rect x="750" y="188" width="240" height="100" fill="#eef3ff" class="box"/>
+  <text x="870" y="226" text-anchor="middle" class="node-title">正式账本引擎</text>
+  <text x="870" y="252" text-anchor="middle" class="node-sub">逐月收支 · 资产负债</text>
+  <text x="870" y="273" text-anchor="middle" class="node-sub">年度快照 · 资金缺口</text>
+
+  <rect x="1020" y="188" width="240" height="100" fill="#eaf6f3" class="box"/>
+  <text x="1140" y="226" text-anchor="middle" class="node-title">分析与查询服务</text>
+  <text x="1140" y="252" text-anchor="middle" class="node-sub">图表 · 关键年份 · 影响项</text>
+  <text x="1140" y="273" text-anchor="middle" class="node-sub">Agent 只读工具</text>
+
+  <rect x="1290" y="188" width="240" height="100" fill="#eef3ff" class="box"/>
+  <text x="1410" y="226" text-anchor="middle" class="node-title">方案试算中心</text>
+  <text x="1410" y="252" text-anchor="middle" class="node-sub">计划副本 · 确定性重算</text>
+  <text x="1410" y="273" text-anchor="middle" class="node-sub">基线与方案差异</text>
+
+  <rect x="1560" y="188" width="240" height="100" fill="#eef3ff" class="box"/>
+  <text x="1680" y="226" text-anchor="middle" class="node-title">版本与交付服务</text>
+  <text x="1680" y="252" text-anchor="middle" class="node-sub">确认写入 · 自动保存 · 撤销</text>
+  <text x="1680" y="273" text-anchor="middle" class="node-sub">DeepSeek 仅增强表达</text>
+
+  <!-- Orchestration lane -->
+  <text x="50" y="384" class="lane">规则 / 编排</text>
+  <rect x="210" y="326" width="240" height="98" fill="#f7f8fb" class="soft-box"/>
+  <text x="330" y="363" text-anchor="middle" class="node-title">基线校验</text>
+  <text x="330" y="389" text-anchor="middle" class="node-sub">必填字段 · 金额单位</text>
+  <text x="330" y="410" text-anchor="middle" class="node-sub">年龄与时间范围</text>
+
+  <rect x="480" y="326" width="240" height="98" fill="#f7f8fb" class="soft-box"/>
+  <text x="600" y="363" text-anchor="middle" class="node-title">人生事件编排</text>
+  <text x="600" y="389" text-anchor="middle" class="node-sub">事件时间 · 金额 · 频率</text>
+  <text x="600" y="410" text-anchor="middle" class="node-sub">防重复与辅助数据确认</text>
+
+  <rect x="750" y="326" width="240" height="98" fill="#f7f8fb" class="soft-box"/>
+  <text x="870" y="363" text-anchor="middle" class="node-title">统一计算口径</text>
+  <text x="870" y="389" text-anchor="middle" class="node-sub">今天购买力 · 月度时间轴</text>
+  <text x="870" y="410" text-anchor="middle" class="node-sub">贷款、资产与现金流规则</text>
+
+  <rect x="1020" y="326" width="240" height="98" fill="#f7f8fb" class="soft-box"/>
+  <text x="1140" y="363" text-anchor="middle" class="node-title">问题识别规则</text>
+  <text x="1140" y="389" text-anchor="middle" class="node-sub">缺口 · 压力年份 · 事件重叠</text>
+  <text x="1140" y="410" text-anchor="middle" class="node-sub">事实、原因与依据映射</text>
+
+  <rect x="1290" y="326" width="240" height="98" fill="#f7f8fb" class="soft-box"/>
+  <text x="1410" y="363" text-anchor="middle" class="node-title">试算护栏</text>
+  <text x="1410" y="389" text-anchor="middle" class="node-sub">PlanPatch 白名单 · 步数限制</text>
+  <text x="1410" y="410" text-anchor="middle" class="node-sub">正式计划不变 · 结果校验</text>
+
+  <rect x="1560" y="326" width="240" height="98" fill="#f7f8fb" class="soft-box"/>
+  <text x="1680" y="363" text-anchor="middle" class="node-title">确认与回流</text>
+  <text x="1680" y="389" text-anchor="middle" class="node-sub">过期检查 · 幂等写入</text>
+  <text x="1680" y="410" text-anchor="middle" class="node-sub">Bad Case 分级与回收</text>
+
+  <!-- Agent highlighted lane -->
+  <rect x="166" y="455" width="1650" height="244" rx="16" fill="#eee9ff" stroke="#252a35" stroke-width="2"/>
+  <text x="73" y="574" class="lane">Agent</text>
+  <text x="192" y="482" class="subtitle">Agent 设计：可信上下文 → 识别与解释 → 规划、执行、校验 → 回答或变更提案</text>
+
+  <rect x="210" y="508" width="780" height="140" fill="#f8f6ff" class="box" filter="url(#shadow)"/>
+  <text x="600" y="548" text-anchor="middle" class="node-title">可信业务上下文准备</text>
+  <text x="600" y="577" text-anchor="middle" class="node-sub">个人基线与人生事件先进入确定性账本，形成可追溯的正式结果</text>
+  <text x="600" y="603" text-anchor="middle" class="node-sub">Agent 不补数、不计算金额、不修改正式计划，只读取经过裁剪的计划摘要</text>
+
+  <rect x="1020" y="508" width="240" height="140" fill="#f8f6ff" class="box" filter="url(#shadow)"/>
+  <text x="1140" y="552" text-anchor="middle" class="node-title">识别与解释</text>
+  <text x="1140" y="580" text-anchor="middle" class="node-sub">识别意图 · 缺失字段 · 风险</text>
+  <text x="1140" y="603" text-anchor="middle" class="node-sub">查询年份、事件与原因</text>
+
+  <rect x="1290" y="508" width="240" height="140" fill="#f8f6ff" class="box" filter="url(#shadow)"/>
+  <text x="1410" y="552" text-anchor="middle" class="node-title">规划 · 执行 · 校验</text>
+  <text x="1410" y="580" text-anchor="middle" class="node-sub">拆步骤 · 调工具 · 读取结果</text>
+  <text x="1410" y="603" text-anchor="middle" class="node-sub">比较方案并检查数字依据</text>
+
+  <rect x="1560" y="508" width="240" height="140" fill="#f8f6ff" class="box" filter="url(#shadow)"/>
+  <text x="1680" y="552" text-anchor="middle" class="node-title">回答或变更提案</text>
+  <text x="1680" y="580" text-anchor="middle" class="node-sub">结论 · 依据 · 风险 · 差异</text>
+  <text x="1680" y="603" text-anchor="middle" class="node-sub">只给预览，确认后才写入</text>
+
+  <!-- Main Agent arrows only -->
+  <line x1="990" y1="578" x2="1013" y2="578" stroke="#303642" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1260" y1="578" x2="1283" y2="578" stroke="#303642" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1530" y1="578" x2="1553" y2="578" stroke="#303642" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Exception chips -->
+  <rect x="1032" y="659" width="216" height="32" rx="8" fill="#fff3bf"/>
+  <text x="1140" y="680" text-anchor="middle" class="chip-title">不确定 → 只追问一个关键字段</text>
+  <rect x="1302" y="659" width="216" height="32" rx="8" fill="#fff3bf"/>
+  <text x="1410" y="680" text-anchor="middle" class="chip-title">失败或无依据 → 修正或停止</text>
+  <rect x="1572" y="659" width="216" height="32" rx="8" fill="#fff3bf"/>
+  <text x="1680" y="680" text-anchor="middle" class="chip-title">涉及修改 → 必须用户确认</text>
+
+  <!-- Human lane -->
+  <text x="50" y="777" class="lane">前台 / 人工</text>
+  <rect x="210" y="730" width="240" height="82" fill="#f0f5ff" class="soft-box"/>
+  <text x="330" y="763" text-anchor="middle" class="node-title">填写个人基线</text>
+  <text x="330" y="789" text-anchor="middle" class="node-sub">7 项核心数据，先获得结果</text>
+
+  <rect x="480" y="730" width="240" height="82" fill="#f0f5ff" class="soft-box"/>
+  <text x="600" y="763" text-anchor="middle" class="node-title">补充人生安排</text>
+  <text x="600" y="789" text-anchor="middle" class="node-sub">按现实顺序填写，也可跳过</text>
+
+  <rect x="750" y="730" width="240" height="82" fill="#f0f5ff" class="soft-box"/>
+  <text x="870" y="763" text-anchor="middle" class="node-title">查看即时结果</text>
+  <text x="870" y="789" text-anchor="middle" class="node-sub">每次保存后立即重新计算</text>
+
+  <rect x="1020" y="730" width="240" height="82" fill="#f0f5ff" class="soft-box"/>
+  <text x="1140" y="763" text-anchor="middle" class="node-title">发现问题并提问</text>
+  <text x="1140" y="789" text-anchor="middle" class="node-sub">查看图表、关键年份和原因</text>
+
+  <rect x="1290" y="730" width="240" height="82" fill="#f0f5ff" class="soft-box"/>
+  <text x="1410" y="763" text-anchor="middle" class="node-title">提出变化并比较</text>
+  <text x="1410" y="789" text-anchor="middle" class="node-sub">比较改善、代价和未计入项</text>
+
+  <rect x="1560" y="730" width="240" height="82" fill="#f0f5ff" class="soft-box"/>
+  <text x="1680" y="763" text-anchor="middle" class="node-title">确认调整或保留</text>
+  <text x="1680" y="789" text-anchor="middle" class="node-sub">明确确认后才改变正式计划</text>
+
+  <!-- Data lane -->
+  <text x="75" y="922" class="lane">数据</text>
+  <rect x="210" y="856" width="240" height="108" fill="#f0f7f5" class="box"/>
+  <text x="330" y="891" text-anchor="middle" class="node-title">个人基线</text>
+  <text x="330" y="917" text-anchor="middle" class="node-sub">年龄 · 收支 · 可用资产</text>
+  <text x="330" y="940" text-anchor="middle" class="node-sub">退休假设 · 基线版本</text>
+
+  <rect x="480" y="856" width="240" height="108" fill="#f0f7f5" class="box"/>
+  <text x="600" y="891" text-anchor="middle" class="node-title">人生事件模型</text>
+  <text x="600" y="917" text-anchor="middle" class="node-sub">职业 · 家庭 · 住房 · 投资</text>
+  <text x="600" y="940" text-anchor="middle" class="node-sub">时间 · 金额 · 来源 · 状态</text>
+
+  <rect x="750" y="856" width="240" height="108" fill="#f0f7f5" class="box"/>
+  <text x="870" y="891" text-anchor="middle" class="node-title">正式账本结果</text>
+  <text x="870" y="917" text-anchor="middle" class="node-sub">月度明细 · 年度快照</text>
+  <text x="870" y="940" text-anchor="middle" class="node-sub">首次缺口 · 终点资金 · 净资产</text>
+
+  <rect x="1020" y="856" width="240" height="108" fill="#f0f7f5" class="box"/>
+  <text x="1140" y="891" text-anchor="middle" class="node-title">问题与证据</text>
+  <text x="1140" y="917" text-anchor="middle" class="node-sub">关键年份 · 主要影响项</text>
+  <text x="1140" y="940" text-anchor="middle" class="node-sub">工具结果 · 结论来源</text>
+
+  <rect x="1290" y="856" width="240" height="108" fill="#f0f7f5" class="box"/>
+  <text x="1410" y="891" text-anchor="middle" class="node-title">临时方案对比</text>
+  <text x="1410" y="917" text-anchor="middle" class="node-sub">基线值 · 方案值 · 差异</text>
+  <text x="1410" y="940" text-anchor="middle" class="node-sub">校验报告 · 执行轨迹</text>
+
+  <rect x="1560" y="856" width="240" height="108" fill="#f0f7f5" class="box"/>
+  <text x="1680" y="891" text-anchor="middle" class="node-title">正式版本与经验</text>
+  <text x="1680" y="917" text-anchor="middle" class="node-sub">账本新版本 · 修改记录</text>
+  <text x="1680" y="940" text-anchor="middle" class="node-sub">审计轨迹 · Bad Case · 回归集</text>
+
+  <!-- Footer legend -->
+  <line x1="76" y1="1002" x2="1810" y2="1002" stroke="#d7dbe4"/>
+  <rect x="76" y="1025" width="16" height="16" rx="4" fill="#eef3ff" stroke="#252a35"/>
+  <text x="101" y="1038" class="legend">后台能力</text>
+  <rect x="204" y="1025" width="16" height="16" rx="4" fill="#f7f8fb" stroke="#505767"/>
+  <text x="229" y="1038" class="legend">规则编排</text>
+  <rect x="346" y="1025" width="16" height="16" rx="4" fill="#eee9ff" stroke="#6656a8"/>
+  <text x="371" y="1038" class="legend">Agent 核心</text>
+  <rect x="486" y="1025" width="16" height="16" rx="4" fill="#f0f5ff" stroke="#435b83"/>
+  <text x="511" y="1038" class="legend">人工动作</text>
+  <rect x="623" y="1025" width="16" height="16" rx="4" fill="#f0f7f5" stroke="#477565"/>
+  <text x="648" y="1038" class="legend">数据产物</text>
+  <rect x="760" y="1025" width="16" height="16" rx="4" fill="#fff3bf"/>
+  <text x="785" y="1038" class="legend">异常与回退</text>
+  <text x="1810" y="1038" text-anchor="end" class="legend">正式账本为唯一事实源 · AI 不算钱 · 试算不写入 · 修改必须确认</text>
+</svg>

@@ -14,10 +14,16 @@ import { createPersonalBaselineFixture } from './fixtures';
 describe('Career periods', () => {
   it('compounds annual real raises separately from new jobs and side income', () => {
     const base = createPersonalBaselineFixture();
-    const raised = updateSalaryGrowth(base, 3);
+    const raised = updateSalaryGrowth(
+      base,
+      3,
+      base.baseMonth,
+      addMonths(base.baseMonth, 12)
+    );
     const rows = calculateMonthlyLifePlan(raised).monthly;
     assert.equal(rows[0].incomeCents, yuan(18000));
     assert.equal(rows[12].incomeCents, yuan(18540));
+    assert.equal(rows[24].incomeCents, yuan(18540));
     const job = saveCareerChange(raised, {
       id: 'new-job',
       kind: 'salary',

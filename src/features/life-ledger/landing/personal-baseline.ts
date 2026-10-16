@@ -35,11 +35,11 @@ export type PersonalBaselineParseResult =
   | { ok: false; issues: PersonalBaselineIssue[] };
 
 export const PERSONAL_BASELINE_DEFAULTS: PersonalBaselineInput = Object.freeze({
-  currentAge: 28,
+  currentAge: 30,
   startingAvailableAssetsWan: 0,
-  monthlyIncomeYuan: 18_000,
-  monthlyExpenseYuan: 9_000,
-  monthlyRetirementSelfFundedYuan: 7_000,
+  monthlyIncomeYuan: 20_000,
+  monthlyExpenseYuan: 10_000,
+  monthlyRetirementSelfFundedYuan: 5_000,
   retirementAge: 60,
   endAge: 90,
 });

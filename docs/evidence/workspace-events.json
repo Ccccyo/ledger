@@ -1,0 +1,12 @@
+{
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-yGxDDy",
+  "startedAt": "2026-10-14T13:51:36.418Z",
+  "checks": [],
+  "status": "failed",
+  "error": "Error: {\"exceptionId\":1,\"text\":\"Uncaught\",\"lineNumber\":0,\"columnNumber\":66,\"scriptId\":\"260\",\"stackTrace\":{\"callFrames\":[{\"functionName\":\"\",\"scriptId\":\"260\",\"url\":\"\",\"lineNumber\":0,\"columnNumber\":66},{\"functionName\":\"\",\"scriptId\":\"260\",\"url\":\"\",\"lineNumber\":0,\"columnNumber\":197}]},\"exception\":{\"type\":\"object\",\"subtype\":\"error\",\"className\":\"TypeError\",\"description\":\"TypeError: Cannot read properties of null (reading 'scrollIntoView')\\n    at <anonymous>:1:67\\n    at <anonymous>:1:198\",\"objectId\":\"8416467376981625247.2.2\"}}",
+  "page": {
+    "url": "http://localhost:3000/plan?tab=plan&section=career",
+    "text": "一生账本\n我的一生账本\n结果待更新\n所有金额按今天购买力\n中文\n规划\n分析\n规划人生安排\n现在\n职业发展\n家人\n孩子\n住房\n投资\n父母\n退休\n其他人生事件\n高级假设\n职业发展\n\n工作会变化，收入也可以分阶段规划。\n\n每年涨薪\n换工作\n副业\n暂停工作\n\n设置当前工资在哪段时间增长；停止后按当时工资保持不变，换工作时再单独填写新工资。\n\n年均实际涨幅\n%\n0%\n购买力不变\n1%\n3%\n开始增长\n停止增长（含当月）\n这个涨幅怎么算？\n计入计划\n\n按今天购买力估算 · 非收益承诺\n\n接下来 · 家人\n结果预览\n逐年看你的资金\n年度快照\n长期趋势\n可用资金与净资产\n\n实线为可用资金，虚线为扣除债务后的净资产。\n\n退休年末可用资金 · 60岁\n358.5 万元\n计算终点可用资金 · 90岁\n180 万元\n年龄 · 年末余额\n净资产与可用资金重合\n30岁\n40岁\n50岁\n60岁\n70岁\n80岁\n90岁\n0万\n100万\n200万\n300万\n400万\n可用资金\n零线以下为资金缺口\n\n月度最低可用资金：2026 年，0 元。曲线展示年末余额。\n\n查看图表数据\n每年花多少\n每年花多少\n收入与支出\n\n最高支出出现在 2027 年，全年 120,000 元。\n\n30岁\n40岁\n50岁\n60岁\n70岁\n80岁\n90岁\n0万\n3万\n6万\n9万\n12万\n日常生活退休\n查看图表数据\n3万",
+    "inputs": []
+  }
+}

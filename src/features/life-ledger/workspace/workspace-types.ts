@@ -5,7 +5,7 @@ import type { StoredPlanRecord } from '../storage';
 
 export type WorkspaceCopy = Record<string, any>;
 
-export type WorkspaceTab = 'overview' | 'plan' | 'ledger';
+export type WorkspaceTab = 'plan' | 'analysis';
 
 export type SaveStatus = 'saved' | 'saving' | 'failed' | 'stale';
 

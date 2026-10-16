@@ -3,7 +3,7 @@ import { moneyCents, type LifePlan } from '../domain';
 import { extractPlanFacts, type PlanFacts } from './extract-facts';
 import { verifyCause } from './simulate-action';
 
-export const ANALYSIS_VERSION = '1.0.0';
+export const ANALYSIS_VERSION = '1.1.0';
 export const RULE_IDS = [
   'housing-causes-first-gap',
   'housing-child-overlap',
@@ -61,10 +61,7 @@ export function ruleMatches(id: RuleId, plan: LifePlan, facts: PlanFacts) {
           facts.topInfluences.some((i) => i.inputId === f.id)
       );
     case 'zero-return-conservative':
-      return (
-        plan.assumptions.annualLiquidReturnBps === 0 &&
-        facts.positiveMonths >= 120
-      );
+      return facts.positiveMonths >= 120;
     case 'important-total-unclassified':
       return facts.unclassifiedBuckets.length > 0;
     case 'baseline-sustainable':
@@ -86,7 +83,7 @@ export function generateInsights(
         : ruleId === 'liquidity-gap'
           ? 'assets'
           : ruleId === 'zero-return-conservative'
-            ? 'advanced'
+            ? 'investment'
             : ruleId === 'important-total-unclassified'
               ? 'living'
               : 'basics';

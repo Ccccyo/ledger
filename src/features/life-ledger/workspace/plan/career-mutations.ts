@@ -24,15 +24,52 @@ export function salaryGrowthBps(plan: LifePlan): number {
   );
 }
 
-export function updateSalaryGrowth(plan: LifePlan, percent: number): LifePlan {
-  if (!Number.isFinite(percent) || percent < -99 || percent > 100)
+export function salaryGrowthPeriod(plan: LifePlan) {
+  const flow = plan.cashFlowBuckets
+    .flatMap((b) =>
+      b.mode === 'summary' ? (b.summary ? [b.summary] : []) : b.details
+    )
+    .find(
+      (item) =>
+        item.ownerId === plan.primaryMemberId &&
+        item.category === 'salary' &&
+        item.direction === 'income'
+    );
+  return {
+    start: flow?.growthStartMonth ?? flow?.startMonth ?? plan.baseMonth,
+    end:
+      flow?.growthEndMonthExclusive ??
+      flow?.endMonthExclusive ??
+      plan.retirementMonth,
+  };
+}
+
+export function updateSalaryGrowth(
+  plan: LifePlan,
+  percent: number,
+  start: MonthIndex = salaryGrowthPeriod(plan).start,
+  end: MonthIndex = salaryGrowthPeriod(plan).end
+): LifePlan {
+  if (
+    !Number.isFinite(percent) ||
+    percent < -99 ||
+    percent > 100 ||
+    start < plan.baseMonth ||
+    end > plan.retirementMonth ||
+    start >= end
+  )
     throw new Error('Invalid growth rate');
   const annualGrowthBps = basisPoints(Math.round(percent * 100));
   const update = (f: CashFlowItem) =>
     f.ownerId === plan.primaryMemberId &&
     f.category === 'salary' &&
     f.direction === 'income'
-      ? { ...f, annualGrowthBps }
+      ? {
+          ...f,
+          annualGrowthBps,
+          growthStartMonth: start,
+          growthEndMonthExclusive: end,
+        }
       : f;
   return {
     ...plan,

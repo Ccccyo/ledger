@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+  addMonths,
+  basisPoints,
   createQuickLifePlan,
   migrateLifePlan,
   resolveLifePlan,
@@ -110,5 +112,29 @@ describe('P0 life plan data standard', () => {
       migrateLifePlan(legacy, context),
       migrateLifePlan(structuredClone(legacy), context)
     );
+  });
+
+  it('validates display-only investment ranges and legacy linked assets', () => {
+    const plan = createQuickLifePlan({ id: 'investment-validation' });
+    plan.assets[0].kind = 'investment';
+    plan.assets[0].openingBalanceCents = yuan(100_000);
+    plan.metadata.investmentScenarios = [
+      {
+        id: 'investment-1',
+        name: '长期投资',
+        assetId: plan.assets[0].id,
+        principalCents: yuan(100_000),
+        riskLevel: 'medium',
+        lowerAnnualReturnBps: basisPoints(-1000),
+        upperAnnualReturnBps: basisPoints(1500),
+        startMonth: plan.baseMonth,
+        endMonthExclusive: addMonths(plan.baseMonth, 24),
+      },
+    ];
+    assert.equal(validateLifePlan(plan).valid, true);
+    plan.metadata.investmentScenarios[0].assetId = 'missing';
+    assert.equal(validateLifePlan(plan).valid, false);
+    delete plan.metadata.investmentScenarios[0].assetId;
+    assert.equal(validateLifePlan(plan).valid, true);
   });
 });

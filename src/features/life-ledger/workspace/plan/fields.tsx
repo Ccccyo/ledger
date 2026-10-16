@@ -11,6 +11,8 @@ export function MoneyEditor({ label, value, locale, hint, onCommit }: any) {
         label={label}
         value={value / 100}
         unit={locale === 'zh' ? '元/月' : 'CNY/mo'}
+        allowMoneyUnit
+        locale={locale}
         onCommit={(next: number) => onCommit(yuan(next))}
       />
       {hint && (
@@ -85,24 +87,7 @@ export function CategoryEditor({
 
 export function AdvancedEditor({ plan, copy, onChange }: any) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <NumberField
-        label={copy.plan.return_rate}
-        minimum={-99}
-        maximum={100}
-        value={plan.assumptions.annualLiquidReturnBps / 100}
-        unit="%"
-        step="0.1"
-        onCommit={(value: number) =>
-          onChange((current: LifePlan) => ({
-            ...current,
-            assumptions: {
-              ...current.assumptions,
-              annualLiquidReturnBps: basisPoints(Math.round(value * 100)),
-            },
-          }))
-        }
-      />
+    <div className="max-w-sm">
       <NumberField
         label={copy.plan.gap_rate}
         value={plan.assumptions.annualCashGapCostBps / 100}
@@ -134,8 +119,19 @@ function NumberFieldInput({
   minimum = 0,
   maximum = 1_000_000_000,
   onCommit,
+  allowMoneyUnit = false,
+  locale = 'zh',
 }: any) {
+  const [moneyUnit, setMoneyUnit] = useState<'yuan' | 'wan'>('yuan');
+  const factor = moneyUnit === 'wan' ? 10_000 : 1;
   const [draft, setDraft] = useState(String(value));
+  const suffix = unit?.includes('/月') || unit?.includes('/mo') ? '/月' : '';
+  const changeUnit = (next: 'yuan' | 'wan') => {
+    const parsed = Number(draft);
+    const yuanValue = Number.isFinite(parsed) ? parsed * factor : value;
+    setMoneyUnit(next);
+    setDraft(String(yuanValue / (next === 'wan' ? 10_000 : 1)));
+  };
   return (
     <label className="block">
       <span className="text-muted-foreground mb-1.5 block text-xs font-medium">
@@ -146,12 +142,12 @@ function NumberFieldInput({
           type="number"
           inputMode="decimal"
           step={step}
-          min={minimum}
-          max={maximum}
+          min={minimum / factor}
+          max={maximum / factor}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={() => {
-            const parsed = Number(draft);
+            const parsed = Number(draft) * factor;
             if (
               draft.trim() &&
               Number.isFinite(parsed) &&
@@ -159,11 +155,29 @@ function NumberFieldInput({
               parsed <= maximum
             ) {
               if (parsed !== value) onCommit(parsed);
-            } else setDraft(String(value));
+            } else setDraft(String(value / factor));
           }}
           className="h-full min-w-0 flex-1 bg-transparent text-sm font-medium tabular-nums outline-none"
         />
-        <span className="text-muted-foreground ml-2 text-xs">{unit}</span>
+        {allowMoneyUnit ? (
+          <select
+            aria-label={locale.startsWith('zh') ? '金额单位' : 'Amount unit'}
+            value={moneyUnit}
+            onChange={(event) =>
+              changeUnit(event.target.value as 'yuan' | 'wan')
+            }
+            className="text-muted-foreground ml-2 h-8 bg-transparent text-xs outline-none"
+          >
+            <option value="yuan">
+              {locale.startsWith('zh') ? `元${suffix}` : 'CNY/mo'}
+            </option>
+            <option value="wan">
+              {locale.startsWith('zh') ? `万${suffix}` : '10k CNY/mo'}
+            </option>
+          </select>
+        ) : (
+          <span className="text-muted-foreground ml-2 text-xs">{unit}</span>
+        )}
       </span>
     </label>
   );

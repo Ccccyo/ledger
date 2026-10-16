@@ -20,7 +20,7 @@ The product keeps one canonical plan model and one deterministic monthly calcula
 
 ## Operating Context
 
-Users begin with seven values on the Landing Page, including a starting available-assets estimate, then continue in a three-view workspace: Overview for conclusions, Plan for inputs and breakdowns, and Ledger for annual verification. The first release supports one local plan in the current browser.
+Users begin with seven values on the Landing Page, including a starting available-assets estimate, then continue in a two-page workspace. Planning keeps the editor on the left and a scrollable live report on the right. Analysis keeps the full report on the left and a planning-assistant panel on the right. The annual ledger remains an internal, auditable data source for snapshots and charts, not a top-level workspace view. The first release supports one local plan in the current browser.
 
 ## Capabilities and Constraints
 

@@ -60,6 +60,9 @@ export interface CashFlowItem {
   endMonthExclusive: MonthIndex;
   /** Real annual growth rate in basis points. */
   annualGrowthBps: BasisPoints;
+  /** Optional interval in which growth compounds; outside it the amount is flat. */
+  growthStartMonth?: MonthIndex;
+  growthEndMonthExclusive?: MonthIndex;
   source: ValueSource;
   confirmation: ConfirmationState;
   /** Explicitly replaces the primary member's salary during this interval. */
@@ -102,6 +105,9 @@ export interface Asset {
   annualReturnBps: BasisPoints;
   source: ValueSource;
   confirmation: ConfirmationState;
+  /** Future property enters net worth in this month; absent means already owned. */
+  acquiredMonth?: MonthIndex;
+  purchase?: { downPaymentFlowId: string; liabilityId?: string };
 }
 
 export type LiabilityKind = 'mortgage' | 'consumer' | 'other';
@@ -118,6 +124,9 @@ export interface Liability {
   endMonthExclusive: MonthIndex;
   source: ValueSource;
   confirmation: ConfirmationState;
+  /** Future borrowing, not an existing balance whose repayments start later. */
+  originatesAtStart?: boolean;
+  interestMethod?: 'nominal-monthly';
 }
 
 export interface PlanAssumptions {
@@ -130,6 +139,35 @@ export interface PlanVersions {
   schema: string;
   calculation: string;
   data: string;
+}
+
+export type InvestmentRiskLevel = 'low' | 'medium' | 'high' | 'custom';
+
+/** Display-only investment range. Formal calculations always use principal. */
+export interface InvestmentScenario {
+  id: string;
+  name: string;
+  /** Legacy link. New scenarios reserve future available principal without moving today's assets. */
+  assetId?: string;
+  principalCents: MoneyCents;
+  riskLevel: InvestmentRiskLevel;
+  lowerAnnualReturnBps: BasisPoints;
+  upperAnnualReturnBps: BasisPoints;
+  startMonth: MonthIndex;
+  endMonthExclusive: MonthIndex;
+}
+
+/** A city move label whose financial effects reuse normal cash-flow items. */
+export interface RelocationPlan {
+  id: string;
+  currentCity?: string;
+  targetCity: string;
+  moveMonth: MonthIndex;
+  movingExpenseFlowId?: string;
+  housingAdjustmentFlowId?: string;
+  livingAdjustmentFlowId?: string;
+  incomeAdjustmentFlowId?: string;
+  source?: ValueSource;
 }
 
 export interface LifePlan {
@@ -160,6 +198,10 @@ export interface LifePlan {
       | 'housing'
       | 'parents'
     )[];
+    /** Optional display-only ranges; never applied by the formal calculator. */
+    investmentScenarios?: InvestmentScenario[];
+    /** City moves; all financial effects reference canonical cash-flow items. */
+    relocations?: RelocationPlan[];
   };
 }
 

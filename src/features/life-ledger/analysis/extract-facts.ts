@@ -26,8 +26,12 @@ export function extractPlanFacts(
     largestExpenseCategories: Object.entries(peak.expenseByCategory)
       .sort((a, b) => b[1] - a[1])
       .map(([k]) => k),
-    housing: stageFlows(plan, 'housing'),
-    children: stageFlows(plan, 'child'),
+    housing: stageFlows(plan, 'housing').filter(
+      (f) => f.direction === 'expense'
+    ),
+    children: stageFlows(plan, 'child').filter(
+      (f) => f.direction === 'expense'
+    ),
     retirement: stageFlows(plan, 'retirement'),
     missingSections: extractLifeTrajectory(plan)
       .filter((n) => n.status === 'missing')

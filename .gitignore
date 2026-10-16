@@ -71,3 +71,6 @@ src/config/db/migrations*
 .source
 
 .chats
+
+# local design review artifacts
+.impeccable/

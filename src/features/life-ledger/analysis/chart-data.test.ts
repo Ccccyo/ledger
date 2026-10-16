@@ -15,6 +15,7 @@ it('chart groups conserve every cent and key years belong to the annual ledger',
         result.annual[i].expenseCents
       );
       assert.equal(r.available, result.annual[i].closingAvailableCents);
+      assert.equal(r.income, result.annual[i].incomeCents);
       assert.equal(r.netWorth, result.annual[i].closingNetWorthCents);
     });
     assert.ok(

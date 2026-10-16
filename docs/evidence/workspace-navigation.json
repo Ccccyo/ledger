@@ -1,6 +1,6 @@
 {
-  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-rvn8xp",
-  "startedAt": "2026-10-13T20:09:40.940Z",
+  "profile": "/var/folders/r5/fcckxgt167j2bh36ktrnjtqc0000gp/T/life-ledger-navigation-vaPWhn",
+  "startedAt": "2026-10-14T01:36:16.838Z",
   "checks": [
     "Canceled home and language navigation keep the URL and unsubmitted growth",
     "Salary preset is dirty; canceled browser back retains draft and original history without duplicates",
@@ -12,11 +12,179 @@
   ],
   "networkErrors": [
     {
-      "requestId": "83765.138",
-      "timestamp": 390123.707672,
-      "type": "Fetch",
+      "requestId": "90171.441",
+      "timestamp": 409721.123399,
+      "type": "Other",
       "errorText": "net::ERR_ABORTED",
-      "canceled": true
+      "canceled": true,
+      "url": "http://localhost:3122/plan?_rsc=2um9d"
+    },
+    {
+      "requestId": "90171.427",
+      "timestamp": 409721.123463,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=1a28h"
+    },
+    {
+      "requestId": "90171.426",
+      "timestamp": 409721.123481,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=eqsja"
+    },
+    {
+      "requestId": "90171.726",
+      "timestamp": 409729.523404,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=1a28h"
+    },
+    {
+      "requestId": "90171.725",
+      "timestamp": 409729.523446,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=eqsja"
+    },
+    {
+      "requestId": "90171.940",
+      "timestamp": 409731.508046,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/plan?_rsc=2um9d"
+    },
+    {
+      "requestId": "90171.932",
+      "timestamp": 409731.508093,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=1a28h"
+    },
+    {
+      "requestId": "90171.931",
+      "timestamp": 409731.508109,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=eqsja"
+    },
+    {
+      "requestId": "90171.1247",
+      "timestamp": 409743.55126,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=573zw"
+    },
+    {
+      "requestId": "90171.1246",
+      "timestamp": 409743.55129,
+      "type": "Other",
+      "errorText": "net::ERR_ABORTED",
+      "canceled": true,
+      "url": "http://localhost:3122/?_rsc=d3c8f"
+    }
+  ],
+  "personas": [
+    {
+      "persona": "lin",
+      "events": 0,
+      "endingCents": -11400000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "change-liquid-opening-balance: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "chen",
+      "events": 2,
+      "endingCents": 628136651,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    },
+    {
+      "persona": "zhou",
+      "events": 3,
+      "endingCents": -42000000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
+    },
+    {
+      "persona": "xu",
+      "events": 2,
+      "endingCents": 56400000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "shift-cash-flow: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "zhao",
+      "events": 1,
+      "endingCents": -172000000,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload",
+        "change-retirement-month: preview-discard-apply-reload"
+      ]
+    },
+    {
+      "persona": "tang",
+      "events": 2,
+      "endingCents": -80628853,
+      "status": "passed",
+      "checks": [
+        "landing",
+        "life-events",
+        "monthly-boundaries",
+        "chart-ledger",
+        "preview-discard-revision",
+        "apply-undo",
+        "reload"
+      ]
     }
   ],
   "status": "passed"

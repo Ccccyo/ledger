@@ -94,11 +94,13 @@ export async function runPersonaJourneys(api) {
     await stage(id, label);
     if (additional) await buttonText('添加项目');
     await ready('main form');
+    await evaluate(
+      "document.querySelectorAll('main form select').forEach(el=>{if(el.querySelector('option[value=income]'))el.dataset.e2eSelect='direction';if(el.querySelector('option[value=once]'))el.dataset.e2eSelect='frequency'})"
+    );
     if (id === 'partner')
-      await click(`main input[name=partner-direction][value=${direction}]`);
+      await select('main select[data-e2e-select=direction]', direction);
     await fill('main input[name=amount]', String(amount));
-    await evaluate("document.querySelector('main form details').open=true");
-    if (once) await select('main form select', 'once');
+    if (once) await select('main select[data-e2e-select=frequency]', 'once');
     await evaluate(
       "document.querySelectorAll('main form input[type=month]').forEach((el,i)=>el.dataset.e2eMonth=String(i))"
     );
@@ -177,10 +179,10 @@ export async function runPersonaJourneys(api) {
       await career('side_income', 3000, month(0), month(59));
     }
     if (p.id === 'zhou') {
-      await event('partner', '伴侣', 2000, month(0), month(335), {
+      await event('partner', '家人', 2000, month(0), month(335), {
         direction: 'income',
       });
-      await event('partner', '伴侣', 3000, month(0), month(335), {
+      await event('partner', '家人', 3000, month(0), month(335), {
         additional: true,
       });
       await event('child', '孩子', 4000, month(24), month(239));

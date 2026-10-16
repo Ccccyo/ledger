@@ -7,6 +7,7 @@ import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
 import type { MonthlyCalculationResult } from '../calculation';
+import { BaselineMiniChart } from './baseline-mini-chart';
 import type { PersonalBaselineInput } from './personal-baseline';
 import type { PersonalBaselineCalculatorConfig } from './personal-baseline-form';
 
@@ -101,6 +102,8 @@ export function PersonalBaselineResult({
           </div>
         ))}
       </dl>
+
+      <BaselineMiniChart config={config} result={result} />
 
       <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
         {interpolate(config.p2_timeline_summary, {

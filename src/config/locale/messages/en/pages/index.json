@@ -66,12 +66,19 @@
           "p2_first_gap": "First funding gap",
           "p2_no_gap": "None found",
           "p2_ending": "Funds at calculation end",
+          "p3_chart_title": "Your long-term funds path",
+          "p3_chart_hint": "Start with the direction. In the full plan, drag through the years to inspect where each year’s money comes from and goes.",
+          "p3_chart_available": "Year-end available funds",
+          "p3_chart_retirement": "Retirement",
+          "p3_chart_first_gap": "First funding gap",
+          "p3_chart_table": "View annual data",
+          "p3_chart_year": "Year / age",
           "p2_timeline_summary": "Start at age {age}, stop working at {retireAge}, and calculate through age {endAge}.",
           "assumptions_title": "How this baseline is calculated",
           "p2_assumptions": "All amounts use today's purchasing power. The baseline starts with the available assets you entered. Before retirement it uses your current income and working-life spending; after retirement income becomes 0 and spending uses the monthly self-funded amount you entered. The real return is 0%.",
           "p2_estimate_note": "This is a personal baseline using your starting assets and current cash flow. Housing and other life events are not included yet.",
           "continue_title": "Add the life events that matter",
-          "continue_description": "Next, add career changes, a partner, children, housing, parents, and retirement as needed. Financial amounts never appear in the URL.",
+          "continue_description": "Next, add career changes, family support, children, housing, parents, and retirement as needed. Financial amounts never appear in the URL.",
           "continue_button": "Add my life events"
         }
       },
@@ -89,7 +96,7 @@
           },
           {
             "title": "Add life events",
-            "description": "Add career changes, a partner, children, housing, parents, and retirement as needed.",
+            "description": "Add career changes, family support, children, housing, parents, and retirement as needed.",
             "icon": "Milestone"
           },
           {
@@ -122,7 +129,7 @@
             "icon": "House"
           },
           {
-            "title": "Partner, children, parents and retirement",
+            "title": "Family, children, parents and retirement",
             "description": "Add each life event and see its long-term effect on available funds.",
             "icon": "UsersRound"
           },
@@ -152,7 +159,7 @@
           },
           {
             "title": "What can the full ledger include?",
-            "description": "You can add asset details, career changes, a partner, children, housing, parents, retirement and one-time life events."
+            "description": "You can add asset details, career changes, family support, children, housing, parents, retirement and one-time life events."
           },
           {
             "title": "Does the quick calculator upload my data?",

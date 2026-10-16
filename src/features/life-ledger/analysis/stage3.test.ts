@@ -174,10 +174,10 @@ describe('Stage 3 life planning', () => {
     });
     assert.deepEqual(again.resultChange, successful.resultChange);
   });
-  it('routes old family links to children and exposes twelve editors', () => {
+  it('routes old family links to children and exposes thirteen editors', () => {
     assert.equal(resolvePlanSection('family'), 'child');
     assert.equal(resolvePlanSection('partner-child'), 'child');
     assert.equal(resolvePlanSection('unknown'), 'basics');
-    assert.equal(PLAN_SECTIONS.length, 12);
+    assert.equal(PLAN_SECTIONS.length, 13);
   });
 });
