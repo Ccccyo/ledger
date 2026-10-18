@@ -109,6 +109,7 @@ export interface LifeLedgerAgentContext {
 }
 
 export type AgentToolCall =
+  | { name: 'read_overview'; arguments: Record<string, never> }
   | {
       name: 'get_annual_series';
       arguments: { startYear: number | null; endYear: number | null };
@@ -128,7 +129,8 @@ export type AgentToolCall =
       name: 'compare_retirement_ages';
       arguments: { ages: number[] };
     }
-  | { name: 'simulate_patch'; arguments: { patch: PlanPatch } };
+  | { name: 'simulate_patch'; arguments: { patch: PlanPatch } }
+  | { name: 'simulate_scenario'; arguments: { patches: PlanPatch[] } };
 
 export type AgentDecision =
   | {
@@ -152,7 +154,7 @@ export interface AgentHistoryMessage {
   content: string;
 }
 
-export type AgentExpressionMode = 'strict' | 'enhanced';
+export type AgentExpressionMode = 'strict' | 'enhanced' | 'autonomous';
 
 export interface AgentTurnRequest {
   question: string;
@@ -160,10 +162,13 @@ export interface AgentTurnRequest {
   context: LifeLedgerAgentContext;
   history: AgentHistoryMessage[];
   observations: AgentObservation[];
+  preferences?: string[];
   step: number;
   /**
    * Strict mode never calls an external language model. Enhanced mode may send
    * only the separately constructed expression payload after user consent.
+   * Autonomous mode may share the compact context and tool observations with
+   * DeepSeek, but only after separate consent; it never writes a plan.
    */
   expressionMode?: AgentExpressionMode;
 }

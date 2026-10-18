@@ -244,7 +244,7 @@ function runQuestion(question: string, history: AgentHistoryMessage[]) {
       observations,
       step,
     });
-    if (decision.type !== 'tool' || decision.tool.name === 'simulate_patch')
+    if (decision.type !== 'tool' || decision.tool.name === 'simulate_patch' || decision.tool.name === 'simulate_scenario')
       break;
     observations.push(runReadOnlyAgentTool(result, decision.tool));
   }

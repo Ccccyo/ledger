@@ -170,7 +170,7 @@ describe('Planning Agent boundary', () => {
         enhancement: string;
       };
       assert.equal(requestedUrl, 'https://api.deepseek.com/responses');
-      assert.equal(requestedBody?.model, 'deepseek-flash');
+      assert.equal((requestedBody as Record<string, unknown> | null)?.model, 'deepseek-flash');
       assert.equal(payload.mode, 'model');
       assert.equal(payload.enhancement, 'applied');
     } finally {
@@ -474,7 +474,7 @@ describe('Planning Agent boundary', () => {
       step: 0,
     });
     assert.equal(tool.type, 'tool');
-    if (tool.type !== 'tool' || tool.tool.name === 'simulate_patch') return;
+    if (tool.type !== 'tool' || tool.tool.name === 'simulate_patch' || tool.tool.name === 'simulate_scenario') return;
     const observation = runReadOnlyAgentTool(result, tool.tool);
     assert.equal(decide('哪一年资金压力最大？', [observation])?.type, 'answer');
   });

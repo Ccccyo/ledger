@@ -311,7 +311,7 @@ function runQuestion(
       break;
     }
     if (decision.type !== 'tool') break;
-    if (decision.tool.name === 'simulate_patch') break;
+    if (decision.tool.name === 'simulate_patch' || decision.tool.name === 'simulate_scenario') break;
     observations.push(runReadOnlyAgentTool(result, decision.tool));
   }
   const text = [renderDecision(decision), simulationEvidence]

@@ -1,7 +1,9 @@
-import { validateLifePlan, type LifePlan } from '../domain';
+import { md5 } from '@/shared/lib/hash';
+
+import { createLocalId, validateLifePlan, type LifePlan } from '../domain';
 
 const DB_NAME = 'life-ledger';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const ACTIVE_PLAN_KEY = 'active-plan';
 
 export interface StoredPlanRecord {
@@ -69,8 +71,20 @@ export function openLifeLedgerDatabase(factory: IDBFactory = indexedDB) {
       if (!database.objectStoreNames.contains('meta')) {
         database.createObjectStore('meta', { keyPath: 'key' });
       }
+      if (!database.objectStoreNames.contains('agentTasks')) {
+        database.createObjectStore('agentTasks', { keyPath: 'planId' });
+      }
+      if (!database.objectStoreNames.contains('agentMemories')) {
+        const memories = database.createObjectStore('agentMemories', {
+          keyPath: 'id',
+        });
+        memories.createIndex('planId', 'planId');
+      }
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      request.result.onversionchange = () => request.result.close();
+      resolve(request.result);
+    };
     request.onerror = () => reject(request.error);
     request.onblocked = () =>
       reject(new Error('Life Ledger database is blocked.'));
@@ -78,11 +92,23 @@ export function openLifeLedgerDatabase(factory: IDBFactory = indexedDB) {
 }
 
 async function checksumPlan(plan: LifePlan) {
-  const bytes = new TextEncoder().encode(JSON.stringify(plan));
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  const serialized = JSON.stringify(plan);
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return `md5-${md5(serialized)}`;
+
+  const bytes = new TextEncoder().encode(serialized);
+  const digest = await subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, '0')
   ).join('');
+}
+
+async function matchesChecksum(plan: LifePlan, expected: string) {
+  if (expected.startsWith('md5-')) {
+    return expected === `md5-${md5(JSON.stringify(plan))}`;
+  }
+  if (!globalThis.crypto?.subtle) return false;
+  return (await checksumPlan(plan)) === expected;
 }
 
 export async function getActivePlan(
@@ -101,7 +127,7 @@ export async function getActivePlan(
     try {
       valid =
         validateLifePlan(plan.plan).valid &&
-        (await checksumPlan(plan.plan)) === plan.checksum;
+        (await matchesChecksum(plan.plan, plan.checksum));
     } catch {
       /* Malformed objects are also integrity failures. */
     }
@@ -309,5 +335,5 @@ export async function deleteActivePlan(database: IDBDatabase) {
 }
 
 export function createWriterId() {
-  return crypto.randomUUID();
+  return createLocalId('writer');
 }

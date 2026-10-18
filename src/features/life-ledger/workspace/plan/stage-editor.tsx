@@ -6,6 +6,9 @@ import { Trash2 } from 'lucide-react';
 import { extractLifeTrajectory } from '../../analysis/extract-life-trajectory';
 import {
   addMonths,
+  cashFlowInputDirection,
+  cashFlowSignedAmount,
+  createLocalId,
   formatMonth,
   monthIndex,
   type CashFlowCategory,
@@ -88,7 +91,8 @@ export function StageEditor({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium break-words">
-                      {flow.name} · {moneyFormatter(locale)(flow.amountCents)} ·{' '}
+                      {flow.name} ·{' '}
+                      {moneyFormatter(locale)(cashFlowSignedAmount(flow))} ·{' '}
                       {copy.editor[flow.frequency.kind]}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs">
@@ -97,7 +101,7 @@ export function StageEditor({
                         ? ' — ' +
                           formatMonth(addMonths(flow.endMonthExclusive, -1))
                         : ''}{' '}
-                      · {copy.editor[flow.direction]}
+                      · {copy.editor[cashFlowInputDirection(flow)]}
                     </p>
                   </div>
                   <div className="flex gap-4">
@@ -218,11 +222,15 @@ function EventForm({
     flow?.frequency.kind ?? (stage === 'events' ? 'once' : 'monthly')
   );
   const [direction, setDirection] = useState<'income' | 'expense'>(
-    flow?.direction ?? (stage === 'partner' ? 'income' : 'expense')
+    flow
+      ? cashFlowInputDirection(flow)
+      : stage === 'partner'
+        ? 'income'
+        : 'expense'
   );
   const [amountUnit, setAmountUnit] = useState<'yuan' | 'wan'>('yuan');
   const [amountDraft, setAmountDraft] = useState(
-    flow ? String(flow.amountCents / 100) : ''
+    flow ? String(cashFlowSignedAmount(flow) / 100) : ''
   );
   const [error, setError] = useState(false);
   const [name, setName] = useState(flow?.name ?? '');
@@ -246,7 +254,7 @@ function EventForm({
     const data = new FormData(event.currentTarget);
     try {
       const input = {
-        id: flow?.id ?? crypto.randomUUID(),
+        id: flow?.id ?? createLocalId('flow'),
         name: String(
           name ||
             (stage === 'partner'
@@ -373,7 +381,7 @@ function EventForm({
               type="number"
               inputMode="decimal"
               required
-              min="0.01"
+              min="-1000000000"
               max="1000000000"
               step="0.01"
               aria-invalid={error}

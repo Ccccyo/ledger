@@ -4,7 +4,11 @@ import { useState } from 'react';
 
 import { ANALYSIS_VERSION } from '../../analysis/generate-insights';
 import type { MonthlyCalculationResult } from '../../calculation';
-import { formatMonth, resolveLifePlan } from '../../domain';
+import {
+  cashFlowSignedAmount,
+  formatMonth,
+  resolveLifePlan,
+} from '../../domain';
 import { moneyFormatter } from '../plan/fields';
 import type { WorkspaceCopy } from '../workspace-types';
 import { WorkspaceDrawer } from './workspace-drawer';
@@ -31,7 +35,7 @@ export function EvidenceDrawer({
     ...flows.map((f) => ({
       id: f.id,
       name: f.name,
-      value: f.amountCents,
+      value: cashFlowSignedAmount(f),
       source: f.source,
     })),
     ...result.input.assets.map((a) => ({

@@ -51,6 +51,12 @@ export interface CashFlowItem {
   id: string;
   name: string;
   direction: CashFlowDirection;
+  /**
+   * Original direction selected for a signed adjustment. When present, the
+   * stored direction is the opposite cash direction and the displayed amount
+   * is negative relative to this basis.
+   */
+  adjustmentBasis?: CashFlowDirection;
   category: CashFlowCategory;
   ownerId: string;
   /** Amount per frequency occurrence, stored in cents. */

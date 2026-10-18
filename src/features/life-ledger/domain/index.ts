@@ -1,4 +1,5 @@
 export * from './factory';
+export * from './id';
 export * from './migrations';
 export * from './primitives';
 export * from './resolve';

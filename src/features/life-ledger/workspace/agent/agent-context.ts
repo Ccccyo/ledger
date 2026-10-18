@@ -6,6 +6,8 @@ import {
 import {
   addMonths,
   basisPoints,
+  cashFlowInputDirection,
+  cashFlowSignedAmount,
   moneyCents,
   type CashFlowItem,
   type LifePlan,
@@ -68,8 +70,8 @@ export function buildAgentContext(
         id: flow.id,
         label: flow.name,
         category: flow.category,
-        direction: flow.direction,
-        amountCents: flow.amountCents,
+        direction: cashFlowInputDirection(flow),
+        amountCents: cashFlowSignedAmount(flow),
         startMonth: flow.startMonth,
         endMonthExclusive: flow.endMonthExclusive,
         frequency: flow.frequency.kind,
@@ -151,7 +153,7 @@ export function buildAgentContext(
           kind: 'cash-flow' as const,
           label: flow.name,
           category: flow.category,
-          amountCents: flow.amountCents,
+          amountCents: cashFlowSignedAmount(flow),
           startMonth: flow.startMonth,
           endMonthExclusive: flow.endMonthExclusive,
         })),
@@ -196,8 +198,24 @@ export function toAgentAnnualRow(
 
 export function runReadOnlyAgentTool(
   result: MonthlyCalculationResult,
-  tool: Exclude<AgentToolCall, { name: 'simulate_patch' }>
+  tool: Exclude<AgentToolCall, { name: 'simulate_patch' | 'simulate_scenario' }>
 ): AgentObservation {
+  if (tool.name === 'read_overview') {
+    return {
+      tool: tool.name,
+      ok: true,
+      result: {
+        planHash: result.inputHash,
+        summary: {
+          firstGapMonth: result.summary.firstGapMonth,
+          minimumAvailableCents: result.summary.minimumAvailableCents,
+          endingAvailableCents: result.summary.endingAvailableCents,
+          endingNetWorthCents: result.summary.endingNetWorthCents,
+          retirementAvailableCents: result.summary.retirementAvailableCents,
+        },
+      },
+    };
+  }
   if (tool.name === 'compare_child_timing') {
     return compareChildTiming(result, tool.arguments);
   }

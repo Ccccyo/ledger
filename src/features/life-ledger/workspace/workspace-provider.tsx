@@ -12,7 +12,7 @@ import {
 } from 'react';
 
 import { safeCalculateMonthlyLifePlan } from '../calculation';
-import { migrateLifePlan, type LifePlan } from '../domain';
+import { createLocalId, migrateLifePlan, type LifePlan } from '../domain';
 import {
   clearQuickPlanHandoff,
   clearQuickPlanHandoffV2,
@@ -100,7 +100,7 @@ export function WorkspaceProvider({
 
       if (decision.source === 'handoff-v1') {
         const migrated = migrateLifePlan(decision.input, {
-          planId: crypto.randomUUID(),
+          planId: createLocalId('plan'),
           now: new Date().toISOString(),
         }).plan;
         const saved = await replaceActivePlan(

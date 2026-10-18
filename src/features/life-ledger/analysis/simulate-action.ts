@@ -22,6 +22,31 @@ export function simulateAction(
   };
 }
 export type SimulationComparison = ReturnType<typeof simulateAction>;
+
+export function simulateScenario(
+  plan: LifePlan,
+  baseline: MonthlyCalculationResult,
+  patches: PlanPatch[]
+) {
+  if (patches.length < 2 || patches.length > 3) {
+    throw new Error('A combined scenario needs two or three changes.');
+  }
+  const candidatePlan = patches.reduce(
+    (current, patch) => applyPlanPatch(current, patch),
+    plan
+  );
+  const candidateResult = calculateMonthlyLifePlan(candidatePlan);
+  return {
+    baselineHash: baseline.inputHash,
+    candidatePlan,
+    candidateResult,
+    change: compareResults(baseline, candidateResult),
+    patch: { type: 'scenario' as const, patches },
+  };
+}
+
+export type ScenarioComparison = ReturnType<typeof simulateScenario>;
+
 export function verifyCause(
   plan: LifePlan,
   baseline: MonthlyCalculationResult,

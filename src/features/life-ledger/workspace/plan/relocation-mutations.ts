@@ -83,6 +83,7 @@ function relocationFlow({
     id,
     name: `${label} · ${input.targetCity.trim()}`,
     direction,
+    adjustmentBasis: amountYuan < 0 ? positiveDirection : undefined,
     category:
       key === 'incomeAdjustmentFlowId' && direction === 'expense'
         ? 'other'

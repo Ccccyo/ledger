@@ -9,10 +9,12 @@
     "retirement-planning"
   ],
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --webpack",
+    "dev:turbopack": "next dev --turbopack",
     "build": "next build && node scripts/build-offline.mjs",
     "build:fast": "NODE_OPTIONS='--max-old-space-size=4096' next build && node scripts/build-offline.mjs",
     "test:calculation": "tsx --test src/features/life-ledger/domain/*.test.ts src/features/life-ledger/calculation/*.test.ts src/features/life-ledger/storage/*.test.ts src/features/life-ledger/landing/*.test.ts src/features/life-ledger/analysis/*.test.ts src/features/life-ledger/workspace/*.test.ts",
+    "eval:agent:skills": "node --import tsx scripts/eval-agent-skill-prototype.ts",
     "test:e2e": "node --import tsx scripts/e2e/workspace-navigation.mjs --personas --recovery",
     "test:e2e:recovery": "node --import tsx scripts/e2e/workspace-navigation.mjs --recovery",
     "test:e2e:offline": "node --import tsx scripts/e2e/workspace-navigation.mjs --offline --personas",

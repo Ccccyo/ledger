@@ -1,6 +1,7 @@
 import { calculateMonthlyLifePlan } from '../../calculation';
 import {
   basisPoints,
+  createLocalId,
   moneyCents,
   yuan,
   type InvestmentRiskLevel,
@@ -167,7 +168,7 @@ export function saveInvestmentScenario(plan: LifePlan, input: InvestmentInput): 
     (scenario) => scenario.id === input.id,
   );
   const normalizedPlan = normalizeLegacyLinkedAsset(plan, existing);
-  const id = input.id ?? `investment-${crypto.randomUUID()}`;
+  const id = input.id ?? createLocalId('investment');
   const scenario: InvestmentScenario = {
     id,
     name: input.name.trim(),

@@ -82,6 +82,73 @@ it('family, parents and housing support are bidirectional without merging amount
   assert.equal(r.monthly[0].incomeCents, yuan(9000));
   assert.equal(r.monthly[0].expenseCents, yuan(3000));
 });
+it('accepts negative income and expense changes without storing negative money', () => {
+  let p = createQuickLifePlan({
+    monthlyIncomeYuan: 10_000,
+    monthlyWorkingExpensesYuan: 6_000,
+    monthlyRetirementSelfFundedYuan: 0,
+    currentSavingsYuan: 0,
+  });
+  p = saveStageEvent(p, 'events', {
+    id: 'income-decrease',
+    name: 'Income decrease',
+    frequency: 'monthly',
+    amountYuan: -3_000,
+    start: p.baseMonth,
+    end: addMonths(p.baseMonth, 12),
+    direction: 'income',
+  });
+  p = saveStageEvent(p, 'events', {
+    id: 'expense-decrease',
+    name: 'Expense decrease',
+    frequency: 'monthly',
+    amountYuan: -2_000,
+    start: p.baseMonth,
+    end: addMonths(p.baseMonth, 12),
+    direction: 'expense',
+  });
+
+  const incomeDecrease = p.standaloneCashFlows.find(
+    (flow) => flow.id === 'income-decrease'
+  )!;
+  const expenseDecrease = p.standaloneCashFlows.find(
+    (flow) => flow.id === 'expense-decrease'
+  )!;
+  const firstMonth = calculateMonthlyLifePlan(p).monthly[0];
+
+  assert.deepEqual(
+    {
+      direction: incomeDecrease.direction,
+      adjustmentBasis: incomeDecrease.adjustmentBasis,
+      amountCents: incomeDecrease.amountCents,
+    },
+    {
+      direction: 'expense',
+      adjustmentBasis: 'income',
+      amountCents: yuan(3_000),
+    }
+  );
+  assert.deepEqual(
+    {
+      direction: expenseDecrease.direction,
+      adjustmentBasis: expenseDecrease.adjustmentBasis,
+      amountCents: expenseDecrease.amountCents,
+    },
+    {
+      direction: 'income',
+      adjustmentBasis: 'expense',
+      amountCents: yuan(2_000),
+    }
+  );
+  assert.equal(firstMonth.incomeCents, yuan(12_000));
+  assert.equal(firstMonth.expenseCents, yuan(9_000));
+  assert.equal(firstMonth.netCashFlowCents, yuan(3_000));
+  assert.equal(validateLifePlan(p).valid, true);
+  assert.deepEqual(
+    parsePlanBackup(JSON.stringify(createPlanBackup(p))).plan,
+    JSON.parse(JSON.stringify(p))
+  );
+});
 it('future purchase enters assets and debt only at purchase; down payment and repayment counted once', () => {
   const p = baseline(),
     month = addMonths(p.baseMonth, 12);

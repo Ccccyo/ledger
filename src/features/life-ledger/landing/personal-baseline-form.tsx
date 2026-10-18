@@ -5,7 +5,11 @@ import {
   safeCalculateMonthlyLifePlan,
   type MonthlyCalculationResult,
 } from '@/features/life-ledger/calculation';
-import { monthIndex, type LifePlan } from '@/features/life-ledger/domain';
+import {
+  createLocalId,
+  monthIndex,
+  type LifePlan,
+} from '@/features/life-ledger/domain';
 import { writeQuickPlanHandoffV2 } from '@/features/life-ledger/storage';
 import { useLocale } from 'next-intl';
 
@@ -252,7 +256,7 @@ export function PersonalBaselineCalculator({
     if (!contextRef.current) {
       const now = new Date();
       contextRef.current = {
-        id: crypto.randomUUID(),
+        id: createLocalId('plan'),
         baseMonth: monthIndex(now.getFullYear(), now.getMonth() + 1),
         nowIso: now.toISOString(),
       };

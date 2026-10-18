@@ -5,6 +5,7 @@ import type {
   AgentDecision,
   AgentTurnRequest,
 } from '@/features/life-ledger/workspace/agent/agent-types';
+import { selectSkillWithModel } from '@/features/life-ledger/workspace/agent/model-skill-router';
 
 export const runtime = 'nodejs';
 
@@ -46,6 +47,33 @@ export async function POST(request: Request) {
   const localDecisionResult = localFastPathDecision(input);
   const localFallback = localDecisionResult ?? localDecision(input);
   const expressionMode = input.expressionMode ?? 'strict';
+
+  if (expressionMode === 'autonomous') {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (apiKey && Date.now() >= modelUnavailableUntil) {
+      try {
+        const decision = await selectSkillWithModel(input, apiKey);
+        // The model is free to choose Skills, but financial conclusions still
+        // come from the existing deterministic coordinator and observations.
+        // This prevents an unverified model amount from becoming the answer.
+        const checkedDecision =
+          decision.type === 'answer' ? localDecision(input) : decision;
+        return NextResponse.json({
+          decision: checkedDecision,
+          mode: 'model-skills',
+          enhancement: 'applied',
+        });
+      } catch (error) {
+        modelUnavailableUntil = Date.now() + modelCooldownMs();
+        console.error('Life Ledger model skill selection fell back', error);
+      }
+    }
+    return NextResponse.json({
+      decision: localFallback,
+      mode: 'local',
+      enhancement: 'unavailable',
+    });
+  }
 
   // The deterministic coordinator remains authoritative. In strict mode no
   // third-party model is called at all. Tool selection and clarification also
@@ -1962,14 +1990,16 @@ function relocationAdjustmentLabel(
   kind: 'cost' | 'income'
 ) {
   const direction =
-    kind === 'cost'
-      ? flow.direction === 'income'
-        ? '减少'
-        : '增加'
-      : flow.direction === 'income'
-        ? '增加'
-        : '减少';
-  return `${label}${direction} ${formatCents(flow.amountCents)}／月`;
+    flow.amountCents < 0
+      ? '减少'
+      : kind === 'cost'
+        ? flow.direction === 'income'
+          ? '减少'
+          : '增加'
+        : flow.direction === 'income'
+          ? '增加'
+          : '减少';
+  return `${label}${direction} ${formatCents(Math.abs(flow.amountCents))}／月`;
 }
 
 function formatCents(cents: number) {

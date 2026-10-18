@@ -3,7 +3,13 @@
 import { useState, type FormEvent } from 'react';
 
 import { calculateMonthlyLifePlan } from '../../calculation';
-import { addMonths, formatMonth, monthIndex, type Asset } from '../../domain';
+import {
+  addMonths,
+  createLocalId,
+  formatMonth,
+  monthIndex,
+  type Asset,
+} from '../../domain';
 import { requestPlanNavigation } from '../navigation';
 import { moneyFormatter } from './fields';
 import {
@@ -162,7 +168,7 @@ function PurchaseForm({
   const [month, setMonth] = useState(
     formatMonth(asset?.acquiredMonth ?? plan.baseMonth)
   );
-  const [draftId] = useState(() => asset?.id ?? crypto.randomUUID());
+  const [draftId] = useState(() => asset?.id ?? createLocalId('housing'));
   const [error, setError] = useState(false);
   const priceYuan = Number(price) * (priceUnit === 'wan' ? 10_000 : 1);
   const depositYuan = Number(deposit) * (depositUnit === 'wan' ? 10_000 : 1);

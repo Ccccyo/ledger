@@ -54,8 +54,8 @@ export function saveStageEvent(
   if (
     !input.name.trim() ||
     !Number.isFinite(input.amountYuan) ||
-    input.amountYuan <= 0 ||
-    input.amountYuan > 1_000_000_000 ||
+    input.amountYuan === 0 ||
+    Math.abs(input.amountYuan) > 1_000_000_000 ||
     input.start < plan.baseMonth ||
     input.start >= plan.endMonthExclusive ||
     end <= input.start ||
@@ -65,10 +65,17 @@ export function saveStageEvent(
   const existing = plan.standaloneCashFlows.find((f) => f.id === input.id);
   const partnerId =
     plan.members.find((m) => m.role === 'partner')?.id ?? `${plan.id}:partner`;
+  const negativeAdjustment = input.amountYuan < 0;
+  const direction = negativeAdjustment
+    ? input.direction === 'income'
+      ? 'expense'
+      : 'income'
+    : input.direction;
   const flow: CashFlowItem = {
     id: input.id,
     name: input.name.trim(),
-    direction: input.direction,
+    direction,
+    adjustmentBasis: negativeAdjustment ? input.direction : undefined,
     category:
       stage === 'housing'
         ? 'housing'
@@ -81,7 +88,7 @@ export function saveStageEvent(
       stage === 'partner'
         ? partnerId
         : (existing?.ownerId ?? plan.primaryMemberId),
-    amountCents: yuan(input.amountYuan),
+    amountCents: yuan(Math.abs(input.amountYuan)),
     frequency:
       input.frequency === 'once'
         ? { kind: 'once', postingMonth: input.start }

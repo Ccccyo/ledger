@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { ArrowRight, MapPin, Plus, Trash2 } from 'lucide-react';
 
 import {
+  createLocalId,
   formatMonth,
   monthIndex,
   type CashFlowItem,
@@ -165,7 +166,7 @@ function RelocationForm({
     const data = new FormData(event.currentTarget);
     const [year, month] = String(data.get('moveMonth')).split('-').map(Number);
     const input: RelocationInput = {
-      id: item?.id ?? crypto.randomUUID(),
+      id: item?.id ?? createLocalId('relocation'),
       currentCity: String(data.get('currentCity')),
       targetCity: String(data.get('targetCity')),
       moveMonth: monthIndex(year, month),

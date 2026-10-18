@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import {
   addMonths,
+  createLocalId,
   formatMonth,
   monthIndex,
   type CashFlowItem,
@@ -208,7 +209,7 @@ function CareerForm({
         const data = new FormData(event.currentTarget);
         try {
           const input = {
-            id: flow?.id ?? crypto.randomUUID(),
+            id: flow?.id ?? createLocalId('flow'),
             kind,
             amount:
               kind === 'break'

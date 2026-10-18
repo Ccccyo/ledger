@@ -1,4 +1,10 @@
-import type { BasisPoints, MoneyCents, MonthIndex } from './types';
+import type {
+  BasisPoints,
+  CashFlowDirection,
+  CashFlowItem,
+  MoneyCents,
+  MonthIndex,
+} from './types';
 
 export function moneyCents(value: number): MoneyCents {
   if (!Number.isSafeInteger(value)) {
@@ -46,6 +52,20 @@ export function addMonths(month: MonthIndex, amount: number): MonthIndex {
     throw new TypeError('Month offset must be an integer.');
   }
   return (month + amount) as MonthIndex;
+}
+
+export function cashFlowSignedAmount(
+  flow: Pick<CashFlowItem, 'adjustmentBasis' | 'amountCents'>
+): MoneyCents {
+  return moneyCents(
+    flow.adjustmentBasis ? -flow.amountCents : flow.amountCents
+  );
+}
+
+export function cashFlowInputDirection(
+  flow: Pick<CashFlowItem, 'adjustmentBasis' | 'direction'>
+): CashFlowDirection {
+  return flow.adjustmentBasis ?? flow.direction;
 }
 
 export function roundMoney(value: number): MoneyCents {

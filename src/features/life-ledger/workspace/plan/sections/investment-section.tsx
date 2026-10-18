@@ -5,6 +5,7 @@ import { Plus, Trash2 } from 'lucide-react';
 
 import {
   addMonths,
+  createLocalId,
   formatMonth,
   monthIndex,
   type InvestmentRiskLevel,
@@ -146,7 +147,7 @@ function InvestmentForm({
     const data = new FormData(event.currentTarget);
     try {
       const input = {
-        id: item?.id ?? crypto.randomUUID(),
+        id: item?.id ?? createLocalId('investment'),
         name: String(data.get('name')),
         principalYuan: Number(data.get('principal')) * 10_000,
         riskLevel: risk,

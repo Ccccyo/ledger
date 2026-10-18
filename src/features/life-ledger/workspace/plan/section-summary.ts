@@ -1,5 +1,5 @@
 import { activeFlows } from '../../analysis/extract-life-trajectory';
-import { formatMonth, type LifePlan } from '../../domain';
+import { cashFlowSignedAmount, formatMonth, type LifePlan } from '../../domain';
 import type { WorkspaceCopy } from '../workspace-types';
 import { salaryGrowthBps } from './career-mutations';
 import { belongsToStage } from './event-mutations';
@@ -70,5 +70,5 @@ export function sectionSummary(
       ? copy.trajectory.status['not-applicable']
       : copy.trajectory.status.missing;
   const first = flows.toSorted((a, b) => a.startMonth - b.startMonth)[0];
-  return `${formatMonth(first.startMonth)} · ${first.name} · ${money(first.amountCents)} · ${copy.editor[first.frequency.kind]}${flows.length > 1 ? ` · ${copy.editor.count.replace('{count}', String(flows.length))}` : ''}`;
+  return `${formatMonth(first.startMonth)} · ${first.name} · ${money(cashFlowSignedAmount(first))} · ${copy.editor[first.frequency.kind]}${flows.length > 1 ? ` · ${copy.editor.count.replace('{count}', String(flows.length))}` : ''}`;
 }

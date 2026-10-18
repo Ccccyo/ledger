@@ -1,3 +1,4 @@
+import { addMonths } from './primitives';
 import type {
   CashFlowBucket,
   CashFlowItem,
@@ -5,7 +6,6 @@ import type {
   MoneyCents,
   MonthIndex,
 } from './types';
-import { addMonths } from './primitives';
 
 export type PlanIssueCode =
   | 'UNSUPPORTED_SCHEMA'
@@ -22,6 +22,7 @@ export type PlanIssueCode =
   | 'INVALID_CONFIRMED_TOTAL'
   | 'RETIREMENT_OUTSIDE_PLAN'
   | 'INVALID_LIFE_STAGE'
+  | 'INVALID_SIGNED_ADJUSTMENT'
   | 'INVALID_CAREER_CHANGE'
   | 'INVALID_INVESTMENT'
   | 'INVALID_RELOCATION';
@@ -72,6 +73,19 @@ function validateFlow(
   if (!validMoney(flow.amountCents)) {
     issues.push(
       issue('UNSAFE_MONEY', `${path}.amountCents`, 'plan.money.integerCents')
+    );
+  }
+  if (
+    flow.adjustmentBasis !== undefined &&
+    (flow.adjustmentBasis === flow.direction ||
+      !['income', 'expense'].includes(flow.adjustmentBasis))
+  ) {
+    issues.push(
+      issue(
+        'INVALID_SIGNED_ADJUSTMENT',
+        `${path}.adjustmentBasis`,
+        'plan.cashFlow.invalidSignedAdjustment'
+      )
     );
   }
   if (
@@ -182,7 +196,8 @@ function validateBucket(
     validateFlow(flow, flowPath, memberIds, seenIds, issues);
     if (
       flow.direction !== bucket.direction ||
-      flow.frequency.kind !== 'monthly'
+      flow.frequency.kind !== 'monthly' ||
+      flow.adjustmentBasis !== undefined
     ) {
       issues.push(
         issue(
@@ -555,7 +570,9 @@ export function validateLifePlan(plan: LifePlan): PlanValidationResult {
       ];
       for (const [flowId, kind] of references) {
         if (!flowId) continue;
-        const flow = plan.standaloneCashFlows.find((item) => item.id === flowId);
+        const flow = plan.standaloneCashFlows.find(
+          (item) => item.id === flowId
+        );
         if (referencedFlowIds.has(flowId)) invalid = true;
         referencedFlowIds.add(flowId);
         if (

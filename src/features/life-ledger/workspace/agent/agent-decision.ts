@@ -93,6 +93,9 @@ function parseTool(value: unknown): AgentToolCall | null {
     tool.arguments && typeof tool.arguments === 'object'
       ? (tool.arguments as Record<string, unknown>)
       : {};
+  if (tool.name === 'read_overview') {
+    return { name: 'read_overview', arguments: {} };
+  }
   if (tool.name === 'get_annual_series') {
     const startYear = args.startYear ?? null;
     const endYear = args.endYear ?? null;
@@ -146,6 +149,17 @@ function parseTool(value: unknown): AgentToolCall | null {
   if (tool.name === 'simulate_patch') {
     const patch = parsePlanPatch(args.patch);
     if (patch) return { name: tool.name, arguments: { patch } };
+  }
+  if (
+    tool.name === 'simulate_scenario' &&
+    Array.isArray(args.patches) &&
+    args.patches.length >= 2 &&
+    args.patches.length <= 3
+  ) {
+    const patches = args.patches.map(parsePlanPatch);
+    if (patches.every((patch): patch is PlanPatch => patch !== null)) {
+      return { name: tool.name, arguments: { patches } };
+    }
   }
   return null;
 }
