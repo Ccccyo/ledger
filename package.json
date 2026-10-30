@@ -2,6 +2,7 @@
   "name": "life-ledger",
   "version": "1.8.2",
   "private": true,
+  "packageManager": "pnpm@9.12.3",
   "keywords": [
     "life-ledger",
     "financial-planning",
