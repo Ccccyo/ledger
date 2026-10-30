@@ -69,7 +69,9 @@ export default async function RootLayout({
   let customerServiceHeadScripts = null;
   let customerServiceBodyScripts = null;
 
-  if (isProduction || isDebug) {
+  // The Life Ledger can run as a local-first app without a database. Only load
+  // template-backed ads/analytics integrations when a database is configured.
+  if ((isProduction || isDebug) && envConfigs.database_url) {
     const configs = await getAllConfigs();
 
     const [adsService, analyticsService, affiliateService, customerService] =
