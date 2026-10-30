@@ -35,7 +35,7 @@ function input(plan: ReturnType<typeof baseline>, principalYuan = 300_000) {
   };
 }
 
-it('records a display-only allocation without moving or duplicating formal assets', () => {
+it('reserves principal from spending without rewriting or duplicating formal assets', () => {
   const plan = baseline();
   const before = calculateMonthlyLifePlan(plan);
   const next = saveInvestmentScenario(plan, input(plan));
@@ -47,6 +47,16 @@ it('records a display-only allocation without moving or duplicating formal asset
     after.monthly[0].openingAvailableCents,
     before.monthly[0].openingAvailableCents
   );
+  assert.equal(
+    after.monthly[0].closingAvailableCents,
+    before.monthly[0].closingAvailableCents - yuan(300_000)
+  );
+  assert.equal(after.monthly[0].reservedInvestmentCents, yuan(300_000));
+  assert.equal(after.monthly[12].openingReservedInvestmentCents, yuan(300_000));
+  assert.equal(after.monthly[12].reservedInvestmentCents, yuan(300_000));
+  assert.equal(after.annual[1].openingReservedInvestmentCents, yuan(300_000));
+  assert.equal(after.annual[1].closingReservedInvestmentCents, yuan(300_000));
+  assert.equal(after.monthly[0].netWorthCents, before.monthly[0].netWorthCents);
   assert.equal(
     after.summary.endingAvailableCents,
     before.summary.endingAvailableCents

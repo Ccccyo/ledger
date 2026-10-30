@@ -11,6 +11,7 @@ import {
   type LifePlan,
 } from '@/features/life-ledger/domain';
 import { writeQuickPlanHandoffV2 } from '@/features/life-ledger/storage';
+import { ArrowRight } from 'lucide-react';
 import { useLocale } from 'next-intl';
 
 import { useRouter } from '@/core/i18n/navigation';
@@ -319,15 +320,13 @@ export function PersonalBaselineCalculator({
         : draft[key];
     return (
       <label key={key} className="grid min-w-0 content-start gap-1.5">
-        <span className="text-muted-foreground text-xs font-medium">
-          {label}
-        </span>
+        <span className="text-foreground/75 text-xs font-medium">{label}</span>
         <span
           className={cn(
-            'bg-background flex h-12 items-center rounded-lg border px-3 transition-[border-color,box-shadow]',
+            'bg-muted/45 flex h-11 items-center rounded-xl border border-transparent px-3 transition-[background-color,border-color,box-shadow]',
             issue
-              ? 'border-destructive focus-within:ring-destructive/15 focus-within:ring-3'
-              : 'border-input focus-within:border-primary focus-within:ring-primary/15 focus-within:ring-3'
+              ? 'border-destructive bg-background focus-within:ring-destructive/15 focus-within:ring-3'
+              : 'hover:bg-muted/65 focus-within:border-primary/45 focus-within:bg-background focus-within:ring-primary/12 focus-within:ring-3'
           )}
         >
           <input
@@ -354,7 +353,7 @@ export function PersonalBaselineCalculator({
               );
               setCalculationError(false);
             }}
-            className="text-foreground h-full min-w-0 flex-1 appearance-none border-0 bg-transparent text-base font-medium tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            className="text-foreground h-full min-w-0 flex-1 appearance-none border-0 bg-transparent text-[15px] font-semibold tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           {money ? (
             <select
@@ -402,7 +401,7 @@ export function PersonalBaselineCalculator({
         {!issue && hint && (
           <span
             id={hintId}
-            className="text-muted-foreground text-[11px] leading-relaxed"
+            className="text-muted-foreground/90 text-[11px] leading-relaxed"
           >
             {hint}
           </span>
@@ -414,28 +413,33 @@ export function PersonalBaselineCalculator({
   return (
     <div
       id={calculatorId}
-      className="border-border/80 bg-card relative overflow-hidden rounded-2xl border p-5 shadow-[0_24px_80px_-36px_color-mix(in_oklab,var(--color-primary)_35%,transparent)] sm:p-6"
+      className="border-border/65 bg-card relative scroll-mt-20 overflow-hidden rounded-3xl border p-5 shadow-[0_28px_90px_-52px_color-mix(in_oklab,var(--color-primary)_42%,transparent)] sm:scroll-mt-24 sm:p-7"
     >
-      <div className="bg-primary/80 absolute inset-x-0 top-0 h-1" />
-      <h2 className="mb-5 text-lg font-semibold tracking-tight">
+      <div className="bg-primary/[0.08] pointer-events-none absolute -top-28 -right-20 size-72 rounded-full blur-3xl" />
+      <h2 className="relative mb-6 text-lg font-semibold tracking-tight">
         {config.title}
       </h2>
 
-      <form ref={formRef} onSubmit={handleSubmit} noValidate>
-        <fieldset className="border-border/80 border-t pt-3">
-          <legend className="text-foreground pr-2 text-xs font-semibold">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        noValidate
+        className="relative"
+      >
+        <fieldset>
+          <legend className="text-muted-foreground text-xs font-semibold">
             {config.timeline_title}
           </legend>
-          <div className="mt-1 grid grid-cols-1 items-start gap-3 min-[460px]:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 items-start gap-3 min-[460px]:grid-cols-3">
             {timelineFields.map(renderField)}
           </div>
         </fieldset>
 
-        <fieldset className="border-border/80 mt-5 border-t pt-3">
-          <legend className="text-foreground pr-2 text-xs font-semibold">
+        <fieldset className="mt-6">
+          <legend className="text-muted-foreground text-xs font-semibold">
             {config.money_title}
           </legend>
-          <div className="mt-1 grid grid-cols-1 items-start gap-x-3 gap-y-4 sm:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 items-start gap-x-3 gap-y-4 sm:grid-cols-2">
             {moneyFields.map(renderField)}
           </div>
         </fieldset>
@@ -453,14 +457,15 @@ export function PersonalBaselineCalculator({
 
         <button
           type="submit"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/30 mt-5 flex min-h-12 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold transition-[background-color,transform] focus-visible:ring-4 focus-visible:outline-none active:translate-y-px"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/30 mt-6 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-[background-color,transform] focus-visible:ring-4 focus-visible:outline-none active:translate-y-px"
         >
           {config.p2_calculate}
+          <ArrowRight className="size-4" aria-hidden="true" />
         </button>
 
         <p
           className={cn(
-            'mt-2 min-h-4 text-center text-xs transition-opacity',
+            'mt-2 min-h-4 text-center text-[11px] transition-opacity',
             isDirty ? 'text-primary opacity-100' : 'opacity-0'
           )}
           aria-live="polite"

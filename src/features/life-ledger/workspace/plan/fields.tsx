@@ -103,6 +103,9 @@ export function AdvancedEditor({ plan, copy, onChange }: any) {
           }))
         }
       />
+      <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+        {copy.plan.gap_rate_hint}
+      </p>
     </div>
   );
 }
@@ -121,6 +124,7 @@ function NumberFieldInput({
   onCommit,
   allowMoneyUnit = false,
   locale = 'zh',
+  leadingIcon: LeadingIcon,
 }: any) {
   const [moneyUnit, setMoneyUnit] = useState<'yuan' | 'wan'>('yuan');
   const factor = moneyUnit === 'wan' ? 10_000 : 1;
@@ -133,9 +137,12 @@ function NumberFieldInput({
     setDraft(String(yuanValue / (next === 'wan' ? 10_000 : 1)));
   };
   return (
-    <label className="block">
-      <span className="text-muted-foreground mb-1.5 block text-xs font-medium">
-        {label}
+    <label className="block min-w-0">
+      <span className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+        {LeadingIcon && (
+          <LeadingIcon className="text-primary size-3.5" aria-hidden="true" />
+        )}
+        <span>{label}</span>
       </span>
       <span className="border-input bg-background focus-within:border-primary focus-within:ring-primary/15 flex h-11 items-center rounded-lg border px-3 focus-within:ring-3">
         <input
@@ -166,7 +173,7 @@ function NumberFieldInput({
             onChange={(event) =>
               changeUnit(event.target.value as 'yuan' | 'wan')
             }
-            className="text-muted-foreground ml-2 h-8 bg-transparent text-xs outline-none"
+            className="text-muted-foreground ml-2 h-8 max-w-[45%] shrink-0 bg-transparent text-xs outline-none"
           >
             <option value="yuan">
               {locale.startsWith('zh') ? `元${suffix}` : 'CNY/mo'}

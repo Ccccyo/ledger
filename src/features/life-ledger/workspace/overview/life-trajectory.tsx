@@ -33,7 +33,7 @@ export function LifeTrajectory({
               <button
                 type="button"
                 onClick={() => onNavigate(node.targetSection)}
-                className="border-border hover:bg-muted focus-visible:ring-primary/30 flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-left focus-visible:ring-4 focus-visible:outline-none"
+                className="bg-background hover:bg-primary/5 focus-visible:ring-primary/30 flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-left shadow-[0_10px_28px_-26px_rgba(15,23,42,0.65)] focus-visible:ring-4 focus-visible:outline-none"
               >
                 <Icon
                   aria-hidden="true"

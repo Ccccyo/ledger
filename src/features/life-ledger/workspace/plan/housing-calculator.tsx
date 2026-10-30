@@ -42,7 +42,7 @@ function MoneyUnitSelect({
       aria-label={copy.editor.amount_unit}
       value={value}
       onChange={(event) => onChange(event.target.value as MoneyUnit)}
-      className="text-muted-foreground bg-transparent text-xs outline-none"
+      className="text-muted-foreground ml-2 max-w-[45%] shrink-0 bg-transparent text-xs outline-none"
     >
       <option value="yuan">{copy.common.currency}</option>
       <option value="wan">{copy.editor.ten_thousand}</option>
@@ -244,8 +244,8 @@ function PurchaseForm({
   };
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
+        <label className="grid min-w-0 gap-2 text-sm">
           {copy.editor.optional_name}
           <input
             name="name"
@@ -255,7 +255,7 @@ function PurchaseForm({
             placeholder={c.default_name}
           />
         </label>
-        <label className="grid gap-2 text-sm">
+        <label className="grid min-w-0 gap-2 text-sm">
           {c.month}
           <input
             name="month"
@@ -267,7 +267,7 @@ function PurchaseForm({
             max={formatMonth(addMonths(plan.endMonthExclusive, -1))}
           />
         </label>
-        <label className="grid gap-2 text-sm">
+        <label className="grid min-w-0 gap-2 text-sm">
           {c.price}
           <span className="border-input bg-background flex h-11 items-center rounded-lg border px-3">
             <input
@@ -289,7 +289,7 @@ function PurchaseForm({
             />
           </span>
         </label>
-        <label className="grid gap-2 text-sm">
+        <label className="grid min-w-0 gap-2 text-sm">
           {c.payment_method}
           <select
             className={control}
@@ -302,7 +302,7 @@ function PurchaseForm({
         </label>
         {financed && (
           <>
-            <label className="grid gap-2 text-sm">
+            <label className="grid min-w-0 gap-2 text-sm">
               {c.deposit}
               <span className="border-input bg-background flex h-11 items-center rounded-lg border px-3">
                 <input
@@ -324,7 +324,7 @@ function PurchaseForm({
                 />
               </span>
             </label>
-            <label className="grid gap-2 text-sm">
+            <label className="grid min-w-0 gap-2 text-sm">
               {c.rate}
               <input
                 name="rate"
@@ -338,7 +338,7 @@ function PurchaseForm({
                 onChange={(e) => setRate(e.target.value)}
               />
             </label>
-            <label className="grid gap-2 text-sm">
+            <label className="grid min-w-0 gap-2 text-sm">
               {c.years}
               <input
                 name="years"

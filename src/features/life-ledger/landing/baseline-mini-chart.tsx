@@ -36,7 +36,8 @@ export function BaselineMiniChart({
     available: row.closingAvailableCents,
   }));
   const values = rows.map((row) => row.available);
-  const { domain, ticks } = balanceChartScale(values);
+  const { domain } = balanceChartScale(values);
+  const balanceTicks = [...new Set([domain[0], 0, domain[1]])];
   const zero = balanceZeroOffset(values);
   const retirementYear = monthParts(result.input.retirementMonth).year;
   const firstGap =
@@ -79,41 +80,42 @@ export function BaselineMiniChart({
   if (rows.length === 0) return null;
 
   return (
-    <section
-      className="border-border mt-5 border-t pt-5"
-      aria-labelledby={`${id}-title`}
-    >
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h4
-            id={`${id}-title`}
-            className="text-foreground text-sm font-semibold"
-          >
-            {config.p3_chart_title}
-          </h4>
-          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-            {config.p3_chart_hint}
-          </p>
-        </div>
-        <span className="text-muted-foreground text-[11px]">
-          {config.p3_chart_available}
-        </span>
+    <section className="mt-6" aria-labelledby={`${id}-title`}>
+      <div>
+        <h4
+          id={`${id}-title`}
+          className="text-foreground text-sm font-semibold"
+        >
+          {config.p3_chart_title}
+        </h4>
+        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
+          {config.p3_chart_hint}
+        </p>
       </div>
 
-      <div className="mt-3 h-52 sm:h-56" aria-hidden="true">
+      <div
+        className="bg-background mt-3 h-48 rounded-2xl px-1.5 pt-2 shadow-[0_18px_45px_-40px_rgba(15,23,42,0.7)] sm:h-52"
+        aria-hidden="true"
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={rows}
-            margin={{ top: 22, right: 12, bottom: 4, left: 0 }}
+            margin={{ top: 18, right: 10, bottom: 4, left: 0 }}
           >
             <defs>
               <linearGradient id={`${id}-area`} x1="0" y1="0" x2="0" y2="1">
                 <stop
+                  offset={0}
+                  stopColor="var(--primary)"
+                  stopOpacity={0.22}
+                />
+                <stop
                   offset={zero}
                   stopColor="var(--primary)"
-                  stopOpacity={0.16}
+                  stopOpacity={0.04}
                 />
-                <stop offset={zero} stopColor="#b7791f" stopOpacity={0.16} />
+                <stop offset={zero} stopColor="#b7791f" stopOpacity={0.06} />
+                <stop offset={1} stopColor="#b7791f" stopOpacity={0.18} />
               </linearGradient>
               <linearGradient id={`${id}-line`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset={zero} stopColor="var(--primary)" />
@@ -123,7 +125,7 @@ export function BaselineMiniChart({
             <CartesianGrid
               vertical={false}
               stroke="var(--border)"
-              strokeDasharray="3 5"
+              strokeOpacity={0.45}
             />
             <XAxis
               dataKey="year"
@@ -138,11 +140,11 @@ export function BaselineMiniChart({
             />
             <YAxis
               domain={domain}
-              ticks={ticks}
+              ticks={balanceTicks}
               tickFormatter={compactMoney}
               tickLine={false}
               axisLine={false}
-              width={54}
+              width={48}
               tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
             />
             <Tooltip
@@ -194,11 +196,11 @@ export function BaselineMiniChart({
               />
             )}
             <Area
-              type="monotone"
+              type="natural"
               dataKey="available"
               baseValue={0}
               stroke={`url(#${id}-line)`}
-              strokeWidth={2.4}
+              strokeWidth={2.8}
               fill={`url(#${id}-area)`}
               dot={false}
               activeDot={{ r: 4, stroke: 'var(--background)', strokeWidth: 2 }}
@@ -208,25 +210,8 @@ export function BaselineMiniChart({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-[11px]">
-        <span className="inline-flex items-center gap-2">
-          <span className="bg-primary h-0.5 w-5" />
-          {config.p3_chart_available}
-        </span>
-        <span className="text-muted-foreground inline-flex items-center gap-2">
-          <span className="h-4 border-l border-dashed border-current" />
-          {config.p3_chart_retirement}
-        </span>
-        {firstGap && (
-          <span className="inline-flex items-center gap-2 text-amber-800 dark:text-amber-300">
-            <span className="size-2 rounded-full bg-[#b7791f]" />
-            {config.p3_chart_first_gap}
-          </span>
-        )}
-      </div>
-
-      <details className="border-border mt-4 border-t pt-3 text-xs">
-        <summary className="text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none">
+      <details className="mt-3 text-xs">
+        <summary className="text-muted-foreground hover:text-foreground focus-visible:ring-primary/20 inline-flex cursor-pointer rounded-lg px-1 py-1 font-medium focus-visible:ring-3 focus-visible:outline-none">
           {config.p3_chart_table}
         </summary>
         <div className="mt-3 max-h-52 overflow-auto">
@@ -243,11 +228,14 @@ export function BaselineMiniChart({
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.year} className="border-border border-t">
-                  <th scope="row" className="py-2 font-normal">
+                <tr key={row.year} className="odd:bg-muted/30">
+                  <th
+                    scope="row"
+                    className="rounded-l-lg px-2 py-2 font-normal"
+                  >
                     {row.year} · {ageLabel(row.year)}
                   </th>
-                  <td className="py-2 text-right tabular-nums">
+                  <td className="rounded-r-lg px-2 py-2 text-right tabular-nums">
                     {money(row.available)}
                   </td>
                 </tr>

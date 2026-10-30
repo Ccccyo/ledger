@@ -15,6 +15,7 @@ import {
   initialWorkspaceState,
   workspaceReducer,
 } from '../workspace/workspace-reducer';
+import { annualChartData } from './chart-data';
 import { compareResults } from './digest-result';
 import { extractLifeTrajectory } from './extract-life-trajectory';
 import {
@@ -29,14 +30,14 @@ describe('Stage 3 life planning', () => {
     const nodes = extractLifeTrajectory(plan);
     assert.deepEqual(
       nodes.map((n) => n.stage),
-      ['now', 'career', 'partner', 'child', 'housing', 'parents', 'retirement']
+      ['now', 'career', 'partner', 'child', 'parents', 'housing', 'retirement']
     );
     assert.equal(nodes[1].status, 'missing');
     assert.equal(nodes[3].month, addMonths(plan.baseMonth, 30));
-    assert.equal(nodes[4].age, 32);
+    assert.equal(nodes[5].age, 32);
     assert.equal(nodes[6].month, plan.retirementMonth);
     assert.equal(
-      extractLifeTrajectory(createLiquidityGapFixture())[4].status,
+      extractLifeTrajectory(createLiquidityGapFixture())[5].status,
       'complete'
     );
   });
@@ -129,6 +130,56 @@ describe('Stage 3 life planning', () => {
     const excessive = updateCategoryDetail(classified, 'child', yuan(8000));
     assert.equal(validateLifePlan(excessive).valid, false);
     assert.equal(validateLifePlan(confirmDetailedTotal(excessive)).valid, true);
+  });
+  it('breaks personal spending out of the landing total without counting it twice', () => {
+    const plan = createPersonalBaselineFixture();
+    const withTravel = updateCategoryDetail(
+      plan,
+      'self_travel',
+      yuan(1000),
+      '旅行储备'
+    );
+    const withPersonalSpending = updateCategoryDetail(
+      withTravel,
+      'self_learning',
+      yuan(500),
+      '学习成长'
+    );
+    const before = calculateMonthlyLifePlan(plan);
+    const after = calculateMonthlyLifePlan(withPersonalSpending);
+
+    assert.deepEqual(
+      after.monthly.map((row) => row.expenseCents),
+      before.monthly.map((row) => row.expenseCents)
+    );
+    assert.equal(after.monthly[0].expenseByCategory.self_travel, yuan(1000));
+    assert.equal(after.monthly[0].expenseByCategory.self_learning, yuan(500));
+    assert.doesNotThrow(() => annualChartData(after));
+  });
+  it('requires a fresh confirmation when an over-total detail changes', () => {
+    const plan = createPersonalBaselineFixture();
+    const excessive = updateCategoryDetail(
+      plan,
+      'self_travel',
+      yuan(20_000),
+      '旅行储备'
+    );
+    const confirmed = confirmDetailedTotal(excessive);
+    assert.equal(validateLifePlan(confirmed).valid, true);
+    const confirmedBucket = confirmed.cashFlowBuckets.find((bucket) =>
+      bucket.id.endsWith('working-expenses')
+    );
+    assert.equal(confirmedBucket?.summary?.amountCents, yuan(20_000));
+    assert.equal(confirmedBucket?.confirmedDetailedTotalCents, undefined);
+
+    const edited = updateCategoryDetail(
+      confirmed,
+      'self_travel',
+      yuan(21_000),
+      '旅行储备'
+    );
+    assert.equal(validateLifePlan(edited).valid, false);
+    assert.equal(validateLifePlan(confirmDetailedTotal(edited)).valid, true);
   });
   it('keeps independently dated events when changing retirement', () => {
     const plan = createHousingChildOverlapFixture();

@@ -76,8 +76,13 @@ export function RelocationEditor({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="flex items-center gap-2 font-medium">
-                      <MapPin className="text-primary size-4" aria-hidden="true" />
-                      <span>{item.currentCity || copy.relocation.current_unknown}</span>
+                      <MapPin
+                        className="text-primary size-4"
+                        aria-hidden="true"
+                      />
+                      <span>
+                        {item.currentCity || copy.relocation.current_unknown}
+                      </span>
                       <ArrowRight
                         className="text-muted-foreground size-3.5"
                         aria-hidden="true"
@@ -113,7 +118,9 @@ export function RelocationEditor({
                       type="button"
                       className={`${quietButton} hover:text-destructive inline-flex items-center gap-1.5`}
                       onClick={() =>
-                        onChange((current) => removeRelocation(current, item.id))
+                        onChange((current) =>
+                          removeRelocation(current, item.id)
+                        )
                       }
                     >
                       <Trash2 className="size-4" aria-hidden="true" />
@@ -196,7 +203,7 @@ function RelocationForm({
       onChange={markPlanDraftChanged}
       noValidate
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
         <label className="grid gap-1.5 text-sm">
           {copy.relocation.current_city}
           <input
@@ -224,7 +231,9 @@ function RelocationForm({
             type="month"
             required
             min={formatMonth(plan.baseMonth)}
-            max={formatMonth((plan.endMonthExclusive - 1) as typeof plan.baseMonth)}
+            max={formatMonth(
+              (plan.endMonthExclusive - 1) as typeof plan.baseMonth
+            )}
             defaultValue={formatMonth(item?.moveMonth ?? plan.baseMonth)}
             className={control}
           />
@@ -292,7 +301,7 @@ function AmountField({
   min?: number;
 }) {
   return (
-    <label className="grid gap-1.5 text-sm">
+    <label className="grid min-w-0 gap-1.5 text-sm">
       {label}
       <input
         name={name}

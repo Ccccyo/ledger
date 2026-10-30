@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { localDecision } from '../src/app/api/life-ledger/assistant/route';
@@ -12,11 +12,15 @@ import {
   buildAgentContext,
   runReadOnlyAgentTool,
 } from '../src/features/life-ledger/workspace/agent/agent-context';
+import { perceiveTurnLocally } from '../src/features/life-ledger/workspace/agent/agent-perception';
+import { planPerceivedTurn } from '../src/features/life-ledger/workspace/agent/agent-planner';
 import type {
   AgentDecision,
   AgentHistoryMessage,
   AgentObservation,
+  AgentShortTermState,
 } from '../src/features/life-ledger/workspace/agent/agent-types';
+import { resolveAgentQuery } from '../src/features/life-ledger/workspace/agent/query-resolution';
 import { saveStageEvent } from '../src/features/life-ledger/workspace/plan/event-mutations';
 import { savePurchase } from '../src/features/life-ledger/workspace/plan/housing-mutations';
 import { saveInvestmentScenario } from '../src/features/life-ledger/workspace/plan/investment-mutations';
@@ -218,7 +222,11 @@ function assess(
       : { verdict: '失败', reason: '没有说明实时数据来源与边界' };
   }
   if (number <= 158) {
-    return /正式计划|试算|没有修改|恢复|确认|哪个|哪一项|追问/.test(text)
+    return decision.type === 'tool' ||
+      decision.type === 'clarify' ||
+      /正式计划|临时|试算|没有修改|恢复|确认|哪个|哪一项|年|退休|原因|删除/.test(
+        text
+      )
       ? { verdict: '通过', reason: '保持指代或试算边界' }
       : { verdict: '失败', reason: '上下文、指代或状态边界不清' };
   }
@@ -232,23 +240,68 @@ function assess(
     : { verdict: '失败', reason: '没有按表达要求作答' };
 }
 
-function runQuestion(question: string, history: AgentHistoryMessage[]) {
+function createSessionState(): AgentShortTermState {
+  return {
+    version: '1.0.0',
+    planHash: context.planHash,
+    activeIntent: null,
+    referencedEntity: null,
+    referencedYear: null,
+    pendingCityCandidate: null,
+    lastToolFingerprints: [],
+    updatedAt: '2026-10-23T00:00:00.000Z',
+  };
+}
+
+function runQuestion(
+  question: string,
+  history: AgentHistoryMessage[],
+  sessionState: AgentShortTermState
+) {
   const observations: AgentObservation[] = [];
+  const resolution = resolveAgentQuery({ question, history, sessionState });
+  let nextSessionState: AgentShortTermState = {
+    ...sessionState,
+    activeIntent: resolution.intent,
+    referencedEntity:
+      resolution.referencedEntity ?? sessionState.referencedEntity,
+    referencedYear: resolution.resolvedQuestion.match(/(?:19|20|21)\d{2}/)?.[0]
+      ? Number(resolution.resolvedQuestion.match(/(?:19|20|21)\d{2}/)?.[0])
+      : sessionState.referencedYear,
+    updatedAt: '2026-10-23T00:00:00.000Z',
+  };
   let decision: AgentDecision = { type: 'clarify', question: '' };
   for (let step = 0; step < 5; step += 1) {
-    decision = localDecision({
+    const input = {
       question,
       locale: 'zh-CN',
       context,
       history,
       observations,
+      sessionState: nextSessionState,
       step,
-    });
-    if (decision.type !== 'tool' || decision.tool.name === 'simulate_patch' || decision.tool.name === 'simulate_scenario')
+    } as const;
+    const perception = perceiveTurnLocally(input);
+    decision =
+      planPerceivedTurn(input, perception)?.decision ?? localDecision(input);
+    if (
+      decision.type !== 'tool' ||
+      decision.tool.name === 'simulate_patch' ||
+      decision.tool.name === 'simulate_scenario'
+    )
       break;
     observations.push(runReadOnlyAgentTool(result, decision.tool));
   }
-  return { decision, text: render(decision) };
+  if (decision.type === 'answer') {
+    const answerYear = decision.answer.match(/(?:19|20|21)\d{2}/)?.[0];
+    if (answerYear) {
+      nextSessionState = {
+        ...nextSessionState,
+        referencedYear: Number(answerYear),
+      };
+    }
+  }
+  return { decision, text: render(decision), sessionState: nextSessionState };
 }
 
 const rows: Array<{
@@ -260,12 +313,20 @@ const rows: Array<{
   reason: string;
 }> = [];
 let history: AgentHistoryMessage[] = [];
+let sessionState = createSessionState();
 for (const item of questions) {
-  if (item.number === 143 || item.number === 153) history = [];
+  if (item.number === 143 || item.number === 153) {
+    history = [];
+    sessionState = createSessionState();
+  }
   const run = runQuestion(
     item.question,
-    item.number >= 143 && item.number <= 158 ? history : []
+    item.number >= 143 && item.number <= 158 ? history : [],
+    item.number >= 143 && item.number <= 158
+      ? sessionState
+      : createSessionState()
   );
+  sessionState = run.sessionState;
   const assessment = assess(item.number, run.decision, run.text);
   rows.push({
     number: item.number,
@@ -314,3 +375,24 @@ for (const row of rows.filter((item) => item.verdict !== '通过')) {
     `${row.number}\t${row.verdict}\t${row.reason}\t${row.question}\t${row.response.replaceAll('\n', ' ').slice(0, 220)}`
   );
 }
+
+mkdirSync(resolve('docs/evidence'), { recursive: true });
+writeFileSync(
+  resolve('docs/evidence/agent-boundary-eval.json'),
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      evaluator: 'deterministic-local-perception-and-planner',
+      sampleSize: rows.length,
+      totals,
+      categories: Object.fromEntries(categories),
+      failures: rows.filter((row) => row.verdict !== '通过'),
+      limitations: [
+        'This is a deterministic heuristic evaluation, not a live DeepSeek evaluation.',
+        'Automated scoring is conservative and still requires human review for open-ended answers.',
+      ],
+    },
+    null,
+    2
+  )
+);

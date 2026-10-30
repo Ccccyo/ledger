@@ -1,0 +1,27 @@
+{
+  "skill_name": "relocation-planning",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我应该在上海还是北京？",
+      "expected_output": "识别为城市选择，说明可计算边界并追问决策标准。",
+      "files": [],
+      "expectations": [
+        "不会进入闲聊兜底",
+        "不会仅凭演示成本直接推荐城市",
+        "追问财务、工作、家庭或生活偏好标准"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "用演示数据比较上海和北京的生活成本。",
+      "expected_output": "调用只读城市成本 MCP 并展示来源与演示数据声明。",
+      "files": [],
+      "expectations": [
+        "调用 lookup_city_costs",
+        "结果包含来源和日期",
+        "不把演示数据表述成实时市场事实"
+      ]
+    }
+  ]
+}

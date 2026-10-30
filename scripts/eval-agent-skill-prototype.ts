@@ -24,8 +24,11 @@ const questions = ['我会有什么变化', '晚两年退休会怎样'];
 const liveKey = process.env.DEEPSEEK_API_KEY;
 
 function mockedModelResponse(body: { messages: Array<{ content: string }> }) {
-  const input = JSON.parse(body.messages[1].content) as AgentTurnRequest;
-  const isRetirement = input.question.includes('退休');
+  const input = JSON.parse(body.messages[1].content) as {
+    originalQuestion: string;
+    observations: AgentObservation[];
+  };
+  const isRetirement = input.originalQuestion.includes('退休');
   const skill = isRetirement
     ? {
         name: 'simulate_patch',

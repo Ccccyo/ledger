@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { MonthlyCalculationResult } from '@/features/life-ledger/calculation';
 import type { LifePlan } from '@/features/life-ledger/domain';
@@ -8,6 +14,7 @@ import { downloadPlanBackup } from '@/features/life-ledger/storage';
 import {
   AlertTriangle,
   ArrowDownToLine,
+  ArrowRight,
   Check,
   ChevronDown,
   CircleDollarSign,
@@ -120,12 +127,41 @@ function PlanWorkspaceSurface({
   const importInput = useRef<HTMLInputElement>(null);
   const tab = resolveWorkspaceTab(searchParams.get('tab'));
 
+  useEffect(() => {
+    if (
+      tab !== 'analysis' ||
+      new URLSearchParams(acceptedSearch).get('focus') !== 'investment-range'
+    )
+      return;
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.getElementById('investment-range-analysis');
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [acceptedSearch, tab]);
+
   const switchTab = (next: WorkspaceTab) => {
     if (next === tab || !requestPlanNavigation()) return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'plan') params.delete('focus');
     pushWorkspaceHistory(
       createWorkspaceTabHref(
-        searchParams.toString(),
+        params.toString(),
         next,
+        window.location.pathname
+      )
+    );
+  };
+
+  const openInvestmentRange = () => {
+    if (!requestPlanNavigation()) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('focus', 'investment-range');
+    pushWorkspaceHistory(
+      createWorkspaceTabHref(
+        params.toString(),
+        'analysis',
         window.location.pathname
       )
     );
@@ -168,7 +204,7 @@ function PlanWorkspaceSurface({
   return (
     <div
       data-life-ledger
-      className="text-foreground min-h-screen pb-20 md:pb-0"
+      className="bg-muted/20 text-foreground min-h-screen pb-20 md:pb-0"
     >
       <WorkspaceHeader
         copy={copy}
@@ -237,7 +273,7 @@ function PlanWorkspaceSurface({
           </div>
         </div>
       )}
-      <main className="mx-auto w-full max-w-[1800px] px-4 pt-2 pb-4 sm:px-6">
+      <main className="mx-auto w-full max-w-[1800px] px-4 pt-5 pb-8 sm:px-6">
         {tab === 'plan' && (
           <section
             id="workspace-panel-plan"
@@ -245,18 +281,18 @@ function PlanWorkspaceSurface({
             aria-labelledby="workspace-tab-plan"
             className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-left-2 motion-safe:duration-200"
           >
-            <div className="grid items-start gap-5 xl:h-[calc(100dvh-10rem)] xl:min-h-[640px] xl:grid-cols-[minmax(0,1.08fr)_minmax(540px,0.92fr)] xl:overflow-hidden">
+            <div className="grid items-start gap-8 xl:h-[calc(100dvh-11rem)] xl:min-h-[640px] xl:grid-cols-2 xl:overflow-hidden">
               <section
-                className="border-border bg-background min-w-0 rounded-xl border xl:h-full xl:overflow-y-auto"
+                className="bg-muted/45 min-w-0 rounded-[1.75rem] p-4 sm:p-5 xl:h-full xl:overflow-y-auto"
                 aria-labelledby="planning-editor-heading"
               >
-                <div className="bg-background sticky top-0 z-20 px-4 pt-4 sm:px-5">
+                <div className="bg-muted/95 sticky top-0 z-20 pb-1 backdrop-blur">
                   <PaneHeading
                     id="planning-editor-heading"
                     label={copy.workspace_pages.plan_title}
                   />
                 </div>
-                <div className="px-4 pb-5 sm:px-5">
+                <div className="pb-1">
                   <PlanView
                     embedded
                     locale={locale}
@@ -265,21 +301,32 @@ function PlanWorkspaceSurface({
                     openSection={openSection}
                     onOpenSection={openPlanSection}
                     onOverview={() => switchTab('analysis')}
+                    onInvestmentAnalysis={openInvestmentRange}
                     onChange={updatePlan}
                   />
                 </div>
               </section>
               <section
-                className="border-border bg-muted/20 min-w-0 rounded-xl border xl:h-full xl:overflow-y-auto xl:overscroll-contain"
+                className="bg-muted/45 min-w-0 rounded-[1.75rem] p-4 sm:p-5 xl:h-full xl:overflow-y-auto xl:overscroll-contain"
                 aria-labelledby="planning-preview-heading"
               >
-                <div className="bg-background/95 sticky top-0 z-20 px-4 pt-4 backdrop-blur sm:px-5">
+                <div className="pb-1">
                   <PaneHeading
                     id="planning-preview-heading"
                     label={copy.workspace_pages.preview}
+                    action={
+                      <button
+                        type="button"
+                        onClick={openInvestmentRange}
+                        className="text-primary hover:bg-primary/8 focus-visible:ring-primary/25 inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:ring-4 focus-visible:outline-none"
+                      >
+                        {copy.workspace_pages.view_investment_range}
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                      </button>
+                    }
                   />
                 </div>
-                <div className="px-4 pb-5 sm:px-5">
+                <div className="pb-1">
                   <OverviewView
                     compact
                     locale={locale}
@@ -300,14 +347,16 @@ function PlanWorkspaceSurface({
             aria-labelledby="workspace-tab-analysis"
             className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-2 motion-safe:duration-200"
           >
-            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
-              <OverviewView
-                locale={locale}
-                copy={copy}
-                result={result}
-                onEdit={() => switchTab('plan')}
-                onNavigate={openPlanSection}
-              />
+            <div className="grid items-start gap-8 xl:grid-cols-2">
+              <section className="bg-muted/45 min-w-0 rounded-[1.75rem] p-4 sm:p-5">
+                <OverviewView
+                  locale={locale}
+                  copy={copy}
+                  result={result}
+                  onEdit={() => switchTab('plan')}
+                  onNavigate={openPlanSection}
+                />
+              </section>
               <AgentPanel copy={copy} locale={locale} result={result} />
             </div>
           </section>
@@ -481,14 +530,22 @@ function MenuButton({ icon: Icon, onClick, children, destructive }: any) {
   );
 }
 
-function PaneHeading({ id, label }: { id: string; label: string }) {
+function PaneHeading({
+  id,
+  label,
+  action,
+}: {
+  id: string;
+  label: string;
+  action?: ReactNode;
+}) {
   return (
-    <h2
-      id={id}
-      className="border-border text-foreground mb-4 border-b pb-3 text-xl font-bold tracking-tight"
-    >
-      {label}
-    </h2>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <h2 id={id} className="text-foreground text-xl font-bold tracking-tight">
+        {label}
+      </h2>
+      {action}
+    </div>
   );
 }
 
@@ -508,7 +565,7 @@ function OverviewView({
   compact?: boolean;
 }) {
   return (
-    <div className={cn('space-y-6', !compact && 'mx-auto max-w-6xl')}>
+    <div className={cn('@container space-y-8', !compact && 'min-w-0')}>
       <AnnualSnapshotExplorer
         key={result.inputHash}
         result={result}
@@ -529,7 +586,7 @@ function OverviewView({
           <LifeStageExpenses result={result} copy={copy} locale={locale} />
           <ScenarioChart result={result} copy={copy} locale={locale} />
           <SystemAnalysis result={result} copy={copy} onNavigate={onNavigate} />
-          <section className="border-border flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <section className="bg-muted/35 flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-semibold">
                 {copy.overview.completeness_basic}

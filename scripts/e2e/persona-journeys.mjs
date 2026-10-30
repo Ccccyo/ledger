@@ -12,9 +12,6 @@ const {
 const {
   PERSONA_INPUTS,
 } = require('../../src/features/life-ledger/analysis/personas.ts');
-const {
-  applyPlanPatch,
-} = require('../../src/features/life-ledger/analysis/action-patches.ts');
 
 export async function runPersonaJourneys(api) {
   const {
@@ -42,10 +39,7 @@ export async function runPersonaJourneys(api) {
   };
   const tab = async (id) => {
     if (await evaluate('innerWidth<768'))
-      await buttonText(
-        { overview: '概览', plan: '规划', ledger: '年度账本' }[id],
-        'nav.fixed'
-      );
+      await buttonText({ analysis: '分析', plan: '规划' }[id], 'nav.fixed');
     else await click(`#workspace-tab-${id}`);
     await selected(id);
   };
@@ -63,6 +57,15 @@ export async function runPersonaJourneys(api) {
         ),
       label
     );
+  };
+  const showLongTermTrend = async () => {
+    await ready('#annual-snapshot-title');
+    await evaluate(`(()=>{
+      const section=document.querySelector('#annual-snapshot-title').closest('section');
+      const button=section.querySelectorAll('[role=group] button')[1];
+      if(button?.getAttribute('aria-pressed')!=='true') button?.click();
+    })()`);
+    await ready('#balance-chart-heading');
   };
   const submit = async () => {
     const before = await record();
@@ -147,16 +150,8 @@ export async function runPersonaJourneys(api) {
     await delay(50);
     await delay(500);
     await click('#calculator button[type=submit]');
-    await waitFor(
-      () =>
-        evaluate(
-          "[...document.querySelectorAll('button')].some(b=>b.textContent.includes('加入我的人生大事'))"
-        ),
-      'baseline result'
-    );
-    await evaluate(
-      "[...document.querySelectorAll('button')].find(b=>b.textContent.includes('加入我的人生大事')).click()"
-    );
+    await ready('#calculator-continue');
+    await click('#calculator-continue');
     await ready('#workspace-tab-plan');
     const initial = await record(),
       base = initial.plan.baseMonth;
@@ -179,10 +174,10 @@ export async function runPersonaJourneys(api) {
       await career('side_income', 3000, month(0), month(59));
     }
     if (p.id === 'zhou') {
-      await event('partner', '家人', 2000, month(0), month(335), {
+      await event('partner', '伴侣', 2000, month(0), month(335), {
         direction: 'income',
       });
-      await event('partner', '家人', 3000, month(0), month(335), {
+      await event('partner', '伴侣', 3000, month(0), month(335), {
         additional: true,
       });
       await event('child', '孩子', 4000, month(24), month(239));
@@ -219,8 +214,8 @@ export async function runPersonaJourneys(api) {
       assert.equal(result.monthly[12].incomeCents, 200000);
       assert.ok(result.monthly[18].incomeCents > 1600000);
     }
-    await tab('overview');
-    await ready('#balance-chart-heading');
+    await tab('analysis');
+    await showLongTermTrend();
     assert.equal(
       await evaluate('document.documentElement.scrollWidth>innerWidth'),
       false
@@ -236,139 +231,13 @@ export async function runPersonaJourneys(api) {
         `document.querySelector('#balance-chart-heading').parentElement.querySelector('tbody tr:last-child').textContent.includes(${JSON.stringify(ending)})`
       )
     );
-    // Preview/discard, then apply/undo a deterministic retirement-budget change.
-    await buttonText('比较退休后的自付预算');
-    await ready('[role=dialog]');
-    await evaluate(
-      "document.querySelector('[role=dialog] form').requestSubmit()"
-    );
-    await waitFor(
-      () =>
-        evaluate(
-          "document.querySelector('[role=dialog]').textContent.includes('原计划 → 试算后')"
-        ),
-      'trial comparison'
-    );
-    assert.equal((await record()).revision, saved.revision);
-    assert.equal(
-      (await record()).plan.metadata.updatedAt,
-      saved.plan.metadata.updatedAt
-    );
-    await buttonText('放弃试算', '[role=dialog]');
-    assert.equal((await record()).revision, saved.revision);
-    await buttonText('比较退休后的自付预算');
-    await ready('[role=dialog]');
-    await evaluate(
-      "document.querySelector('[role=dialog] form').requestSubmit()"
-    );
-    await delay(50);
-    await buttonText('应用到计划', '[role=dialog]');
-    await waitFor(
-      async () => (await record()).revision > saved.revision,
-      'apply trial'
-    );
-    const applied = await record();
-    assert.ok(
-      applied.plan.metadata.updatedAt > saved.plan.metadata.updatedAt,
-      'Applying trial updates provenance timestamp'
-    );
-    assert.notEqual(
-      calculateMonthlyLifePlan(applied.plan).summary.endingAvailableCents,
-      result.summary.endingAvailableCents
-    );
-    await buttonText('撤销本次应用');
-    await waitFor(
-      async () => (await record()).revision > applied.revision,
-      'undo trial'
-    );
     assert.deepEqual((await record()).plan, saved.plan);
-    const specific =
-      p.id === 'lin'
-        ? {
-            title: '核对起始可用资产',
-            value: '40000',
-            patch: {
-              type: 'change-liquid-opening-balance',
-              assetId: saved.plan.assets.find((a) => a.liquid).id,
-              openingBalanceCents: 4000000,
-            },
-          }
-        : p.id === 'xu'
-          ? {
-              title: '调整住房支出时间',
-              value: '12',
-              patch: {
-                type: 'shift-cash-flow',
-                cashFlowId: saved.plan.standaloneCashFlows.find(
-                  (f) => f.category === 'housing'
-                ).id,
-                monthDelta: 12,
-              },
-            }
-          : p.id === 'zhao'
-            ? {
-                title: '比较不同退休时间',
-                value: formatMonth(addMonths(saved.plan.retirementMonth, 12)),
-                patch: {
-                  type: 'change-retirement-month',
-                  retirementMonth: addMonths(saved.plan.retirementMonth, 12),
-                },
-              }
-            : null;
-    if (specific) {
-      const beforeSpecific = await record();
-      const preview = async () => {
-        await buttonText(specific.title);
-        await ready('[role=dialog] input');
-        await fill('[role=dialog] input', specific.value);
-        await evaluate(
-          "document.querySelector('[role=dialog] form').requestSubmit()"
-        );
-        await waitFor(
-          () =>
-            evaluate(
-              "document.querySelector('[role=dialog]').textContent.includes('原计划 → 试算后')"
-            ),
-          'specific trial comparison'
-        );
-      };
-      await preview();
-      assert.deepEqual(await record(), beforeSpecific);
-      await buttonText('放弃试算', '[role=dialog]');
-      assert.deepEqual(await record(), beforeSpecific);
-      await preview();
-      await buttonText('应用到计划', '[role=dialog]');
-      await waitFor(
-        async () => (await record()).revision > beforeSpecific.revision,
-        'specific trial saved'
-      );
-      const appliedSpecific = await record();
-      const expected = applyPlanPatch(beforeSpecific.plan, specific.patch);
-      assert.deepEqual(
-        calculateMonthlyLifePlan(appliedSpecific.plan).monthly,
-        calculateMonthlyLifePlan(expected).monthly
-      );
-      if (p.id === 'zhao')
-        assert.deepEqual(
-          appliedSpecific.plan.standaloneCashFlows,
-          beforeSpecific.plan.standaloneCashFlows,
-          'Retirement change preserves independently dated parent support'
-        );
-      await send('Page.reload');
-      await ready('#balance-chart-heading');
-      assert.deepEqual(await record(), appliedSpecific);
-    }
-    await tab('ledger');
-    await buttonText('全部年份');
-    assert.ok(
-      await evaluate(
-        `document.querySelector('main').innerText.includes(${JSON.stringify(String(result.annual.at(-1).year))})`
-      )
-    );
+    await tab('analysis');
+    await ready('#annual-snapshot-title');
     const final = await record();
     await send('Page.reload');
-    await ready('#workspace-tab-ledger');
-    await selected('ledger');
+    await ready('#workspace-tab-analysis');
+    await selected('analysis');
     assert.deepEqual((await record()).plan, final.plan);
     assert.equal((await record()).revision, final.revision);
     reports.push({
@@ -380,13 +249,9 @@ export async function runPersonaJourneys(api) {
         'landing',
         'life-events',
         'monthly-boundaries',
-        'chart-ledger',
-        'preview-discard-revision',
-        'apply-undo',
+        'analysis-charts',
         'reload',
-        ...(specific
-          ? [`${specific.patch.type}: preview-discard-apply-reload`]
-          : []),
+        'analysis-does-not-mutate-plan',
       ],
     });
     console.log(`Persona ${p.id}: passed`);

@@ -9,8 +9,10 @@ const routes = [
 const assets = new Set();
 for (const file of routes) {
   const source = await readFile(file, 'utf8');
-  for (const match of source.matchAll(/\/_next\/static\/[^"\\\s]+/g))
-    assets.add(match[0]);
+  for (const match of source.matchAll(/(?:\/_next\/)?static\/[^"\\\s]+/g)) {
+    const asset = match[0];
+    assets.add(asset.startsWith('/_next/') ? asset : `/_next/${asset}`);
+  }
 }
 // Fonts and styles can be referenced indirectly by CSS rather than route JS.
 for (const folder of ['chunks', 'media']) {
@@ -20,16 +22,49 @@ for (const folder of ['chunks', 'media']) {
   }
 }
 const version = (await readFile('.next/BUILD_ID', 'utf8')).trim();
-// Turbopack can keep lazy client chunks out of the route manifest. Follow only
-// static chunk references reachable from these public route entry points.
+// Lazy client chunks can stay out of a route manifest. Build a chunk-id index
+// from React Loadable, then follow only dynamic imports reachable from the two
+// public route entry points. This avoids caching unrelated admin/docs chunks.
+const loadableManifest = JSON.parse(
+  await readFile('.next/react-loadable-manifest.json', 'utf8')
+);
+const loadableFilesById = new Map();
+const loadableFilesByChunkId = new Map();
+for (const value of Object.values(loadableManifest)) {
+  if (!value || typeof value !== 'object' || value.id == null) continue;
+  const files = Array.isArray(value.files)
+    ? value.files.filter((file) => typeof file === 'string')
+    : [];
+  if (!files.length) continue;
+  loadableFilesById.set(String(value.id), files);
+  for (const file of files) {
+    const chunkId = path.basename(file).match(/^(\d+)[.-]/)?.[1];
+    if (!chunkId) continue;
+    const group = loadableFilesByChunkId.get(chunkId) ?? new Set();
+    for (const groupFile of files) group.add(groupFile);
+    loadableFilesByChunkId.set(chunkId, group);
+  }
+}
+
+// Set iteration visits assets added below, so nested lazy imports are followed
+// until no new public-route dependency is found.
 for (const asset of assets) {
   if (!asset.endsWith('.js')) continue;
   const source = await readFile(
-    `.next/${asset.slice('/_next/'.length)}`,
+    `.next/${decodeURIComponent(asset.slice('/_next/'.length))}`,
     'utf8'
   );
   for (const match of source.matchAll(/static\/chunks\/[A-Za-z0-9_.-]+\.js/g)) {
     assets.add(`/_next/${match[0]}`);
+  }
+  for (const match of source.matchAll(/\.e\((\d+)\)/g)) {
+    const files = new Set([
+      ...(loadableFilesById.get(match[1]) ?? []),
+      ...(loadableFilesByChunkId.get(match[1]) ?? []),
+    ]);
+    for (const file of files) {
+      if (file.startsWith('static/')) assets.add(`/_next/${file}`);
+    }
   }
 }
 const manifest = { version, assets: [...assets].sort() };

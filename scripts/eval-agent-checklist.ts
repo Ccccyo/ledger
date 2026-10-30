@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { localDecision } from '../src/app/api/life-ledger/assistant/route';
@@ -221,7 +221,7 @@ function assess(number: number, decision: AgentDecision, text: string) {
     57: /住房成本减少 2,000 元/,
     58: /收入减少 3,000 元/,
     60: /没有资金缺口.*不能说换城市/,
-    75: /不会.*不会从正式可用资金中扣款/,
+    75: /投资开始月.*可用资金中预留/,
     76: /不改变退休资金或首次缺口/,
     84: /增加 3,000 元/,
     85: /减少 2,000 元/,
@@ -229,7 +229,7 @@ function assess(number: number, decision: AgentDecision, text: string) {
     92: /55 岁.*60 岁.*65 岁/,
     102: /2059 年 10 月/,
     108: /不是单一事件造成的/,
-    128: /不能绕过确认修改正式计划/,
+    128: /不能绕过确认(?:或直接)?修改正式计划/,
   };
   const semanticRule = semanticRules[number];
   if (semanticRule && !semanticRule.test(text)) return '失败：语义或金额不符';
@@ -311,7 +311,11 @@ function runQuestion(
       break;
     }
     if (decision.type !== 'tool') break;
-    if (decision.tool.name === 'simulate_patch' || decision.tool.name === 'simulate_scenario') break;
+    if (
+      decision.tool.name === 'simulate_patch' ||
+      decision.tool.name === 'simulate_scenario'
+    )
+      break;
     observations.push(runReadOnlyAgentTool(result, decision.tool));
   }
   const text = [renderDecision(decision), simulationEvidence]
@@ -427,4 +431,23 @@ const report = [
   '',
 ].join('\n');
 writeFileSync(reportPath, report);
+mkdirSync(resolve('docs/evidence'), { recursive: true });
+writeFileSync(
+  resolve('docs/evidence/agent-checklist-eval.json'),
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      evaluator: 'deterministic-checklist-with-semantic-assertions',
+      sampleSize: rows.length,
+      counts,
+      rows,
+      limitations: [
+        'Synthetic plans and deterministic assertions are used; this is not a real-user study.',
+        'Passing answer checks does not prove open-language generalization.',
+      ],
+    },
+    null,
+    2
+  )
+);
 console.log(JSON.stringify({ reportPath, counts }, null, 2));

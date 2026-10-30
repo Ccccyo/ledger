@@ -6,7 +6,7 @@ export function AssetsSection({ plan, locale, copy, onChange }: SectionProps) {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">{copy.editor.assets_hint}</p>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
         {plan.assets
           .filter((asset) => !asset.purchase)
           .map((asset) => (

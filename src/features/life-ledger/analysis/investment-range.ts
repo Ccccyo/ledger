@@ -65,15 +65,18 @@ export function calculateInvestmentRange(
         scenarioDelta(item, pointEndExclusive, item.upperAnnualReturnBps),
       0
     );
+    const principalCents = moneyCents(
+      row.closingAvailableCents + row.closingReservedInvestmentCents
+    );
     return {
       year: row.year,
       age: row.ageEnd,
       started: scenarios.some(
         (item) => pointEndExclusive > item.startMonth
       ),
-      principalCents: row.closingAvailableCents,
-      lowerCents: moneyCents(row.closingAvailableCents + lowerDelta),
-      upperCents: moneyCents(row.closingAvailableCents + upperDelta),
+      principalCents,
+      lowerCents: moneyCents(principalCents + lowerDelta),
+      upperCents: moneyCents(principalCents + upperDelta),
     };
   });
 }

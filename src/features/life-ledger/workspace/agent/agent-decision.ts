@@ -146,6 +146,58 @@ function parseTool(value: unknown): AgentToolCall | null {
   ) {
     return { name: tool.name, arguments: { ages: [...new Set(args.ages)] } };
   }
+  if (
+    tool.name === 'get_investment_capacity' &&
+    finiteInteger(args.startMonth) &&
+    finiteInteger(args.endMonthExclusive) &&
+    args.endMonthExclusive > args.startMonth
+  ) {
+    return {
+      name: tool.name,
+      arguments: {
+        startMonth: args.startMonth,
+        endMonthExclusive: args.endMonthExclusive,
+      },
+    };
+  }
+  if (tool.name === 'lookup_city_costs') {
+    const fromCity =
+      typeof args.fromCity === 'string' ? args.fromCity.trim() : '';
+    const toCity = typeof args.toCity === 'string' ? args.toCity.trim() : '';
+    if (
+      fromCity.length >= 2 &&
+      fromCity.length <= 40 &&
+      toCity.length >= 2 &&
+      toCity.length <= 40 &&
+      fromCity !== toCity &&
+      finiteInteger(args.householdSize) &&
+      args.householdSize >= 1 &&
+      args.householdSize <= 8 &&
+      (args.housingMode === 'rent' ||
+        args.housingMode === 'own' ||
+        args.housingMode === 'unknown')
+    ) {
+      return {
+        name: tool.name,
+        arguments: {
+          fromCity,
+          toCity,
+          householdSize: args.householdSize,
+          housingMode: args.housingMode,
+        },
+      };
+    }
+  }
+  if (
+    tool.name === 'simulate_relocation_candidate' &&
+    typeof args.relocationId === 'string' &&
+    args.relocationId.trim()
+  ) {
+    return {
+      name: tool.name,
+      arguments: { relocationId: args.relocationId.trim() },
+    };
+  }
   if (tool.name === 'simulate_patch') {
     const patch = parsePlanPatch(args.patch);
     if (patch) return { name: tool.name, arguments: { patch } };

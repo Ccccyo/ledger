@@ -76,13 +76,13 @@ export function BalanceChart({
   };
   return (
     <>
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+      <dl className="mt-4 grid max-w-xl grid-cols-2 gap-5">
         {checkpoints.map(({ row, label }) => (
           <div key={row.year}>
-            <dt className="text-muted-foreground text-xs">
+            <dt className="text-muted-foreground text-[11px] leading-snug">
               {label} · {ageTick(row.year)}
             </dt>
-            <dd className="mt-0.5 text-base font-semibold tabular-nums">
+            <dd className="mt-1 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
               {locale.startsWith('zh')
                 ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(row.available / 1e6)} 万元`
                 : money(row.available)}
@@ -90,16 +90,16 @@ export function BalanceChart({
           </div>
         ))}
       </dl>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <span className="text-muted-foreground">{copy.charts.age_axis}</span>
+      <div className="mt-3 flex min-h-8 items-center justify-end text-[11px]">
         {different ? (
-          <label className="flex min-h-11 cursor-pointer items-center gap-2">
+          <label className="text-muted-foreground hover:bg-background hover:text-foreground inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2.5 transition-colors">
             <input
               type="checkbox"
               checked={showNetWorth}
-              onChange={(e) => setCompare(e.target.checked)}
-              className="accent-primary size-4"
+              onChange={(event) => setCompare(event.target.checked)}
+              className="accent-primary size-3.5"
             />
+            <span className="w-4 border-t border-dashed border-current" />
             {copy.charts.compare_networth}
           </label>
         ) : (
@@ -108,24 +108,30 @@ export function BalanceChart({
           </span>
         )}
       </div>
-      <div className="h-72 sm:h-80" aria-hidden="true">
+      <div className="h-64 sm:h-72" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={rows}
-            margin={{ top: 28, right: 20, left: 0, bottom: 6 }}
+            margin={{ top: 18, right: 12, left: 0, bottom: 4 }}
           >
             <defs>
               <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1">
                 <stop
+                  offset={0}
+                  stopColor="var(--primary)"
+                  stopOpacity={0.22}
+                />
+                <stop
                   offset={threshold}
                   stopColor="var(--primary)"
-                  stopOpacity={0.12}
+                  stopOpacity={0.04}
                 />
                 <stop
                   offset={threshold}
                   stopColor="#b7791f"
-                  stopOpacity={0.13}
+                  stopOpacity={0.06}
                 />
+                <stop offset={1} stopColor="#b7791f" stopOpacity={0.18} />
               </linearGradient>
               <linearGradient id={`${id}-line`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset={threshold} stopColor="var(--primary)" />
@@ -135,7 +141,7 @@ export function BalanceChart({
             <CartesianGrid
               vertical={false}
               stroke="var(--border)"
-              strokeDasharray="3 5"
+              strokeOpacity={0.5}
             />
             <XAxis
               dataKey="year"
@@ -230,11 +236,12 @@ export function BalanceChart({
               />
             ))}
             <Area
+              type="natural"
               dataKey="available"
               name={copy.overview.available}
               baseValue={0}
               stroke={`url(#${id}-line)`}
-              strokeWidth={2.5}
+              strokeWidth={2.8}
               fill={`url(#${id}-fill)`}
               dot={false}
               activeDot={{ r: 4, stroke: 'var(--background)', strokeWidth: 2 }}
@@ -242,6 +249,7 @@ export function BalanceChart({
             />
             {showNetWorth && (
               <Line
+                type="natural"
                 dataKey="netWorth"
                 name={copy.overview.net_worth}
                 stroke="var(--muted-foreground)"
@@ -292,17 +300,11 @@ export function BalanceChart({
           </ol>
         </div>
       )}
-      <div className="mt-3 mb-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+      <div className="mt-2 mb-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px]">
         <span className="inline-flex items-center gap-2">
           <span className="bg-primary h-0.5 w-5" />
           {copy.overview.available}
         </span>
-        {showNetWorth && (
-          <span className="text-muted-foreground inline-flex items-center gap-2">
-            <span className="w-5 border-t-2 border-dashed border-current" />
-            {copy.overview.net_worth}
-          </span>
-        )}
         <span className="text-muted-foreground inline-flex items-center gap-2">
           <span className="h-0.5 w-5 bg-[#b7791f]" />
           {copy.charts.negative_hint}

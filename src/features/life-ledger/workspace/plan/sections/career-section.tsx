@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { cn } from '@/shared/lib/utils';
+
 import {
   addMonths,
   createLocalId,
@@ -43,7 +45,7 @@ export function CareerSection(props: SectionProps) {
       <div
         role="tablist"
         aria-label={copy.career.kind}
-        className="border-border mb-6 flex flex-wrap gap-x-4 border-b"
+        className="bg-muted/55 mb-6 grid grid-cols-2 gap-1 rounded-xl p-1 sm:grid-cols-4"
       >
         {(['growth', 'salary', 'side_income', 'break'] as const).map(
           (value, index, values) => (
@@ -79,7 +81,12 @@ export function CareerSection(props: SectionProps) {
                 setTab(value);
                 setEditing(null);
               }}
-              className="text-muted-foreground hover:text-foreground aria-selected:text-primary aria-selected:border-primary focus-visible:ring-primary/30 min-h-11 border-b-2 border-transparent px-1 text-sm focus-visible:ring-4 focus-visible:outline-none"
+              className={cn(
+                'focus-visible:ring-primary/30 min-h-10 rounded-lg px-2 text-sm transition-colors focus-visible:ring-4 focus-visible:outline-none motion-reduce:transition-none',
+                tab === value
+                  ? 'bg-background text-primary font-medium shadow-sm'
+                  : 'text-muted-foreground hover:bg-background/65 hover:text-foreground'
+              )}
             >
               {copy.career[value]}
             </button>
@@ -267,7 +274,7 @@ function CareerForm({
                 }
                 setAmountUnit(next);
               }}
-              className="text-muted-foreground bg-transparent text-xs outline-none"
+              className="text-muted-foreground ml-2 max-w-[45%] shrink-0 bg-transparent text-xs outline-none"
             >
               <option value="yuan">
                 {copy.common.currency}
@@ -281,7 +288,7 @@ function CareerForm({
           </span>
         </label>
       )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
         <label className="grid min-w-0 gap-2 text-sm">
           {copy.editor.start}
           <input

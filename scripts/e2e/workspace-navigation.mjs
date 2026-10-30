@@ -359,16 +359,8 @@ try {
   );
   await delay(500);
   await click('#calculator button[type=submit]');
-  await waitFor(
-    () =>
-      evaluate(
-        "[...document.querySelectorAll('button')].some(b=>b.textContent.includes('加入我的人生大事'))"
-      ),
-    'landing result'
-  );
-  await evaluate(
-    "[...document.querySelectorAll('button')].find(b=>b.textContent.includes('加入我的人生大事')).click()"
-  );
+  await ready('#calculator-continue');
+  await click('#calculator-continue');
   await ready('#workspace-tab-plan');
   await waitFor(() => record(), 'saved initial plan');
   if (process.argv.includes('--offline')) {
@@ -411,7 +403,7 @@ try {
     await evaluate("document.querySelector('input[name=growth]').value"),
     '3'
   );
-  await click('#workspace-tab-ledger');
+  await click('#workspace-tab-analysis');
   assert.equal(dialogCount, beforeDialogs + 2);
   await selected('plan');
   const originalHref = await evaluate('location.href');
@@ -465,8 +457,8 @@ try {
     'Canceled stage/tab navigation retains the unsubmitted draft'
   );
   acceptDialog = true;
-  await click('#workspace-tab-ledger');
-  await selected('ledger');
+  await click('#workspace-tab-analysis');
+  await selected('analysis');
   await evaluate('history.back()');
   await selected('plan');
   await ready('input[name=growth]');
@@ -493,7 +485,7 @@ try {
   );
   acceptDialog = true;
   await evaluate('history.forward()');
-  await selected('ledger');
+  await selected('analysis');
   await evaluate('history.back()');
   await selected('plan');
   await ready('#career-tab-growth');
@@ -525,25 +517,21 @@ try {
     saved.plan.metadata.updatedAt > beforeEventEdit.plan.metadata.updatedAt,
     'Accepted event updates provenance timestamp'
   );
-  await click('#workspace-tab-overview');
-  await selected('overview');
+  await click('#workspace-tab-analysis');
+  await selected('analysis');
   await showLongTermTrend();
-  await click('#workspace-tab-ledger');
-  await selected('ledger');
   assert.ok(
-    await evaluate(
-      "document.querySelector('main').innerText.includes('全部年份')"
-    )
+    await evaluate("!!document.querySelector('#balance-chart-heading')")
   );
   await click('#workspace-tab-plan');
   await selected('plan');
   await ready('#career-tab-growth');
   assert.equal((await record()).revision, saved.revision);
   evidence.checks.push(
-    'Offline: edit and save event, view both charts, switch ledger/plan without revision changes'
+    'Offline: edit and save event, view analysis charts, switch analysis/plan without revision changes'
   );
   await evaluate('history.back()');
-  await selected('ledger');
+  await selected('analysis');
   await evaluate('history.forward()');
   await selected('plan');
   evidence.checks.push('Browser back/forward remains functional offline');
@@ -568,7 +556,7 @@ try {
     for (const pause of [0, 10, 100]) {
       await send('Page.navigate', { url: 'about:blank' });
       if (pause) await delay(pause);
-      await send('Page.navigate', { url: `${origin}/plan?tab=overview` });
+      await send('Page.navigate', { url: `${origin}/plan?tab=analysis` });
       await showLongTermTrend();
       assert.equal((await record()).revision, saved.revision);
     }
@@ -614,7 +602,7 @@ try {
     });
   }
   if (process.argv.includes('--balance')) {
-    await send('Page.navigate', { url: `${origin}/plan?tab=overview` });
+    await send('Page.navigate', { url: `${origin}/plan?tab=analysis` });
     await showLongTermTrend();
     await fs.mkdir('docs/evidence', { recursive: true });
     for (const width of [375, 1440]) {
@@ -688,7 +676,7 @@ try {
     await send('Network.enable');
     await send('Network.setCacheDisabled', { cacheDisabled: true });
     await assert.rejects(fetch(origin));
-    await send('Page.navigate', { url: `${origin}/plan?tab=overview` });
+    await send('Page.navigate', { url: `${origin}/plan?tab=analysis` });
     await showLongTermTrend();
     assert.deepEqual(await record(), beforeRestart);
     const activeCaches = await evaluate('caches.keys()');
@@ -701,7 +689,7 @@ try {
     evidence.checks.push(
       'Waiting version activates after old clients exit; current and preceding shells retained for handover, unrelated cache and IndexedDB retained'
     );
-    await send('Page.navigate', { url: `${origin}/en/plan?tab=overview` });
+    await send('Page.navigate', { url: `${origin}/en/plan?tab=analysis` });
     await showLongTermTrend();
     assert.equal(await evaluate('document.documentElement.lang'), 'en');
     assert.deepEqual(await record(), beforeRestart);

@@ -7,10 +7,12 @@ import {
   Check,
   ChevronRight,
   LoaderCircle,
-  LockKeyhole,
   RotateCcw,
+  Settings2,
   ShieldCheck,
   Sparkles,
+  ThumbsDown,
+  ThumbsUp,
   Wrench,
 } from 'lucide-react';
 
@@ -30,7 +32,7 @@ import {
   type SimulationComparison,
 } from '../../analysis/simulate-action';
 import type { MonthlyCalculationResult } from '../../calculation';
-import { createLocalId, formatMonth } from '../../domain';
+import { addMonths, createLocalId, formatMonth } from '../../domain';
 import {
   deleteAgentMemory,
   deleteAgentTask,
@@ -43,17 +45,40 @@ import {
 import { moneyFormatter } from '../plan/fields';
 import { useWorkspace } from '../workspace-provider';
 import type { WorkspaceCopy } from '../workspace-types';
-import { buildAgentContext, runReadOnlyAgentTool } from './agent-context';
+import { fetchAgentTurn, warmAgentRoute } from './agent-client';
+import { buildAgentContext } from './agent-context';
+import { summarizeAgentQuality } from './agent-metrics';
+import {
+  executeReadOnlyAgentTool,
+  simulateRelocationCandidate,
+  type RelocationCandidateComparison,
+} from './agent-tool-runtime';
 import type {
   AgentDecision,
+  AgentFeedbackReason,
   AgentHistoryMessage,
+  AgentMessageFeedback,
   AgentObservation,
+  AgentPerception,
+  AgentPlan,
+  AgentShortTermState,
   AgentTurnRequest,
+  AgentTurnTrace,
 } from './agent-types';
-import { AGENT_SKILLS, type AgentSkillId } from './skill-registry';
+import { inferMemoryKind, queryAgentMemories } from './memory-query';
+import { resolveAgentQuery } from './query-resolution';
+import { updateWorkingMemory } from './working-memory';
 
 const MAX_STEPS = 5;
+const TURN_DEADLINE_MS = 12_000;
 const ENHANCED_SESSION_KEY = 'life-ledger:agent-enhanced-session';
+const FEEDBACK_REASONS: AgentFeedbackReason[] = [
+  'misunderstood',
+  'incorrect',
+  'unclear',
+  'slow',
+  'other',
+];
 
 type EnhancementScope =
   | 'off'
@@ -66,6 +91,8 @@ interface ConversationMessage extends AgentHistoryMessage {
   id: string;
   evidence?: string[];
   caveats?: string[];
+  trace?: AgentTurnTrace;
+  feedback?: AgentMessageFeedback;
 }
 
 export function AgentPanel({
@@ -87,10 +114,10 @@ export function AgentPanel({
   const [error, setError] = useState('');
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [showConsent, setShowConsent] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [consentPurpose, setConsentPurpose] = useState<'expression' | 'skills'>(
     'expression'
   );
-  const [usedSkills, setUsedSkills] = useState<AgentSkillId[]>([]);
   const [memories, setMemories] = useState<StoredAgentMemory[]>([]);
   const [memoryDraft, setMemoryDraft] = useState('');
   const [taskHydrated, setTaskHydrated] = useState(false);
@@ -98,12 +125,19 @@ export function AgentPanel({
   const [taskObservations, setTaskObservations] = useState<AgentObservation[]>(
     []
   );
+  const [taskTraces, setTaskTraces] = useState<AgentTurnTrace[]>([]);
   const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
   const [enhancementScope, setEnhancementScope] =
-    useState<EnhancementScope>('off');
+    useState<EnhancementScope>('agent-session');
   const [proposal, setProposal] = useState<
-    SimulationComparison | ScenarioComparison | null
+    | SimulationComparison
+    | ScenarioComparison
+    | RelocationCandidateComparison
+    | null
   >(null);
+  const [sessionState, setSessionState] = useState<AgentShortTermState | null>(
+    null
+  );
   const messagesRef = useRef<ConversationMessage[]>([]);
   const taskSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const abortRef = useRef<AbortController | null>(null);
@@ -112,8 +146,12 @@ export function AgentPanel({
   }, [messages]);
   useEffect(() => {
     const savedScope = sessionStorage.getItem(ENHANCED_SESSION_KEY);
-    if (savedScope === 'agent') setEnhancementScope('agent-session');
+    if (savedScope === 'off') setEnhancementScope('off');
     else if (savedScope === 'yes') setEnhancementScope('session');
+    else setEnhancementScope('agent-session');
+  }, []);
+  useEffect(() => {
+    void warmAgentRoute();
   }, []);
   const context = useMemo(() => buildAgentContext(result), [result]);
   const planId = result.input.id;
@@ -133,6 +171,10 @@ export function AgentPanel({
         );
         setTaskStep(restored?.step ?? 0);
         setTaskObservations(restored?.observations ?? []);
+        setTaskTraces(restored?.traceSteps ?? []);
+        setSessionState(
+          restored?.sessionState ?? createShortTermState(context.planHash)
+        );
         setMemories(savedMemories);
         setTaskHydrated(true);
       })
@@ -155,6 +197,8 @@ export function AgentPanel({
       activeQuestion,
       step: taskStep,
       observations: taskObservations.slice(-5),
+      traceSteps: taskTraces.slice(-20),
+      sessionState: sessionState ?? createShortTermState(context.planHash),
       status: (busy ? 'running' : activeQuestion ? 'interrupted' : 'idle') as
         | 'running'
         | 'interrupted'
@@ -172,6 +216,8 @@ export function AgentPanel({
     activeQuestion,
     taskStep,
     taskObservations,
+    taskTraces,
+    sessionState,
     busy,
     taskHydrated,
     taskStorageError,
@@ -182,6 +228,10 @@ export function AgentPanel({
         state.result?.inputHash !== proposal.baselineHash ||
         state.calculationStatus !== 'idle')
   );
+  const qualitySummary = useMemo(
+    () => summarizeAgentQuality(taskTraces, messages),
+    [taskTraces, messages]
+  );
 
   function updateMessages(
     updater: (current: ConversationMessage[]) => ConversationMessage[]
@@ -191,15 +241,111 @@ export function AgentPanel({
     setMessages(next);
   }
 
-  async function startTurn(value: string) {
+  function setMessageFeedback(
+    messageId: string,
+    rating: AgentMessageFeedback['rating'],
+    reason: AgentFeedbackReason | null = null
+  ) {
+    updateMessages((current) =>
+      current.map((message) =>
+        message.id === messageId
+          ? {
+              ...message,
+              feedback: {
+                rating,
+                reason,
+                createdAt: new Date().toISOString(),
+              },
+            }
+          : message
+      )
+    );
+  }
+
+  async function startTurn(value: string, forceLocal = false) {
     const trimmed = value.trim();
     if (!trimmed || busy) return;
-    const expressionMode = enhancementScope.startsWith('agent-')
-      ? 'autonomous'
-      : enhancementScope === 'off'
-        ? 'strict'
-        : 'enhanced';
-    if (enhancementScope === 'once' || enhancementScope === 'agent-once') {
+    const interactionStartedAt = performance.now();
+
+    // The first suggested question has one deterministic ledger operation.
+    // Run it in-process so a common first interaction never waits for a model
+    // or even a network round trip.
+    if (trimmed === examples[0]) {
+      const retirementMonth = addMonths(result.input.retirementMonth, 24);
+      if (retirementMonth < result.input.endMonthExclusive) {
+        try {
+          const comparison = simulateAction(result.input, result, {
+            type: 'change-retirement-month',
+            retirementMonth,
+          });
+          updateMessages((current) => [
+            ...current,
+            {
+              id: createLocalId('message'),
+              role: 'user',
+              content: trimmed,
+            },
+          ]);
+          setQuestion('');
+          setError('');
+          setFallbackUsed(false);
+          setTaskObservations([]);
+          setTaskStep(0);
+          setProposal(comparison);
+          setActiveQuestion(null);
+          const durationMs = Math.round(
+            performance.now() - interactionStartedAt
+          );
+          const trace: AgentTurnTrace = {
+            id: createLocalId('trace'),
+            totalMs: durationMs,
+            perceptionMs: 0,
+            planningMs: 0,
+            perceptionSource: 'rule',
+            intent: 'plan_change',
+            confidence: 'high',
+            skillId: 'scenario-planning',
+            decisionType: 'tool',
+            tool: 'simulate_patch',
+            fallbackReason: null,
+            endToEndMs: durationMs,
+            stepCount: 1,
+            toolCallCount: 1,
+            outcome: 'proposal',
+          };
+          setTaskTraces((current) => [...current, trace].slice(-20));
+          updateMessages((current) => [
+            ...current,
+            {
+              id: createLocalId('message'),
+              role: 'assistant',
+              content: copy.agent_panel.proposal_intro,
+              evidence: [
+                locale.startsWith('zh')
+                  ? '已用当前账本在本地完成试算。'
+                  : 'Calculated locally from the current ledger.',
+              ],
+              trace,
+            },
+          ]);
+          return;
+        } catch {
+          // Fall through to the guarded local route for uncommon plan bounds.
+        }
+      }
+    }
+
+    const expressionMode = forceLocal
+      ? 'strict'
+      : enhancementScope.startsWith('agent-')
+        ? 'autonomous'
+        : enhancementScope === 'off'
+          ? 'strict'
+          : 'enhanced';
+    if (
+      !forceLocal &&
+      (enhancementScope === 'once' || enhancementScope === 'agent-once')
+    ) {
       setEnhancementScope('off');
     }
     await runTurn(trimmed, expressionMode);
@@ -210,6 +356,10 @@ export function AgentPanel({
     expressionMode: 'strict' | 'enhanced' | 'autonomous',
     resume = false
   ) {
+    const turnStartedAt = performance.now();
+    let toolCallCount = 0;
+    let attemptedSteps = 0;
+    let lastTrace: AgentTurnTrace | null = null;
     const priorHistory = messagesRef.current
       .slice(-6)
       .map(({ role, content }) => ({
@@ -230,7 +380,6 @@ export function AgentPanel({
     setFallbackUsed(false);
     if (!resume) {
       setProposal(null);
-      setUsedSkills([]);
       setTaskObservations([]);
     }
     setBusy(true);
@@ -241,10 +390,69 @@ export function AgentPanel({
     const observations: AgentObservation[] = resume
       ? [...taskObservations]
       : [];
-    const seenCalls = new Set<string>();
+    let workingSessionState =
+      sessionState?.planHash === context.planHash
+        ? sessionState
+        : createShortTermState(context.planHash);
+    const resolution = resolveAgentQuery({
+      question: value,
+      history: priorHistory,
+      sessionState: workingSessionState,
+    });
+    workingSessionState = {
+      ...workingSessionState,
+      activeIntent: resolution.intent,
+      referencedEntity:
+        resolution.referencedEntity ?? workingSessionState.referencedEntity,
+      referencedYear: resolution.resolvedQuestion.match(
+        /(?:19|20|21)\d{2}/
+      )?.[0]
+        ? Number(resolution.resolvedQuestion.match(/(?:19|20|21)\d{2}/)?.[0])
+        : workingSessionState.referencedYear,
+      lastToolFingerprints: resume
+        ? workingSessionState.lastToolFingerprints
+        : [],
+      updatedAt: new Date().toISOString(),
+    };
+    setSessionState(workingSessionState);
+    const relevantMemories = queryAgentMemories(memories, value);
+    const seenCalls = new Set<string>(
+      resume ? workingSessionState.lastToolFingerprints : []
+    );
+    const completeTrace = (
+      outcome: NonNullable<AgentTurnTrace['outcome']>,
+      base: AgentTurnTrace | null = lastTrace
+    ): AgentTurnTrace => {
+      const endToEndMs = Math.round(performance.now() - turnStartedAt);
+      return {
+        ...(base ?? {
+          id: createLocalId('trace'),
+          totalMs: 0,
+          perceptionMs: 0,
+          planningMs: 0,
+          perceptionSource: 'fallback' as const,
+          intent: 'unknown' as const,
+          confidence: 'low' as const,
+          skillId: null,
+          decisionType: 'answer' as const,
+          tool: null,
+          fallbackReason: 'No server trace was available.',
+        }),
+        endToEndMs,
+        stepCount: attemptedSteps,
+        toolCallCount,
+        outcome,
+      };
+    };
+    let timedOut = false;
+    const deadline = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, TURN_DEADLINE_MS);
 
     try {
       for (let step = resume ? taskStep : 0; step < MAX_STEPS; step += 1) {
+        attemptedSteps = step + 1;
         setTaskStep(step);
         const request: AgentTurnRequest = {
           question: value,
@@ -252,32 +460,67 @@ export function AgentPanel({
           context,
           history: priorHistory,
           observations,
-          preferences: memories.map((memory) => memory.text),
+          memories: relevantMemories,
+          sessionState: workingSessionState,
           step,
           expressionMode,
         };
-        const response = await fetch('/api/life-ledger/assistant', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request),
-          signal: controller.signal,
-        });
+        const { response, usedLocalRescue } = await fetchAgentTurn(
+          request,
+          controller.signal
+        );
         if (!response.ok) throw new Error(copy.agent_panel.errors.request);
         const payload = (await response.json()) as {
           decision?: AgentDecision;
+          perception?: AgentPerception;
+          plan?: AgentPlan;
+          trace?: AgentTurnTrace;
           enhancement?: 'applied' | 'unavailable' | 'not-requested';
         };
         if (!payload.decision)
           throw new Error(copy.agent_panel.errors.response);
+        const turnTrace = payload.trace
+          ? {
+              ...payload.trace,
+              fallbackReason: usedLocalRescue
+                ? 'Autonomous step exceeded its soft deadline; retried locally.'
+                : payload.trace.fallbackReason,
+            }
+          : undefined;
+        if (turnTrace) lastTrace = turnTrace;
         if (
           expressionMode !== 'strict' &&
-          payload.enhancement === 'unavailable'
+          (payload.enhancement === 'unavailable' || usedLocalRescue)
         ) {
           setFallbackUsed(true);
+        }
+        if (payload.perception && payload.plan) {
+          workingSessionState = {
+            ...workingSessionState,
+            workingMemory: updateWorkingMemory(
+              workingSessionState.workingMemory,
+              context.planHash,
+              payload.perception,
+              payload.plan
+            ),
+            updatedAt: new Date().toISOString(),
+          };
+          setSessionState(workingSessionState);
         }
         const decision = payload.decision;
 
         if (decision.type === 'answer') {
+          const completedTrace = completeTrace('answer', turnTrace ?? null);
+          setTaskTraces((current) => [...current, completedTrace].slice(-20));
+          const answerYear = decision.answer.match(/(?:19|20|21)\d{2}/)?.[0];
+          if (answerYear) {
+            workingSessionState = {
+              ...workingSessionState,
+              referencedYear: Number(answerYear),
+              updatedAt: new Date().toISOString(),
+            };
+            setSessionState(workingSessionState);
+          }
           setActiveQuestion(null);
           updateMessages((current) => [
             ...current,
@@ -286,9 +529,10 @@ export function AgentPanel({
               role: 'assistant',
               content: decision.answer,
               evidence: decision.evidence,
+              trace: completedTrace,
               caveats:
                 expressionMode !== 'strict' &&
-                payload.enhancement === 'unavailable'
+                (payload.enhancement === 'unavailable' || usedLocalRescue)
                   ? [
                       ...decision.caveats,
                       copy.agent_panel.enhancement_unavailable,
@@ -299,6 +543,8 @@ export function AgentPanel({
           return;
         }
         if (decision.type === 'clarify') {
+          const completedTrace = completeTrace('clarify', turnTrace ?? null);
+          setTaskTraces((current) => [...current, completedTrace].slice(-20));
           setActiveQuestion(null);
           updateMessages((current) => [
             ...current,
@@ -306,19 +552,23 @@ export function AgentPanel({
               id: createLocalId('message'),
               role: 'assistant',
               content: decision.question,
+              trace: completedTrace,
+              caveats:
+                expressionMode !== 'strict' &&
+                (payload.enhancement === 'unavailable' || usedLocalRescue)
+                  ? [copy.agent_panel.enhancement_unavailable]
+                  : undefined,
             },
           ]);
           return;
         }
 
         setRunningReason(decision.reason);
-        setUsedSkills((current) =>
-          current.includes(decision.tool.name)
-            ? current
-            : [...current, decision.tool.name]
-        );
         const callKey = JSON.stringify(decision.tool);
         if (seenCalls.has(callKey)) {
+          if (turnTrace) {
+            setTaskTraces((current) => [...current, turnTrace].slice(-20));
+          }
           observations.push({
             tool: decision.tool.name,
             ok: false,
@@ -328,32 +578,78 @@ export function AgentPanel({
           continue;
         }
         seenCalls.add(callKey);
+        toolCallCount += 1;
+        workingSessionState = {
+          ...workingSessionState,
+          lastToolFingerprints: [...seenCalls].slice(-5),
+          updatedAt: new Date().toISOString(),
+        };
+        setSessionState(workingSessionState);
 
         if (
           decision.tool.name !== 'simulate_patch' &&
-          decision.tool.name !== 'simulate_scenario'
+          decision.tool.name !== 'simulate_scenario' &&
+          decision.tool.name !== 'simulate_relocation_candidate'
         ) {
-          observations.push(runReadOnlyAgentTool(result, decision.tool));
+          const observation = await executeReadOnlyAgentTool(
+            result,
+            decision.tool,
+            controller.signal
+          );
+          observations.push(observation);
+          if (
+            observation.tool === 'lookup_city_costs' &&
+            observation.ok &&
+            observation.result &&
+            typeof observation.result === 'object' &&
+            (observation.result as { kind?: unknown }).kind ===
+              'city-cost-candidate'
+          ) {
+            workingSessionState = {
+              ...workingSessionState,
+              pendingCityCandidate:
+                observation.result as AgentShortTermState['pendingCityCandidate'],
+              updatedAt: new Date().toISOString(),
+            };
+            setSessionState(workingSessionState);
+          }
           setTaskObservations([...observations]);
           setTaskStep(step + 1);
+          if (turnTrace) {
+            setTaskTraces((current) => [...current, turnTrace].slice(-20));
+          }
           continue;
         }
 
         try {
           const comparison =
-            decision.tool.name === 'simulate_scenario'
-              ? simulateScenario(
-                  result.input,
-                  result,
-                  decision.tool.arguments.patches
-                )
-              : simulateAction(
-                  result.input,
-                  result,
-                  decision.tool.arguments.patch
-                );
+            decision.tool.name === 'simulate_relocation_candidate'
+              ? workingSessionState.pendingCityCandidate
+                ? simulateRelocationCandidate(
+                    result,
+                    decision.tool.arguments.relocationId,
+                    workingSessionState.pendingCityCandidate
+                  )
+                : (() => {
+                    throw new Error(
+                      'No verified city candidate is available for simulation.'
+                    );
+                  })()
+              : decision.tool.name === 'simulate_scenario'
+                ? simulateScenario(
+                    result.input,
+                    result,
+                    decision.tool.arguments.patches
+                  )
+                : simulateAction(
+                    result.input,
+                    result,
+                    decision.tool.arguments.patch
+                  );
           setProposal(comparison);
           setActiveQuestion(null);
+          const completedTrace = completeTrace('proposal', turnTrace ?? null);
+          setTaskTraces((current) => [...current, completedTrace].slice(-20));
           updateMessages((current) => [
             ...current,
             {
@@ -361,6 +657,7 @@ export function AgentPanel({
               role: 'assistant',
               content: copy.agent_panel.proposal_intro,
               evidence: [decision.reason],
+              trace: completedTrace,
             },
           ]);
           return;
@@ -375,11 +672,22 @@ export function AgentPanel({
           });
           setTaskObservations([...observations]);
           setTaskStep(step + 1);
+          if (turnTrace) {
+            setTaskTraces((current) => [...current, turnTrace].slice(-20));
+          }
         }
       }
       throw new Error(copy.agent_panel.errors.step_limit);
     } catch (turnError) {
-      if ((turnError as Error).name !== 'AbortError') {
+      const failureTrace = completeTrace(timedOut ? 'timeout' : 'error');
+      setTaskTraces((current) => [...current, failureTrace].slice(-20));
+      if (timedOut) {
+        setError(
+          locale.startsWith('zh')
+            ? '本轮任务超过 12 秒，已停止执行；正式计划没有改变。'
+            : 'This turn exceeded 12 seconds and was stopped; the formal plan was not changed.'
+        );
+      } else if ((turnError as Error).name !== 'AbortError') {
         setError(
           turnError instanceof Error
             ? turnError.message
@@ -387,6 +695,7 @@ export function AgentPanel({
         );
       }
     } finally {
+      window.clearTimeout(deadline);
       setBusy(false);
       setRunningReason('');
       abortRef.current = null;
@@ -395,13 +704,27 @@ export function AgentPanel({
 
   const gap = (month: number | null) =>
     month === null ? copy.agent_panel.no_gap : formatMonth(month as never);
+  const currentMode = enhancementScope.startsWith('agent-')
+    ? enhancementScope === 'agent-once'
+      ? copy.agent_panel.mode_agent_once
+      : copy.agent_panel.mode_agent_session
+    : enhancementScope === 'once'
+      ? copy.agent_panel.mode_enhanced_once
+      : enhancementScope === 'session'
+        ? copy.agent_panel.mode_enhanced_session
+        : copy.agent_panel.mode_strict;
+  const currentPrivacy = enhancementScope.startsWith('agent-')
+    ? copy.agent_panel.privacy_agent
+    : enhancementScope === 'off'
+      ? copy.agent_panel.privacy_strict
+      : copy.agent_panel.privacy_enhanced;
 
   return (
     <aside
-      className="border-primary/30 bg-background overflow-hidden rounded-xl border shadow-[0_18px_50px_-24px_rgba(15,118,78,0.38)] xl:sticky xl:top-32 xl:max-h-[calc(100dvh-9rem)]"
+      className="bg-background ring-border/40 flex flex-col overflow-hidden rounded-[1.75rem] shadow-[0_28px_65px_-46px_rgba(15,118,78,0.5)] ring-1 xl:sticky xl:top-36 xl:h-[calc(100dvh-10rem)] xl:min-h-[600px]"
       aria-labelledby="agent-panel-title"
     >
-      <header className="border-border flex items-start justify-between gap-3 border-b p-4 sm:p-5">
+      <header className="flex items-start justify-between gap-3 px-4 pt-5 sm:px-6 sm:pt-6">
         <div className="flex min-w-0 items-center gap-3">
           <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
             <Sparkles className="size-4" aria-hidden="true" />
@@ -410,132 +733,32 @@ export function AgentPanel({
             <h2 id="agent-panel-title" className="font-semibold">
               {copy.agent_panel.title}
             </h2>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <p className="text-muted-foreground mt-1 text-xs">
               {copy.agent_panel.subtitle}
             </p>
           </div>
         </div>
-        <span className="border-primary/25 bg-primary/5 text-primary shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium">
-          {copy.agent_panel.status}
-        </span>
+        <button
+          type="button"
+          aria-label={copy.agent_panel.settings}
+          title={copy.agent_panel.settings}
+          onClick={() => setShowSettings(true)}
+          className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary/25 relative flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:ring-4 focus-visible:outline-none"
+        >
+          <Settings2 className="size-4.5" aria-hidden="true" />
+          {enhancementScope !== 'off' && (
+            <span
+              className="bg-primary absolute top-2 right-2 size-1.5 rounded-full"
+              aria-hidden="true"
+            />
+          )}
+        </button>
       </header>
 
-      <div
-        className="xl:max-h-[calc(100dvh-22rem)] xl:overflow-y-auto"
-        aria-live="polite"
-      >
-        <div className="space-y-4 p-4 sm:p-5">
-          <section
-            aria-label={copy.agent_panel.skills_title}
-            className="border-border border-b pb-4"
-          >
-            <h3 className="text-sm font-semibold">
-              {copy.agent_panel.skills_title}
-            </h3>
-            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-              {copy.agent_panel.skills_description}
-            </p>
-            <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-              {AGENT_SKILLS.map((skill) => (
-                <li
-                  key={skill.id}
-                  title={
-                    locale.startsWith('zh')
-                      ? skill.zhDescription
-                      : skill.enDescription
-                  }
-                  className="flex min-w-0 items-center gap-1 py-1"
-                >
-                  <span className="min-w-0 leading-relaxed font-medium">
-                    {locale.startsWith('zh') ? skill.zh : skill.en}
-                  </span>
-                  <span className="sr-only">
-                    {locale.startsWith('zh')
-                      ? skill.zhDescription
-                      : skill.enDescription}
-                  </span>
-                  {usedSkills.includes(skill.id) && (
-                    <span className="text-primary shrink-0 text-[10px] font-medium">
-                      {copy.agent_panel.skill_used}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <details className="border-border border-b pb-4">
-            <summary className="cursor-pointer text-sm font-semibold">
-              {copy.agent_panel.memory_title} · {memories.length}/5
-            </summary>
-            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-              {copy.agent_panel.memory_description}
-            </p>
-            {memories.length > 0 && (
-              <ul className="mt-2 space-y-2 text-xs">
-                {memories.map((memory) => (
-                  <li
-                    key={memory.id}
-                    className="flex items-start justify-between gap-2"
-                  >
-                    <span className="min-w-0 break-words">{memory.text}</span>
-                    <button
-                      type="button"
-                      className="text-destructive shrink-0 underline underline-offset-2"
-                      onClick={() => {
-                        void deleteAgentMemory(memory.id)
-                          .then(() =>
-                            setMemories((current) =>
-                              current.filter((item) => item.id !== memory.id)
-                            )
-                          )
-                          .catch(() => setError(copy.agent_panel.memory_error));
-                      }}
-                    >
-                      {copy.agent_panel.memory_delete}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <form
-              className="mt-3 flex gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const text = memoryDraft.trim();
-                if (!text || memories.length >= 5) return;
-                const memory = {
-                  id: createLocalId('agent-memory'),
-                  planId,
-                  text,
-                  createdAt: new Date().toISOString(),
-                };
-                void saveAgentMemory(memory)
-                  .then(() => {
-                    setMemories((current) => [...current, memory]);
-                    setMemoryDraft('');
-                  })
-                  .catch(() => setError(copy.agent_panel.memory_error));
-              }}
-            >
-              <input
-                value={memoryDraft}
-                maxLength={160}
-                onChange={(event) => setMemoryDraft(event.target.value)}
-                placeholder={copy.agent_panel.memory_placeholder}
-                aria-label={copy.agent_panel.memory_placeholder}
-                className="border-input bg-background min-w-0 flex-1 rounded-lg border px-2.5 py-2 text-xs"
-              />
-              <button
-                type="submit"
-                disabled={!memoryDraft.trim() || memories.length >= 5}
-                className="border-primary/30 text-primary shrink-0 rounded-lg border px-2.5 text-xs disabled:opacity-45"
-              >
-                {copy.agent_panel.memory_add}
-              </button>
-            </form>
-          </details>
+      <div className="min-h-0 flex-1 overflow-y-auto" aria-live="polite">
+        <div className="space-y-4 p-4 sm:p-6">
           {messages.length === 0 ? (
-            <AgentWelcome copy={copy} result={result} money={money} />
+            <AgentWelcome copy={copy} />
           ) : (
             <div className="space-y-3">
               {messages.map((message) => (
@@ -577,6 +800,94 @@ export function AgentPanel({
                       {item}
                     </p>
                   ))}
+                  {message.role === 'assistant' && message.trace && (
+                    <p className="text-muted-foreground/75 border-border/50 mt-2 border-t pt-2 font-mono text-[10px] leading-relaxed">
+                      {message.trace.intent}
+                      {message.trace.skillId
+                        ? ` · ${message.trace.skillId}`
+                        : ''}
+                      {` · ${message.trace.perceptionSource} · ${message.trace.totalMs}ms`}
+                      {typeof message.trace.endToEndMs === 'number'
+                        ? ` · E2E ${message.trace.endToEndMs}ms`
+                        : ''}
+                    </p>
+                  )}
+                  {message.role === 'assistant' && message.trace && (
+                    <div className="border-border/50 mt-2 border-t pt-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground mr-1 text-[11px]">
+                          {copy.agent_panel.feedback_prompt}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={copy.agent_panel.feedback_helpful}
+                          aria-pressed={message.feedback?.rating === 'helpful'}
+                          title={copy.agent_panel.feedback_helpful}
+                          onClick={() =>
+                            setMessageFeedback(message.id, 'helpful')
+                          }
+                          className={`flex size-7 items-center justify-center rounded-md transition-colors ${
+                            message.feedback?.rating === 'helpful'
+                              ? 'bg-primary/15 text-primary'
+                              : 'text-muted-foreground hover:bg-muted'
+                          }`}
+                        >
+                          <ThumbsUp className="size-3.5" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={copy.agent_panel.feedback_not_helpful}
+                          aria-pressed={
+                            message.feedback?.rating === 'not_helpful'
+                          }
+                          title={copy.agent_panel.feedback_not_helpful}
+                          onClick={() =>
+                            setMessageFeedback(message.id, 'not_helpful')
+                          }
+                          className={`flex size-7 items-center justify-center rounded-md transition-colors ${
+                            message.feedback?.rating === 'not_helpful'
+                              ? 'bg-destructive/10 text-destructive'
+                              : 'text-muted-foreground hover:bg-muted'
+                          }`}
+                        >
+                          <ThumbsDown className="size-3.5" aria-hidden="true" />
+                        </button>
+                        {message.feedback?.rating === 'helpful' && (
+                          <span className="text-muted-foreground text-[11px]">
+                            {copy.agent_panel.feedback_thanks}
+                          </span>
+                        )}
+                      </div>
+                      {message.feedback?.rating === 'not_helpful' && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="text-muted-foreground w-full text-[11px]">
+                            {copy.agent_panel.feedback_reason_prompt}
+                          </span>
+                          {FEEDBACK_REASONS.map((reason) => (
+                            <button
+                              type="button"
+                              key={reason}
+                              aria-pressed={message.feedback?.reason === reason}
+                              onClick={() =>
+                                setMessageFeedback(
+                                  message.id,
+                                  'not_helpful',
+                                  reason
+                                )
+                              }
+                              className={`rounded-full border px-2 py-1 text-[10px] ${
+                                message.feedback?.reason === reason
+                                  ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                                  : 'border-border text-muted-foreground'
+                              }`}
+                            >
+                              {copy.agent_panel[`feedback_reason_${reason}`]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
@@ -650,6 +961,16 @@ export function AgentPanel({
                       proposal.candidatePlan
                     );
                     setProposal(null);
+                    setSessionState((current) =>
+                      current
+                        ? {
+                            ...current,
+                            pendingCityCandidate: null,
+                            lastToolFingerprints: [],
+                            updatedAt: new Date().toISOString(),
+                          }
+                        : current
+                    );
                     updateMessages((current) => [
                       ...current,
                       {
@@ -665,7 +986,19 @@ export function AgentPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setProposal(null)}
+                  onClick={() => {
+                    setProposal(null);
+                    setSessionState((current) =>
+                      current
+                        ? {
+                            ...current,
+                            pendingCityCandidate: null,
+                            lastToolFingerprints: [],
+                            updatedAt: new Date().toISOString(),
+                          }
+                        : current
+                    );
+                  }}
                   className="border-border bg-background min-h-10 rounded-lg border px-3 text-xs"
                 >
                   {copy.agent_panel.discard}
@@ -716,6 +1049,8 @@ export function AgentPanel({
               onClick={() => {
                 updateMessages(() => []);
                 setProposal(null);
+                setSessionState(createShortTermState(context.planHash));
+                setTaskTraces([]);
                 setError('');
                 setTaskHydrated(false);
                 taskSaveQueueRef.current = taskSaveQueueRef.current
@@ -731,6 +1066,219 @@ export function AgentPanel({
           )}
         </div>
       </div>
+
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto sm:max-w-md">
+          <DialogHeader className="pr-7 text-left">
+            <DialogTitle>{copy.agent_panel.settings}</DialogTitle>
+            <DialogDescription className="leading-relaxed">
+              {copy.agent_panel.settings_description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <section className="mt-5" aria-labelledby="assistant-mode-heading">
+            <div className="flex items-center justify-between gap-3">
+              <h3 id="assistant-mode-heading" className="text-sm font-semibold">
+                {copy.agent_panel.analysis_mode}
+              </h3>
+              <span className="text-muted-foreground text-xs">
+                {copy.agent_panel.current_mode} · {currentMode}
+              </span>
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              {currentPrivacy}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {enhancementScope === 'off' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSettings(false);
+                      setConsentPurpose('expression');
+                      setShowConsent(true);
+                    }}
+                    className="border-border bg-background hover:bg-muted min-h-10 rounded-lg border px-3 text-xs font-medium"
+                  >
+                    {copy.agent_panel.enable_enhancement}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSettings(false);
+                      setConsentPurpose('skills');
+                      setShowConsent(true);
+                    }}
+                    className="bg-primary text-primary-foreground min-h-10 rounded-lg px-3 text-xs font-medium"
+                  >
+                    {copy.agent_panel.enable_agent}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sessionStorage.setItem(ENHANCED_SESSION_KEY, 'off');
+                    setEnhancementScope('off');
+                  }}
+                  className="border-border bg-background hover:bg-muted min-h-10 rounded-lg border px-3 text-xs font-medium"
+                >
+                  {copy.agent_panel.disable_enhancement}
+                </button>
+              )}
+            </div>
+          </section>
+
+          <section
+            className="border-border mt-5 border-t pt-5"
+            aria-labelledby="assistant-quality-heading"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <h3
+                id="assistant-quality-heading"
+                className="text-sm font-semibold"
+              >
+                {copy.agent_panel.quality_title}
+              </h3>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                n={qualitySummary.completedSampleSize}
+              </span>
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              {copy.agent_panel.quality_description}
+            </p>
+            {qualitySummary.completedSampleSize === 0 ? (
+              <p className="text-muted-foreground mt-3 text-xs">
+                {copy.agent_panel.quality_no_data}
+              </p>
+            ) : (
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <QualityMetric
+                  label={copy.agent_panel.quality_p50}
+                  value={`${qualitySummary.medianEndToEndMs ?? 0} ms`}
+                />
+                <QualityMetric
+                  label={copy.agent_panel.quality_p95}
+                  value={`${qualitySummary.p95EndToEndMs ?? 0} ms`}
+                />
+                <QualityMetric
+                  label={copy.agent_panel.quality_helpful_rate}
+                  value={
+                    qualitySummary.helpfulRatePercent === null
+                      ? `— (n=${qualitySummary.feedbackSampleSize})`
+                      : `${qualitySummary.helpfulRatePercent}% (n=${qualitySummary.feedbackSampleSize})`
+                  }
+                />
+                <QualityMetric
+                  label={copy.agent_panel.quality_fallback_rate}
+                  value={`${qualitySummary.fallbackRatePercent ?? 0}%`}
+                />
+                <QualityMetric
+                  label={copy.agent_panel.quality_clarification_rate}
+                  value={`${qualitySummary.clarificationRatePercent ?? 0}%`}
+                />
+                <QualityMetric
+                  label={copy.agent_panel.quality_failure_rate}
+                  value={`${qualitySummary.failureRatePercent ?? 0}%`}
+                />
+              </dl>
+            )}
+            <p className="text-muted-foreground mt-3 text-[11px] leading-relaxed">
+              {copy.agent_panel.quality_caveat}
+            </p>
+          </section>
+
+          <section
+            className="border-border mt-5 border-t pt-5"
+            aria-labelledby="assistant-preferences-heading"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <h3
+                id="assistant-preferences-heading"
+                className="text-sm font-semibold"
+              >
+                {copy.agent_panel.memory_title}
+              </h3>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {memories.length}/5
+              </span>
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              {copy.agent_panel.memory_description}
+            </p>
+            {memories.length > 0 && (
+              <ul className="mt-3 space-y-2 text-xs">
+                {memories.map((memory) => (
+                  <li
+                    key={memory.id}
+                    className="bg-muted/40 flex items-start justify-between gap-3 rounded-lg px-3 py-2.5"
+                  >
+                    <span className="min-w-0 leading-relaxed break-words">
+                      {memory.text}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-destructive shrink-0 underline underline-offset-2"
+                      onClick={() => {
+                        void deleteAgentMemory(memory.id)
+                          .then(() =>
+                            setMemories((current) =>
+                              current.filter((item) => item.id !== memory.id)
+                            )
+                          )
+                          .catch(() => setError(copy.agent_panel.memory_error));
+                      }}
+                    >
+                      {copy.agent_panel.memory_delete}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form
+              className="mt-3 flex gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const text = memoryDraft.trim();
+                if (!text || memories.length >= 5) return;
+                const memory = {
+                  id: createLocalId('agent-memory'),
+                  planId,
+                  text,
+                  createdAt: new Date().toISOString(),
+                  kind: inferMemoryKind(text),
+                  source: 'user_confirmed' as const,
+                  status: 'active' as const,
+                  effectiveFrom: new Date().toISOString(),
+                  expiresAt: null,
+                };
+                void saveAgentMemory(memory)
+                  .then(() => {
+                    setMemories((current) => [...current, memory]);
+                    setMemoryDraft('');
+                  })
+                  .catch(() => setError(copy.agent_panel.memory_error));
+              }}
+            >
+              <input
+                value={memoryDraft}
+                maxLength={160}
+                onChange={(event) => setMemoryDraft(event.target.value)}
+                placeholder={copy.agent_panel.memory_placeholder}
+                aria-label={copy.agent_panel.memory_placeholder}
+                className="border-input bg-background min-w-0 flex-1 rounded-lg border px-3 py-2 text-xs"
+              />
+              <button
+                type="submit"
+                disabled={!memoryDraft.trim() || memories.length >= 5}
+                className="border-primary/30 text-primary min-h-10 shrink-0 rounded-lg border px-3 text-xs font-medium disabled:opacity-45"
+              >
+                {copy.agent_panel.memory_add}
+              </button>
+            </form>
+          </section>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showConsent} onOpenChange={setShowConsent}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto sm:max-w-md">
@@ -783,7 +1331,7 @@ export function AgentPanel({
             <button
               type="button"
               onClick={() => {
-                sessionStorage.removeItem(ENHANCED_SESSION_KEY);
+                sessionStorage.setItem(ENHANCED_SESSION_KEY, 'off');
                 setEnhancementScope(
                   consentPurpose === 'skills' ? 'agent-once' : 'once'
                 );
@@ -821,81 +1369,20 @@ export function AgentPanel({
       </Dialog>
 
       <form
-        className="border-border bg-muted/25 border-t p-4 sm:p-5"
+        className="bg-muted/30 m-3 mt-0 shrink-0 rounded-xl p-4 sm:m-4 sm:mt-0"
         onSubmit={(event) => {
           event.preventDefault();
           void startTurn(question);
         }}
       >
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2 text-xs">
-            {enhancementScope === 'off' ? (
-              <LockKeyhole
-                className="text-muted-foreground size-3.5 shrink-0"
-                aria-hidden="true"
-              />
-            ) : (
-              <Sparkles
-                className="text-primary size-3.5 shrink-0"
-                aria-hidden="true"
-              />
-            )}
-            <span className="truncate font-medium">
-              {enhancementScope === 'off'
-                ? copy.agent_panel.mode_strict
-                : enhancementScope === 'agent-once'
-                  ? copy.agent_panel.mode_agent_once
-                  : enhancementScope === 'agent-session'
-                    ? copy.agent_panel.mode_agent_session
-                    : enhancementScope === 'once'
-                      ? copy.agent_panel.mode_enhanced_once
-                      : copy.agent_panel.mode_enhanced_session}
-            </span>
-          </div>
-          {enhancementScope === 'off' ? (
-            <span className="flex shrink-0 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setConsentPurpose('expression');
-                  setShowConsent(true);
-                }}
-                className="text-primary hover:text-primary/80 text-xs font-medium"
-              >
-                {copy.agent_panel.enable_enhancement}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setConsentPurpose('skills');
-                  setShowConsent(true);
-                }}
-                className="text-primary hover:text-primary/80 text-xs font-medium"
-              >
-                {copy.agent_panel.enable_agent}
-              </button>
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                sessionStorage.removeItem(ENHANCED_SESSION_KEY);
-                setEnhancementScope('off');
-              }}
-              className="text-muted-foreground hover:text-foreground shrink-0 text-xs"
-            >
-              {copy.agent_panel.disable_enhancement}
-            </button>
-          )}
-        </div>
         {messages.length === 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {examples.slice(0, 2).map((example) => (
+          <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            {examples.slice(0, 6).map((example) => (
               <button
                 type="button"
                 key={example}
-                onClick={() => void startTurn(example)}
-                className="border-border bg-background hover:border-primary/40 rounded-full border px-3 py-1.5 text-left text-[11px]"
+                onClick={() => void startTurn(example, true)}
+                className="border-border bg-background hover:border-primary/40 hover:bg-primary/[0.025] focus-visible:ring-primary/20 min-h-11 rounded-xl border px-3 py-2.5 text-left text-[11px] leading-snug transition-colors focus-visible:ring-4 focus-visible:outline-none"
               >
                 {example}
               </button>
@@ -935,75 +1422,43 @@ export function AgentPanel({
             )}
           </button>
         </div>
-        <p className="text-muted-foreground mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed">
-          <LockKeyhole className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
-          {enhancementScope === 'off'
-            ? copy.agent_panel.privacy_strict
-            : enhancementScope.startsWith('agent-')
-              ? copy.agent_panel.privacy_agent
-              : copy.agent_panel.privacy_enhanced}
-        </p>
       </form>
     </aside>
   );
 }
 
-function AgentWelcome({
-  copy,
-  result,
-  money,
-}: {
-  copy: WorkspaceCopy;
-  result: MonthlyCalculationResult;
-  money: (cents: number) => string;
-}) {
+function AgentWelcome({ copy }: { copy: WorkspaceCopy }) {
   return (
-    <>
-      <div className="bg-muted/55 rounded-xl p-4">
-        <p className="text-sm leading-relaxed">
-          {copy.agent_panel.description}
-        </p>
-        <dl className="border-border mt-4 grid grid-cols-2 gap-3 border-t pt-4">
-          <div>
-            <dt className="text-muted-foreground text-[11px]">
-              {copy.agent_panel.ending}
-            </dt>
-            <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
-              {money(result.summary.endingAvailableCents)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground text-[11px]">
-              {copy.agent_panel.first_gap}
-            </dt>
-            <dd className="mt-1 text-sm font-semibold">
-              {result.summary.firstGapMonth
-                ? copy.agent_panel.has_gap
-                : copy.agent_panel.no_gap}
-            </dd>
-          </div>
-        </dl>
-      </div>
-      <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-        {copy.agent_panel.capabilities.map((item: string) => (
-          <div
-            key={item}
-            className="border-border bg-background rounded-lg border px-2 py-2 leading-tight"
-          >
-            {item}
-          </div>
-        ))}
-      </div>
-    </>
+    <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed">
+      {copy.agent_panel.description}
+    </p>
+  );
+}
+
+function QualityMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-muted/45 rounded-lg px-3 py-2.5">
+      <dt className="text-muted-foreground text-[11px]">{label}</dt>
+      <dd className="mt-1 font-semibold tabular-nums">{value}</dd>
+    </div>
   );
 }
 
 function patchLabel(
-  patch: (SimulationComparison | ScenarioComparison)['patch'],
+  patch: (
+    | SimulationComparison
+    | ScenarioComparison
+    | RelocationCandidateComparison
+  )['patch'],
   context: ReturnType<typeof buildAgentContext>,
   locale: string
 ): string {
   const zh = locale.startsWith('zh');
+  if (patch.type === 'city-relocation-candidate') {
+    return zh
+      ? `${patch.fromCity} → ${patch.toCity}：采用 ${patch.sourceLabel} 候选试算`
+      : `${patch.fromCity} → ${patch.toCity}: simulate ${patch.sourceLabel}`;
+  }
   if (patch.type === 'scenario') {
     return patch.patches
       .map((item) => patchLabel(item, context, locale))
@@ -1051,4 +1506,18 @@ function patchLabel(
       ? patch.amountCents
       : patch.openingBalanceCents;
   return `${label ?? id}: ${new Intl.NumberFormat(locale).format(amount / 100)}`;
+}
+
+function createShortTermState(planHash: string): AgentShortTermState {
+  return {
+    version: '1.0.0',
+    planHash,
+    activeIntent: null,
+    referencedEntity: null,
+    referencedYear: null,
+    pendingCityCandidate: null,
+    lastToolFingerprints: [],
+    workingMemory: null,
+    updatedAt: new Date().toISOString(),
+  };
 }

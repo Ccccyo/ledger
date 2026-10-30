@@ -33,16 +33,16 @@ export function LifeTimeline({
     e.kind === 'relocation'
       ? copy.relocation.timeline.replace('{city}', e.name)
       : e.kind === 'event'
-      ? e.name
-      : e.kind === 'loan_end'
-        ? `${e.name} · ${c.loan_end}`
-        : e.kind === 'retirement'
-          ? copy.plan.sections.retirement
-          : c[e.kind];
+        ? e.name
+        : e.kind === 'loan_end'
+          ? `${e.name} · ${c.loan_end}`
+          : e.kind === 'retirement'
+            ? copy.plan.sections.retirement
+            : c[e.kind];
   return (
     <section
       aria-labelledby="life-timeline-heading"
-      className="border-border border-y py-4"
+      className="bg-muted/30 rounded-xl px-4 py-4"
     >
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="life-timeline-heading" className="text-base font-semibold">

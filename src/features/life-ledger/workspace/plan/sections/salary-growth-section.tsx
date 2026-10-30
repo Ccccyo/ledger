@@ -97,8 +97,8 @@ export function SalaryGrowthSection({ plan, copy, onChange }: SectionProps) {
           ))}
         </div>
       </div>
-      <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-        <label className="text-sm">
+      <div className="grid max-w-xl min-w-0 gap-3 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
+        <label className="min-w-0 text-sm">
           <span className="mb-2 block">{copy.career.growth_start}</span>
           <input
             type="month"
@@ -109,7 +109,7 @@ export function SalaryGrowthSection({ plan, copy, onChange }: SectionProps) {
             className="border-input bg-background focus-visible:ring-primary/20 h-11 w-full rounded-lg border px-3 focus-visible:ring-3 focus-visible:outline-none"
           />
         </label>
-        <label className="text-sm">
+        <label className="min-w-0 text-sm">
           <span className="mb-2 block">{copy.career.growth_end}</span>
           <input
             type="month"

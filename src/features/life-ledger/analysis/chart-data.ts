@@ -13,7 +13,15 @@ export function annualChartData(result: MonthlyCalculationResult) {
   return result.annual.map((row) => {
     const c = row.expenseByCategory;
     const groups = {
-      living: (c.living ?? 0) + (c.healthcare ?? 0) + (c.tax ?? 0),
+      living:
+        (c.living ?? 0) +
+        (c.self_travel ?? 0) +
+        (c.self_hobbies ?? 0) +
+        (c.self_learning ?? 0) +
+        (c.self_wellness ?? 0) +
+        (c.self_social ?? 0) +
+        (c.healthcare ?? 0) +
+        (c.tax ?? 0),
       housing: c.housing ?? 0,
       child: c.child ?? 0,
       parent: c.parent ?? 0,

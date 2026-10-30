@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   buildAnnualSnapshots,
+  compactAnnualFlowDiagram,
   selectInitialSnapshotYear,
   type AnnualFlowCategory,
   type AnnualFlowNode,
@@ -87,6 +88,9 @@ export function AnnualSnapshotExplorer({
 
   if (!snapshot) return null;
 
+  const chartFlow = compactAnnualFlowDiagram(snapshot.flow);
+  const flowIsCompacted = chartFlow.nodes.length < snapshot.flow.nodes.length;
+
   const selectIndex = (index: number) => {
     const next = snapshots[Math.max(0, Math.min(snapshots.length - 1, index))];
     if (next) setSelectedYear(next.year);
@@ -125,15 +129,15 @@ export function AnnualSnapshotExplorer({
 
   return (
     <section
-      className="border-border bg-background overflow-hidden rounded-xl border"
+      className="bg-background overflow-hidden rounded-2xl shadow-[0_24px_55px_-44px_rgba(15,23,42,0.75)]"
       aria-labelledby="annual-snapshot-title"
     >
-      <div className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
         <h2 id="annual-snapshot-title" className="text-lg font-semibold">
           {copy.annual_snapshot.title}
         </h2>
         <div
-          className="bg-muted grid shrink-0 grid-cols-2 rounded-lg p-1"
+          className="bg-muted/70 grid shrink-0 grid-cols-2 rounded-xl p-1"
           role="group"
           aria-label={copy.annual_snapshot.view_label}
         >
@@ -157,7 +161,7 @@ export function AnnualSnapshotExplorer({
       </div>
 
       {mode === 'trend' ? (
-        <div className="bg-muted/20 p-4 sm:p-5">
+        <div className="px-4 pb-4 sm:px-5 sm:pb-5">
           <PlanCharts result={result} copy={copy} locale={locale} />
         </div>
       ) : (
@@ -165,15 +169,14 @@ export function AnnualSnapshotExplorer({
           <div className="p-4 sm:p-5">
             <div
               className={cn(
-                'border-border grid grid-cols-2 border-y',
-                !condensed && 'lg:grid-cols-[1.15fr_repeat(4,minmax(0,1fr))]'
+                'grid grid-cols-2 gap-2',
+                !condensed && '2xl:grid-cols-[1.15fr_repeat(4,minmax(0,1fr))]'
               )}
             >
               <div
                 className={cn(
-                  'border-border col-span-2 flex min-w-0 items-center justify-between gap-3 border-b py-3',
-                  !condensed &&
-                    'lg:col-span-1 lg:border-r lg:border-b-0 lg:pr-4'
+                  'bg-muted/35 col-span-2 flex min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-3',
+                  !condensed && '2xl:col-span-1 2xl:px-4'
                 )}
               >
                 <div className="min-w-0">
@@ -216,10 +219,8 @@ export function AnnualSnapshotExplorer({
                 <dl
                   key={metric.label}
                   className={cn(
-                    'min-w-0 py-3',
-                    index % 2 === 0 ? 'pr-3' : 'border-border border-l pl-3',
-                    index >= 2 && 'border-border border-t lg:border-t-0',
-                    !condensed && 'lg:border-l lg:px-4'
+                    'bg-muted/25 min-w-0 rounded-xl px-3 py-3',
+                    !condensed && '2xl:px-4'
                   )}
                 >
                   <dt className="text-muted-foreground truncate text-[11px]">
@@ -282,7 +283,7 @@ export function AnnualSnapshotExplorer({
             </div>
           </div>
 
-          <div className="border-border bg-muted/20 border-t p-4 sm:p-5">
+          <div className="bg-muted/30 m-4 mt-0 rounded-xl p-4 sm:m-5 sm:mt-0 sm:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="font-semibold">
@@ -303,20 +304,25 @@ export function AnnualSnapshotExplorer({
             </div>
 
             {snapshot.flow.sourceTotalCents === 0 ? (
-              <p className="text-muted-foreground border-border mt-5 border-y py-10 text-center text-sm">
+              <p className="text-muted-foreground bg-background/65 mt-5 rounded-xl py-10 text-center text-sm">
                 {copy.annual_snapshot.empty_flow}
               </p>
             ) : (
               <AnnualFlowChart
-                nodes={snapshot.flow.nodes}
-                links={snapshot.flow.links}
+                nodes={chartFlow.nodes}
+                links={chartFlow.links}
                 copy={copy}
                 money={compact}
                 condensed={condensed}
               />
             )}
 
-            <FlowTable nodes={snapshot.flow.nodes} copy={copy} money={money} />
+            <FlowTable
+              nodes={snapshot.flow.nodes}
+              copy={copy}
+              money={money}
+              compacted={flowIsCompacted}
+            />
           </div>
         </div>
       )}
@@ -393,8 +399,8 @@ function AnnualFlowChart({
               sort
               margin={
                 condensed
-                  ? { top: 28, right: 96, bottom: 8, left: 96 }
-                  : { top: 28, right: 170, bottom: 8, left: 170 }
+                  ? { top: 28, right: 120, bottom: 8, left: 64 }
+                  : { top: 28, right: 216, bottom: 8, left: 96 }
               }
               node={(props: unknown) => (
                 <FlowNode {...(props as FlowNodeProps)} money={money} />
@@ -464,10 +470,10 @@ function FlowNode({
   money,
 }: FlowNodeProps & { money: (amountCents: number) => string }) {
   const color = toneColors[payload.tone];
-  const isSource = payload.side === 'source';
   const isCenter = payload.side === 'center';
-  const labelX = isCenter ? x + width / 2 : isSource ? x - 10 : x + width + 10;
+  const labelX = isCenter ? x + width / 2 : x - 12;
   const labelY = isCenter ? Math.max(18, y - 12) : y + height / 2 - 7;
+  const labelAnchor = isCenter ? 'middle' : 'end';
   return (
     <g>
       <rect
@@ -481,9 +487,13 @@ function FlowNode({
       <text
         x={labelX}
         y={labelY}
-        textAnchor={isCenter ? 'middle' : isSource ? 'end' : 'start'}
+        textAnchor={labelAnchor}
         fill="var(--foreground)"
         fontSize={11}
+        paintOrder="stroke"
+        stroke="var(--background)"
+        strokeWidth={3}
+        strokeLinejoin="round"
       >
         <tspan x={labelX} fontWeight={600}>
           {payload.name}
@@ -492,6 +502,7 @@ function FlowNode({
           x={labelX}
           dy={16}
           fill="var(--muted-foreground)"
+          stroke="var(--background)"
           fontVariant="tabular-nums"
         >
           {money(payload.amountCents)}
@@ -530,15 +541,22 @@ function FlowTable({
   nodes,
   copy,
   money,
+  compacted,
 }: {
   nodes: AnnualFlowNode[];
   copy: WorkspaceCopy;
   money: (amountCents: number) => string;
+  compacted: boolean;
 }) {
   const rows = nodes.filter((node) => node.side !== 'center');
   return (
     <details className="border-border mt-4 border-t pt-3 text-sm">
       <summary className="text-muted-foreground hover:text-foreground cursor-pointer focus-visible:outline-none">
+        {compacted && (
+          <span className="text-foreground font-medium">
+            {copy.annual_snapshot.compacted_flow} ·{' '}
+          </span>
+        )}
         {copy.annual_snapshot.table_alternative}
       </summary>
       <div className="mt-3 overflow-x-auto">

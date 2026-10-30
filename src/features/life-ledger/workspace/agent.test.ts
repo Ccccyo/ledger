@@ -12,7 +12,7 @@ import { calculateMonthlyLifePlan } from '../calculation';
 import { addMonths, createQuickLifePlan, monthIndex } from '../domain';
 import { buildAgentContext, runReadOnlyAgentTool } from './agent/agent-context';
 import { parseAgentDecision, parsePlanPatch } from './agent/agent-decision';
-import type { AgentObservation } from './agent/agent-types';
+import type { AgentObservation, AgentTurnRequest } from './agent/agent-types';
 import { saveRelocation } from './plan/relocation-mutations';
 
 describe('Planning Agent boundary', () => {
@@ -170,7 +170,10 @@ describe('Planning Agent boundary', () => {
         enhancement: string;
       };
       assert.equal(requestedUrl, 'https://api.deepseek.com/responses');
-      assert.equal((requestedBody as Record<string, unknown> | null)?.model, 'deepseek-flash');
+      assert.equal(
+        (requestedBody as Record<string, unknown> | null)?.model,
+        'deepseek-flash'
+      );
       assert.equal(payload.mode, 'model');
       assert.equal(payload.enhancement, 'applied');
     } finally {
@@ -462,6 +465,12 @@ describe('Planning Agent boundary', () => {
 
     assert.equal(decide('你好')?.type, 'answer');
     assert.equal(decide('哪一年资金压力最大？')?.type, 'tool');
+    const gapTiming = decide('当前计划什么时候可能出现资金缺口？');
+    assert.equal(gapTiming?.type, 'answer');
+    if (gapTiming?.type === 'answer') {
+      assert.match(gapTiming.answer, /没有出现资金缺口/);
+      assert.doesNotMatch(gapTiming.answer, /没完全听懂|换个说法/);
+    }
     assert.equal(decide('我们聊聊电影吧'), null);
     assert.equal(decide('我的计划到底稳不稳？')?.type, 'answer');
 
@@ -474,9 +483,83 @@ describe('Planning Agent boundary', () => {
       step: 0,
     });
     assert.equal(tool.type, 'tool');
-    if (tool.type !== 'tool' || tool.tool.name === 'simulate_patch' || tool.tool.name === 'simulate_scenario') return;
+    if (
+      tool.type !== 'tool' ||
+      tool.tool.name === 'simulate_patch' ||
+      tool.tool.name === 'simulate_scenario'
+    )
+      return;
     const observation = runReadOnlyAgentTool(result, tool.tool);
     assert.equal(decide('哪一年资金压力最大？', [observation])?.type, 'answer');
+  });
+
+  it('keeps natural investment and retirement questions inside planning', () => {
+    const context = buildAgentContext(result);
+    const request = (
+      question: string,
+      history: AgentTurnRequest['history'] = [],
+      observations: AgentObservation[] = []
+    ) =>
+      localFastPathDecision({
+        question,
+        locale: 'zh-CN',
+        context,
+        history,
+        observations,
+        step: observations.length,
+      });
+
+    const capacity = request('你觉得我可以再投入多少本金', [
+      { role: 'user', content: '我准备 35 岁开始投资，持有 3 年' },
+    ]);
+    assert.equal(capacity?.type, 'tool');
+    if (capacity?.type !== 'tool') return;
+    assert.equal(capacity.tool.name, 'get_investment_capacity');
+    const observation = runReadOnlyAgentTool(result, capacity.tool);
+    const capacityAnswer = request(
+      '你觉得我可以再投入多少本金',
+      [{ role: 'user', content: '我准备 35 岁开始投资，持有 3 年' }],
+      [observation]
+    );
+    assert.equal(capacityAnswer?.type, 'answer');
+    if (capacityAnswer?.type === 'answer') {
+      assert.match(capacityAnswer.answer, /最多还可安排/);
+      assert.doesNotMatch(capacityAnswer.answer, /不谈计划|想聊什么/);
+    }
+
+    const newInvestment = request('我要在 35 岁投一笔 50w');
+    assert.equal(newInvestment?.type, 'answer');
+    if (newInvestment?.type === 'answer')
+      assert.match(newInvestment.evidence.join(' '), /本金 500,000 元/);
+
+    const retirement = request('你说我能退休么');
+    assert.equal(retirement?.type, 'answer');
+    if (retirement?.type === 'answer')
+      assert.doesNotMatch(retirement.answer, /没完全听懂|换个说法/);
+  });
+
+  it('recognizes capability variants and urgent safety language', () => {
+    const context = buildAgentContext(result);
+    const decide = (question: string) =>
+      localFastPathDecision({
+        question,
+        locale: 'zh-CN',
+        context,
+        history: [],
+        observations: [],
+        step: 0,
+      });
+    const capability = decide('你可以干啥');
+    assert.equal(capability?.type, 'answer');
+    if (capability?.type === 'answer')
+      assert.match(capability.answer, /查看和试算当前计划/);
+
+    const urgent = decide('我不想活了');
+    assert.equal(urgent?.type, 'answer');
+    if (urgent?.type === 'answer') {
+      assert.match(urgent.answer, /安全最重要|紧急服务/);
+      assert.doesNotMatch(urgent.answer, /不谈计划|想聊什么/);
+    }
   });
 
   it('treats a broad life question as a concise plan assessment', () => {

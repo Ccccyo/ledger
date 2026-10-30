@@ -1,11 +1,26 @@
 import { NextResponse } from 'next/server';
+import { enforceMinIntervalRateLimit } from '@/shared/lib/rate-limit';
 import type { MonthIndex } from '@/features/life-ledger/domain';
 import { parseAgentDecision } from '@/features/life-ledger/workspace/agent/agent-decision';
+import {
+  perceiveTurnLocally,
+  perceiveTurnWithModel,
+} from '@/features/life-ledger/workspace/agent/agent-perception';
+import {
+  buildPlanForDecision,
+  planPerceivedTurn,
+} from '@/features/life-ledger/workspace/agent/agent-planner';
+import { policyDecision } from '@/features/life-ledger/workspace/agent/agent-policy';
 import type {
   AgentDecision,
+  AgentPerception,
+  AgentPlan,
   AgentTurnRequest,
 } from '@/features/life-ledger/workspace/agent/agent-types';
+import { validatePlannedTurn } from '@/features/life-ledger/workspace/agent/agent-validation';
+import { isCityCostCandidate } from '@/features/life-ledger/workspace/agent/city-cost-types';
 import { selectSkillWithModel } from '@/features/life-ledger/workspace/agent/model-skill-router';
+import { resolveAgentQuery } from '@/features/life-ledger/workspace/agent/query-resolution';
 
 export const runtime = 'nodejs';
 
@@ -15,7 +30,28 @@ const DEFAULT_MODEL_COOLDOWN_MS = 60_000;
 
 let modelUnavailableUntil = 0;
 
+/**
+ * Warms the route in development before the first real turn. It performs no
+ * model, tool, ledger, or storage work and is intentionally not cached.
+ */
+export function GET() {
+  return new Response(null, {
+    status: 204,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+}
+
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    const limited = enforceMinIntervalRateLimit(request, {
+      intervalMs: agentRateLimitIntervalMs(),
+      keyPrefix: 'life-ledger-agent',
+    });
+    if (limited) return limited;
+  }
+
+  const requestStartedAt = performance.now();
+  const traceId = crypto.randomUUID();
   const raw = await request.text();
   if (raw.length > MAX_BODY_BYTES) {
     return NextResponse.json(
@@ -44,12 +80,107 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid agent turn.' }, { status: 400 });
   }
 
+  const perceptionStartedAt = performance.now();
+  const localPerception = perceiveTurnLocally(input);
+  let perception = localPerception;
+  let perceptionMs = Math.round(performance.now() - perceptionStartedAt);
+  let fallbackReason: string | null = null;
+  const hardPolicy = policyDecision(input);
+  if (hardPolicy) {
+    const plan = buildPlanForDecision(localPerception, hardPolicy);
+    return agentResponse({
+      decision: hardPolicy,
+      plan,
+      perception: localPerception,
+      mode: 'policy',
+      enhancement: 'not-requested',
+      traceId,
+      requestStartedAt,
+      perceptionMs,
+      planningMs: 0,
+      fallbackReason: null,
+    });
+  }
+
+  const expressionMode = input.expressionMode ?? 'autonomous';
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (
+    expressionMode === 'autonomous' &&
+    apiKey &&
+    Date.now() >= modelUnavailableUntil &&
+    !['safety_boundary', 'crisis_support'].includes(localPerception.intent) &&
+    (localPerception.confidence === 'low' ||
+      localPerception.intent === 'unknown')
+  ) {
+    try {
+      const modelPerceptionStartedAt = performance.now();
+      perception = await perceiveTurnWithModel(input, apiKey);
+      perceptionMs = Math.round(performance.now() - modelPerceptionStartedAt);
+    } catch (error) {
+      fallbackReason =
+        error instanceof Error ? error.message : 'Model perception failed.';
+      modelUnavailableUntil = Date.now() + modelCooldownMs();
+      console.error('Life Ledger perception fell back', error);
+    }
+  }
+
+  const planningStartedAt = performance.now();
+  const perceivedPlan = planPerceivedTurn(input, perception);
+  const planningMs = Math.round(performance.now() - planningStartedAt);
+  if (perceivedPlan) {
+    const validation = validatePlannedTurn(
+      input,
+      perception,
+      perceivedPlan.plan,
+      perceivedPlan.decision
+    );
+    if (validation.ok) {
+      return agentResponse({
+        decision: perceivedPlan.decision,
+        plan: perceivedPlan.plan,
+        perception,
+        mode:
+          perception.source === 'model'
+            ? 'model-perception'
+            : 'local-structured',
+        enhancement:
+          perception.source === 'model'
+            ? 'applied'
+            : expressionMode === 'autonomous' && fallbackReason
+              ? 'unavailable'
+              : 'not-requested',
+        traceId,
+        requestStartedAt,
+        perceptionMs,
+        planningMs,
+        fallbackReason,
+      });
+    }
+    fallbackReason = `Plan validation failed: ${validation.errors.join(' ')}`;
+  }
+
   const localDecisionResult = localFastPathDecision(input);
   const localFallback = localDecisionResult ?? localDecision(input);
-  const expressionMode = input.expressionMode ?? 'strict';
+  const localPlan = buildPlanForDecision(perception, localFallback);
 
   if (expressionMode === 'autonomous') {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    // After the optional LLM perception pass, known and fully validated tasks
+    // use local planning and execution. A second model call is reserved for
+    // ambiguous language or dynamic tool selection.
+    if (localDecisionResult) {
+      return agentResponse({
+        decision: localDecisionResult,
+        plan: buildPlanForDecision(perception, localDecisionResult),
+        perception,
+        mode: 'local-fast-path',
+        enhancement: 'not-requested',
+        traceId,
+        requestStartedAt,
+        perceptionMs,
+        planningMs,
+        fallbackReason,
+      });
+    }
     if (apiKey && Date.now() >= modelUnavailableUntil) {
       try {
         const decision = await selectSkillWithModel(input, apiKey);
@@ -58,20 +189,49 @@ export async function POST(request: Request) {
         // This prevents an unverified model amount from becoming the answer.
         const checkedDecision =
           decision.type === 'answer' ? localDecision(input) : decision;
-        return NextResponse.json({
+        const plan = buildPlanForDecision(perception, checkedDecision);
+        const validation = validatePlannedTurn(
+          input,
+          perception,
+          plan,
+          checkedDecision
+        );
+        if (!validation.ok) {
+          throw new Error(
+            `Model plan failed validation: ${validation.errors.join(' ')}`
+          );
+        }
+        return agentResponse({
           decision: checkedDecision,
+          plan,
+          perception,
           mode: 'model-skills',
           enhancement: 'applied',
+          traceId,
+          requestStartedAt,
+          perceptionMs,
+          planningMs,
+          fallbackReason,
         });
       } catch (error) {
         modelUnavailableUntil = Date.now() + modelCooldownMs();
+        fallbackReason =
+          error instanceof Error ? error.message : 'Model planning failed.';
         console.error('Life Ledger model skill selection fell back', error);
       }
     }
-    return NextResponse.json({
+    return agentResponse({
       decision: localFallback,
+      plan: localPlan,
+      perception,
       mode: 'local',
       enhancement: 'unavailable',
+      traceId,
+      requestStartedAt,
+      perceptionMs,
+      planningMs,
+      fallbackReason:
+        fallbackReason ?? 'Model is not configured or is cooling down.',
     });
   }
 
@@ -83,19 +243,33 @@ export async function POST(request: Request) {
     expressionMode === 'strict' ||
     (localDecisionResult && localDecisionResult.type !== 'answer')
   ) {
-    return NextResponse.json({
+    return agentResponse({
       decision: localFallback,
+      plan: localPlan,
+      perception,
       mode: 'local',
       enhancement: 'not-requested',
+      traceId,
+      requestStartedAt,
+      perceptionMs,
+      planningMs,
+      fallbackReason,
     });
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey || Date.now() < modelUnavailableUntil) {
-    return NextResponse.json({
+    return agentResponse({
       decision: localFallback,
+      plan: localPlan,
+      perception,
       mode: 'local',
       enhancement: 'unavailable',
+      traceId,
+      requestStartedAt,
+      perceptionMs,
+      planningMs,
+      fallbackReason:
+        fallbackReason ?? 'Model is not configured or is cooling down.',
     });
   }
 
@@ -142,20 +316,83 @@ export async function POST(request: Request) {
     if (!decision || decision.type !== 'answer') {
       throw new Error('Enhanced expression returned a non-answer decision');
     }
-    return NextResponse.json({
+    return agentResponse({
       decision,
+      plan: buildPlanForDecision(perception, decision),
+      perception,
       mode: 'model',
       enhancement: 'applied',
+      traceId,
+      requestStartedAt,
+      perceptionMs,
+      planningMs,
+      fallbackReason,
     });
   } catch (error) {
     modelUnavailableUntil = Date.now() + modelCooldownMs();
     console.error('Life Ledger Agent fell back to local mode', error);
-    return NextResponse.json({
+    return agentResponse({
       decision: localFallback,
+      plan: localPlan,
+      perception,
       mode: 'local',
       enhancement: 'unavailable',
+      traceId,
+      requestStartedAt,
+      perceptionMs,
+      planningMs,
+      fallbackReason:
+        error instanceof Error ? error.message : 'Expression model failed.',
     });
   }
+}
+
+function agentResponse({
+  decision,
+  perception,
+  plan,
+  mode,
+  enhancement,
+  traceId,
+  requestStartedAt,
+  perceptionMs,
+  planningMs,
+  fallbackReason,
+}: {
+  decision: AgentDecision;
+  perception: AgentPerception;
+  plan: AgentPlan;
+  mode: string;
+  enhancement: 'applied' | 'unavailable' | 'not-requested';
+  traceId: string;
+  requestStartedAt: number;
+  perceptionMs: number;
+  planningMs: number;
+  fallbackReason: string | null;
+}) {
+  return NextResponse.json(
+    {
+      decision,
+      perception,
+      plan,
+      mode,
+      enhancement,
+      trace: {
+        id: traceId,
+        totalMs: Math.round(performance.now() - requestStartedAt),
+        perceptionMs,
+        planningMs,
+        perceptionSource: perception.source,
+        intent: perception.intent,
+        confidence: perception.confidence,
+        skillId: plan.skillId,
+        decisionType: decision.type,
+        tool: decision.type === 'tool' ? decision.tool.name : null,
+        fallbackReason,
+      },
+    },
+    { headers: { 'x-agent-trace-id': traceId } }
+  );
 }
 
 export function buildEnhancedExpressionPayload(
@@ -369,14 +606,121 @@ function readOutputText(payload: Record<string, unknown>) {
 }
 
 export function localDecision(input: AgentTurnRequest): AgentDecision {
+  const policy = policyDecision(input);
+  if (policy) return policy;
+  const resolution = resolveAgentQuery(input);
   const zh = input.locale.startsWith('zh');
-  const q = input.question.toLowerCase();
-  const conversation = [...input.history.map((item) => item.content), q]
+  const q = resolution.resolvedQuestion.toLowerCase();
+  // Only the immediately relevant exchange may assist deterministic parsing.
+  // Durable slots live in working memory; concatenating a long transcript made
+  // old amounts and intents leak into unrelated follow-up questions.
+  const conversation = [
+    ...input.history.slice(-2).map((item) => item.content),
+    q,
+  ]
     .join('\n')
     .toLowerCase();
   const casual = localConversationDecision(q, zh);
   if (casual) return casual;
   const last = input.observations.at(-1);
+  if (!last) {
+    const operationalBoundary = localOperationalBoundary(input, q, resolution);
+    if (operationalBoundary) return operationalBoundary;
+  }
+  if (last?.tool === 'read_overview') {
+    if (!last.ok || !last.result || typeof last.result !== 'object') {
+      return plainAnswer(
+        '当前正式账本读取失败，我没有继续引用旧结果。',
+        [],
+        [last.error ?? '请刷新计划后重试。']
+      );
+    }
+    const overview = last.result as {
+      planHash: string;
+      summary: {
+        firstGapMonth: number | null;
+        minimumAvailableCents: number;
+        endingAvailableCents: number;
+        endingNetWorthCents: number;
+        retirementAvailableCents: number;
+      };
+    };
+    return plainAnswer(
+      overview.summary.firstGapMonth === null
+        ? '已按当前正式计划重新计算：规划期内没有资金缺口。'
+        : `已按当前正式计划重新计算：首次资金缺口在 ${formatMonthIndex(overview.summary.firstGapMonth)}。`,
+      [
+        `最低可用资金 ${formatCents(overview.summary.minimumAvailableCents)}；期末可用资金 ${formatCents(overview.summary.endingAvailableCents)}。`,
+        `计划版本：${overview.planHash.slice(0, 8)}。`,
+      ],
+      ['结论只对应这次读取的计划版本。']
+    );
+  }
+  if (last?.tool === 'inspect_year') {
+    if (!last.ok || !last.result || typeof last.result !== 'object') {
+      return plainAnswer(
+        '请求的年份不在当前规划范围内。',
+        [],
+        [last.error ?? '请换一个年份。']
+      );
+    }
+    const row = last.result as {
+      year: number;
+      closingAvailableCents: number;
+      closingNetWorthCents: number;
+      netCashFlowCents: number;
+    };
+    return plainAnswer(
+      `${row.year} 年末可用资金为 ${formatCents(row.closingAvailableCents)}。`,
+      [
+        `当年资金变化 ${formatCents(row.netCashFlowCents)}；年末净资产 ${formatCents(row.closingNetWorthCents)}。`,
+      ],
+      ['结果来自当前正式计划版本。']
+    );
+  }
+  if (last?.tool === 'lookup_city_costs') {
+    if (!last.ok || !isCityCostCandidate(last.result)) {
+      return plainAnswer(
+        zh
+          ? '城市成本查询暂时不可用，我没有用猜测值继续试算。'
+          : 'The city-cost lookup is unavailable, so I did not continue with guessed values.',
+        [],
+        [
+          last.error ??
+            (zh
+              ? '可改为手工填写候选金额。'
+              : 'You can enter candidate amounts manually.'),
+        ]
+      );
+    }
+    const candidate = last.result;
+    const relocation = input.context.relocations.find(
+      (item) =>
+        item.currentCity === candidate.fromCity &&
+        item.targetCity === candidate.toCity
+    );
+    if (relocation && /试算|影响|计划|应用|采用/.test(q)) {
+      return {
+        type: 'tool',
+        reason: `使用 ${candidate.source.datasetVersion} 城市候选更新已有迁居安排的临时副本。`,
+        tool: {
+          name: 'simulate_relocation_candidate',
+          arguments: { relocationId: relocation.id },
+        },
+      };
+    }
+    const signed = (value: number) =>
+      `${value >= 0 ? '+' : '-'}${formatCents(Math.abs(value))}`;
+    return plainAnswer(
+      zh
+        ? `${candidate.fromCity} → ${candidate.toCity} 的演示候选为：每月住房 ${signed(candidate.housingMonthlyChangeCents)}，每月生活费 ${signed(candidate.livingMonthlyChangeCents)}，一次性搬迁费 ${formatCents(candidate.movingExpenseCandidateCents)}。`
+        : `Demo candidate for ${candidate.fromCity} → ${candidate.toCity}: housing ${signed(candidate.housingMonthlyChangeCents)} monthly, living costs ${signed(candidate.livingMonthlyChangeCents)} monthly, and ${formatCents(candidate.movingExpenseCandidateCents)} one time.`,
+      [
+        `${candidate.source.provider} · ${candidate.source.datasetVersion} · ${candidate.source.observedAt}`,
+      ],
+      [candidate.source.disclaimer]
+    );
+  }
   if (last?.tool === 'compare_retirement_ages') {
     if (!last.ok || !Array.isArray(last.result))
       return {
@@ -398,6 +742,40 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
       ),
       caveats: ['这是临时比较，没有修改正式退休年龄。'],
     };
+  }
+  if (last?.tool === 'get_investment_capacity') {
+    if (!last.ok || !last.result) {
+      return {
+        type: 'clarify',
+        question: zh
+          ? '这段投资时间超出了当前规划范围，请换一个开始时间或持有期限。'
+          : 'That investment period is outside the current plan. Choose another start or holding period.',
+      };
+    }
+    const capacity = last.result as {
+      startMonth: number;
+      endMonthExclusive: number;
+      availableAtStartCents: number;
+      gapFreeAdditionalCents: number;
+    };
+    const startAge = ageAtMonth(input.context, capacity.startMonth);
+    const holdingMonths = capacity.endMonthExclusive - capacity.startMonth;
+    const holdingYears = Math.round((holdingMonths / 12) * 10) / 10;
+    return plainAnswer(
+      zh
+        ? `按当前账本，从${startAge === null ? formatMonthIndex(capacity.startMonth) : `${startAge} 岁`}开始、持有约 ${holdingYears} 年，如果要求持有期间可用资金不低于 0，最多还可安排 ${formatCents(capacity.gapFreeAdditionalCents)}。`
+        : `Based on the current ledger, starting at ${startAge ?? formatMonthIndex(capacity.startMonth)} for about ${holdingYears} years, up to ${formatCents(capacity.gapFreeAdditionalCents)} more keeps available funds at or above zero during the holding period.`,
+      [
+        zh
+          ? `开始时可用资金上限：${formatCents(capacity.availableAtStartCents)}`
+          : `Available at the start: ${formatCents(capacity.availableAtStartCents)}`,
+      ],
+      [
+        zh
+          ? '这是现金流边界，不是建议投入额；系统没有额外预留应急资金。'
+          : 'This is a cash-flow boundary, not an investment recommendation; no extra emergency reserve is included.',
+      ]
+    );
   }
   if (last?.tool === 'compare_child_timing') {
     if (!last.ok) {
@@ -471,7 +849,7 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
       expenseByCategory: Record<string, number>;
       topExpenseCategories: string[];
     }>;
-    if (/为什么会这么少/.test(q)) {
+    if (/为什么(?:会)?这么少/.test(q)) {
       const totals = rows.reduce<Record<string, number>>((sum, row) => {
         for (const [category, amount] of Object.entries(
           row.expenseByCategory ?? {}
@@ -633,7 +1011,9 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
         `规划期内合计 ${formatCents(amount)}。`
       );
     }
-    if (/为什么.*(?:资金缺口|缺口)|退休后.*资金下降|主要原因/.test(q)) {
+    if (
+      /为什么.*(?:资金缺口|缺口)|退休后.*资金下降|主要原因|最大原因/.test(q)
+    ) {
       const requestedAge = q.match(/(\d{2})\s*岁/)?.[1];
       const focus = requestedAge
         ? rows.find(
@@ -721,11 +1101,84 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
       caveats: [],
     };
   }
+  if (
+    resolution.intent === 'state_query' &&
+    /哪些.*试算|试算.*保存|正式计划.*是什么|是否生效|恢复原来|删除试算/.test(q)
+  ) {
+    const pending = input.sessionState?.pendingCityCandidate;
+    return plainAnswer(
+      pending
+        ? `当前正式计划版本是 ${input.context.planHash.slice(0, 8)}；${pending.fromCity} → ${pending.toCity} 城市数据仍只是候选，尚未写入正式计划。`
+        : `当前正式计划版本是 ${input.context.planHash.slice(0, 8)}；没有保存中的城市数据候选。`,
+      [],
+      ['只有点击候选方案上的确认按钮后，正式计划才会改变。']
+    );
+  }
+  if (resolution.cityPair) {
+    if (/最新|当前|今天|实时|官方/.test(q) && !/演示|样例|模拟/.test(q)) {
+      return plainAnswer(
+        '当前没有接入可证明为最新的城市市场数据，因此我不能把演示数据说成实时结论。',
+        [],
+        [
+          `可以明确说“用演示数据比较 ${resolution.cityPair.fromCity} 和 ${resolution.cityPair.toCity}”，用于验证 MCP 与试算流程。`,
+        ]
+      );
+    }
+    return {
+      type: 'tool',
+      reason: `通过只读 MCP 查询 ${resolution.cityPair.fromCity} → ${resolution.cityPair.toCity} 的城市成本候选。`,
+      tool: {
+        name: 'lookup_city_costs',
+        arguments: {
+          ...resolution.cityPair,
+          householdSize: input.context.householdSize,
+          housingMode: 'unknown',
+        },
+      },
+    };
+  }
+  if (/我会有什么变化|计划概览|整体情况|总体情况/.test(q)) {
+    return {
+      type: 'tool',
+      reason: '读取当前正式计划的资金、退休和缺口概览。',
+      tool: { name: 'read_overview', arguments: {} },
+    };
+  }
+  const referencedYear = q.match(/((?:19|20|21)\d{2})\s*年/)?.[1];
+  if (referencedYear && /余额|资金|净资产/.test(q)) {
+    return {
+      type: 'tool',
+      reason: `读取 ${referencedYear} 年的正式账本记录。`,
+      tool: {
+        name: 'inspect_year',
+        arguments: { year: Number(referencedYear) },
+      },
+    };
+  }
   const structuralPatch = localStructuralPatchDecision(input, q);
   if (structuralPatch) return structuralPatch;
   const known = localKnownAnswer(input, q, conversation);
   if (known) return known;
   const asksRetirement = /退休|retire/.test(q);
+  if (
+    asksRetirement &&
+    /能不能|能否|能退休|可以退休|可不可以|行不行|够不够/.test(q)
+  ) {
+    const retirementAge = input.context.retirementAge ?? '设定年龄';
+    return input.context.summary.firstGapMonth === null
+      ? plainAnswer(
+          `按当前输入，在 ${retirementAge} 岁退休的方案计算到 ${input.context.endAge ?? '规划终点'} 岁都没有出现资金缺口。`,
+          [
+            `退休时可用资金 ${formatCents(input.context.summary.retirementAvailableCents)}。`,
+          ],
+          ['这是当前方案的试算结果，不是对未来的保证。']
+        )
+      : plainAnswer(
+          `按当前输入，在 ${retirementAge} 岁退休后会于 ${formatMonthIndex(input.context.summary.firstGapMonth)}首次出现资金缺口。`,
+          [],
+          ['可以继续比较推迟退休或调整退休支出的方案。']
+        );
+  }
   const comparedRetirementAges = [...q.matchAll(/(\d{2})\s*岁/g)].map((match) =>
     Number(match[1])
   );
@@ -843,7 +1296,7 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
     };
   }
   if (
-    /压力最大|最紧张|哪一年|最低可用资金|收入.*变化|支出.*最高|余额突然下降|哪一项支出.*影响最大|家庭支出中.*最大|为什么.*资金缺口|为什么会出现缺口|为什么会这么少|退休后.*资金下降|主要原因|支出.*重叠|买房当年.*支出|买房后.*可用资金|tightest|pressure/.test(
+    /压力最大|最紧张|哪一年|最低可用资金|收入.*变化|支出.*最高|余额突然下降|哪一项支出.*影响最大|家庭支出中.*最大|为什么.*资金缺口|为什么会出现缺口|为什么(?:会)?这么少|退休后.*资金下降|主要原因|最大原因|支出.*重叠|买房当年.*支出|买房后.*可用资金|tightest|pressure/.test(
       q
     )
   ) {
@@ -858,8 +1311,54 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
       },
     };
   }
-  const investmentIntent = /理财|投资|基金|股票|高波动|investment|invest/;
+  const investmentIntent =
+    /理财|投资|基金|股票|高波动|投一笔|投入|追加|加仓|本金|investment|invest/;
   const principalYuan = parseYuanAmount(q);
+  const asksInvestmentCapacity =
+    investmentIntent.test(q) &&
+    /(?:还|再|追加|加仓|最多|上限|可以|能).*(?:投入|投资|本金)|(?:投入|投资|本金).*(?:多少|多大|上限)/.test(
+      q
+    );
+  if (asksInvestmentCapacity) {
+    const existing =
+      input.context.investments.length === 1
+        ? input.context.investments[0]
+        : null;
+    const ageMatches = [...conversation.matchAll(/(\d{2})\s*岁(?:开始)?/g)]
+      .map((match) => Number(match[1]))
+      .filter((age) => age >= 18 && age <= 90);
+    const inferredAge = ageMatches.at(-1) ?? null;
+    const holdingYears = parseHoldingYears(conversation);
+    const startMonth = existing
+      ? existing.startMonth
+      : inferredAge !== null && input.context.primaryBirthMonth !== null
+        ? input.context.primaryBirthMonth + inferredAge * 12
+        : null;
+    const endMonthExclusive = existing
+      ? existing.endMonthExclusive
+      : startMonth !== null && holdingYears !== null
+        ? startMonth + holdingYears * 12
+        : null;
+    if (input.context.investments.length > 1 && inferredAge === null)
+      return {
+        type: 'clarify',
+        question: '你想追加到哪一笔投资？也可以告诉我开始年龄和持有年限。',
+      };
+    if (startMonth === null || endMonthExclusive === null)
+      return {
+        type: 'clarify',
+        question:
+          '准备从几岁或哪个月开始，预计持有多久？我会按正式账本计算可投入上限。',
+      };
+    return {
+      type: 'tool',
+      reason: '读取投资期间的逐月可用资金，计算追加本金的现金流边界。',
+      tool: {
+        name: 'get_investment_capacity',
+        arguments: { startMonth, endMonthExclusive },
+      },
+    };
+  }
   if (
     investmentIntent.test(q) ||
     (principalYuan !== null && investmentIntent.test(conversation))
@@ -915,11 +1414,168 @@ export function localDecision(input: AgentTurnRequest): AgentDecision {
         ? '我还没完全听懂你想查看或试算哪一项，可以换个说法吗？'
         : 'I did not fully understand which part of the plan you want to inspect or simulate. Could you rephrase it?',
     };
+  if (
+    /怎么办|怎么看|合理吗|严重吗|想多了|靠谱吗|哪里有问题|怎么优化|最好方案|应该改哪个|看看未来|安全吗|还有救|你觉得/.test(
+      q
+    )
+  ) {
+    return {
+      type: 'clarify',
+      question:
+        '你想先看“资金缺口”“压力最大的年份”，还是试算一个具体调整？请选择一项，我会用当前正式计划核对。',
+    };
+  }
   return plainAnswer(
     zh
       ? '当然可以，我们先不谈计划。你想聊什么？'
       : 'Of course. We can set the plan aside—what would you like to talk about?'
   );
+}
+
+function localOperationalBoundary(
+  input: AgentTurnRequest,
+  q: string,
+  resolution: ReturnType<typeof resolveAgentQuery>
+): AgentDecision | null {
+  const planVersion = input.context.planHash.slice(0, 8);
+  if (
+    !resolution.cityPair &&
+    /(?:今天|现在|当前|最新|今年).*(?:房贷利率|养老金政策|个税政策|社保缴费基数|通胀率|租金|房价)|(?:房贷利率|养老金政策|个税政策|社保缴费基数|通胀率|租金|房价).*(?:多少|是什么|怎样|影响|更新)/.test(
+      q
+    )
+  ) {
+    return plainAnswer(
+      '我不能查询实时房价或可证明为最新的政策、利率和市场数据，因此不会给出实时数值。',
+      [],
+      ['外部数据接入后也只会成为带来源和日期的候选值，确认前不会写入正式计划。']
+    );
+  }
+  if (/用最新数据.*自动更新|自动更新.*计划/.test(q)) {
+    return plainAnswer(
+      '不能用外部数据自动改写正式计划。',
+      [],
+      ['候选值必须展示来源、日期、口径和字段差异，并由你确认。']
+    );
+  }
+  if (/刚刚修改了收入|修改了收入.*重新分析/.test(q)) {
+    return {
+      type: 'tool',
+      reason: `重新读取正式计划 ${planVersion}，不复用上一轮结论。`,
+      tool: { name: 'read_overview', arguments: {} },
+    };
+  }
+  if (/另一个页面.*修改.*退休年龄|这里看到.*退休年龄/.test(q)) {
+    return plainAnswer(
+      `这个会话当前读取的退休年龄是 ${input.context.retirementAge ?? '未设置'} 岁。`,
+      [`正式计划版本：${planVersion}。`],
+      [
+        '如果另一个标签页尚未成功保存或本页尚未刷新，我不能声称已经看到那次修改。',
+      ]
+    );
+  }
+  if (/数字还是修改前|结论为什么没有恢复/.test(q)) {
+    return plainAnswer(
+      `我不会把旧回答当作当前事实；当前应以正式计划版本 ${planVersion} 重新计算。`,
+      [],
+      ['如果页面仍显示旧结果，请刷新计划后重新提问。']
+    );
+  }
+  if (/页面还在计算.*最终结果|还在计算.*先告诉/.test(q)) {
+    return plainAnswer(
+      '计算尚未完成时，我不能把旧结果冒充最终结果。',
+      [],
+      ['请等待本次计算完成；超时则应明确报错并保留正式计划不变。']
+    );
+  }
+  if (/保存失败.*(?:生效|成功)/.test(q)) {
+    return plainAnswer('不能仅凭提交动作判断生效；保存失败应视为未确认写入。', [
+      `当前可核对的正式计划版本是 ${planVersion}。`,
+    ]);
+  }
+  if (/两个标签页.*(?:最新|哪个计划)/.test(q)) {
+    return plainAnswer(
+      '应以成功保存后的最新计划版本为准；仅凭标签页打开时间无法判断。',
+      [`本会话当前版本：${planVersion}。`],
+      ['检测到版本冲突时需要刷新或人工选择，不能静默覆盖。']
+    );
+  }
+  if (/导入.*新.*计划.*(?:对话|有效)/.test(q)) {
+    return plainAnswer('导入新计划后，旧计划上的对话结论应失效。', [
+      '会话状态与 planHash 绑定；版本不一致时会重建短期状态。',
+    ]);
+  }
+  if (/删除了投资.*(?:解释|为什么)/.test(q)) {
+    return plainAnswer(
+      '如果投资已从正式计划删除，之前基于它的解释就是过期结果，不能继续引用。',
+      [`请以当前版本 ${planVersion} 重新计算。`]
+    );
+  }
+  if (/上一条回答.*(?:变化|相比)|当前计划和.*回答/.test(q)) {
+    return plainAnswer(
+      '我能确认当前计划版本，但没有保存上一条回答对应的完整计划快照，不能可靠生成差异。',
+      [`当前版本：${planVersion}。`],
+      ['后续可保存“回答时 planHash + 关键指标”来支持精确对比。']
+    );
+  }
+  if (/如果推迟呢/.test(q)) {
+    return {
+      type: 'clarify',
+      question: `你想推迟${input.sessionState?.referencedEntity?.label ?? '哪一项安排'}？请再给出推迟几年。`,
+    };
+  }
+  if (/^推迟哪个/.test(q)) {
+    return {
+      type: 'clarify',
+      question: `当前指代的是${input.sessionState?.referencedEntity?.label ?? '未确定对象'}；请确认要推迟它，还是其他安排。`,
+    };
+  }
+  if (/^就刚才那个/.test(q)) {
+    return {
+      type: 'clarify',
+      question: `已定位到${input.sessionState?.referencedEntity?.label ?? '未确定对象'}；还需要你提供具体调整幅度。`,
+    };
+  }
+  if (/把它删掉/.test(q)) {
+    return {
+      type: 'clarify',
+      question:
+        '“它”目前不能唯一对应一个可删除项目。请说出具体人生事件或试算；在确认前我不会删除正式计划内容。',
+    };
+  }
+  if (/你准备删除什么/.test(q)) {
+    return plainAnswer(
+      '目前没有准备删除任何正式计划项目。',
+      [],
+      ['只有定位到具体项目、展示差异并经你确认后，才会写入删除。']
+    );
+  }
+  if (/删除试算.*不是删除人生事件|取消试算|删除试算/.test(q)) {
+    return plainAnswer(
+      '明白，只丢弃临时试算，不删除任何人生事件。',
+      [],
+      ['正式计划保持不变。']
+    );
+  }
+  if (/解释净资产/.test(q)) {
+    return plainAnswer(
+      '净资产就是：把你拥有的东西折成金额，再减去还欠的钱。',
+      [],
+      ['房产等资产不一定能立刻拿来支付日常开销。']
+    );
+  }
+  if (/可用资金和净资产.*区别/.test(q)) {
+    return plainAnswer(
+      '可用资金是现在能拿来花的钱，净资产还包括房子等资产并扣掉欠款。'
+    );
+  }
+  if (/不要使用.*(?:现金流|复利|基点)|先告诉我结论.*原因/.test(q)) {
+    return {
+      type: 'clarify',
+      question:
+        '可以，我会按这个表达要求回答；请指出要解释的具体结果或上一条结论。',
+    };
+  }
+  return null;
 }
 
 /**
@@ -959,7 +1615,7 @@ function modelTimeoutMs() {
   const configured = Number(process.env.DEEPSEEK_AGENT_TIMEOUT_MS);
   return Number.isInteger(configured) &&
     configured >= 1_000 &&
-    configured <= 30_000
+    configured <= 5_000
     ? configured
     : DEFAULT_MODEL_TIMEOUT_MS;
 }
@@ -973,6 +1629,13 @@ function modelCooldownMs() {
     : DEFAULT_MODEL_COOLDOWN_MS;
 }
 
+function agentRateLimitIntervalMs() {
+  const configured = Number(process.env.AGENT_RATE_LIMIT_INTERVAL_MS);
+  return Number.isFinite(configured) && configured >= 500
+    ? configured
+    : 2_500;
+}
+
 function localConversationDecision(
   question: string,
   zh: boolean
@@ -982,6 +1645,12 @@ function localConversationDecision(
     .replace(/[。！!？?，,～~]+$/g, '')
     .trim();
   const compactGreeting = normalized.replace(/[\s,，.!！?？]+/g, '');
+  if (/不想活|想死|自杀|结束生命|伤害自己|活不下去/.test(normalized))
+    return plainAnswer(
+      zh
+        ? '听起来你现在可能非常难受。你的安全最重要：如果你可能马上伤害自己，请立刻联系当地紧急服务，或请身边可信任的人现在陪着你。你此刻是否正处于危险中？'
+        : 'It sounds like you may be in a lot of pain. Your immediate safety matters most: if you might hurt yourself now, contact local emergency services or ask someone you trust to stay with you. Are you in immediate danger?'
+    );
   if (
     /^(?:(?:你好|您好|嗨|哈喽|嘿|早上好|下午好|晚上好|在吗|在不在|hi|hello|hey)){1,3}$/i.test(
       compactGreeting
@@ -1002,7 +1671,11 @@ function localConversationDecision(
         ? '我是你的规划助手。可以一起看计划，也可以先随便聊聊。'
         : 'I’m your planning assistant. We can review the plan or simply chat.'
     );
-  if (/你会做什么|你能做什么|你可以做什么|what can you do/i.test(normalized))
+  if (
+    /你会做什么|你能做什么|你可以做什么|你可以干啥|你能干啥|what can you do/i.test(
+      normalized
+    )
+  )
     return plainAnswer(
       zh
         ? '我可以查看和试算当前计划，也可以陪你聊聊；涉及修改时会先给你确认。'
@@ -1046,7 +1719,7 @@ function localConversationDecision(
 }
 
 function looksLikePlanningQuestion(question: string) {
-  return /资金|金额|收入|工资|副业|支出|花费|余额|资产|负债|房|贷款|首付|退休|养老金|投资|理财|收益|孩子|父母|结婚|搬家|迁居|城市|计划|账本|缺口|现金流|净资产|修改|删除|撤销|试算|推迟|提前|增加|减少|持续到|哪一年|多少岁/.test(
+  return /资金|金额|收入|工资|副业|支出|花费|余额|资产|负债|房|贷款|首付|退休|养老金|投资|理财|投入|本金|追加|加仓|收益|孩子|父母|结婚|搬家|迁居|城市|计划|账本|缺口|现金流|净资产|修改|删除|撤销|试算|推迟|提前|增加|减少|持续到|哪一年|多少岁/.test(
     question
   );
 }
@@ -1181,6 +1854,22 @@ function localKnownAnswer(
     ]);
 
   // Read-only plan summary.
+  if (
+    /(?:什么时候|何时|哪一年|多少岁).*资金缺口|资金缺口.*(?:什么时候|何时|哪一年|多少岁)/.test(
+      q
+    )
+  )
+    return summary.firstGapMonth === null
+      ? plainAnswer(
+          `按当前输入，计算到 ${context.endAge ?? '规划终点'} 岁都没有出现资金缺口。`,
+          [],
+          ['结论只覆盖当前计划和规划期限。']
+        )
+      : plainAnswer(
+          `按当前输入，首次资金缺口出现在 ${formatMonthIndex(summary.firstGapMonth)}，约 ${firstGapAge ?? '未知'} 岁。`,
+          [],
+          ['结论会随收入、支出和时间安排变化。']
+        );
   if (/资金能持续到多少岁/.test(q))
     return summary.firstGapMonth === null
       ? plainAnswer(
@@ -1203,7 +1892,7 @@ function localKnownAnswer(
         : `首次资金缺口发生在 ${formatMonthIndex(summary.firstGapMonth)}，约 ${firstGapAge} 岁。`
     );
   if (
-    /退休时.*(?:可用资金|还有多少钱)|那时候还有多少钱/.test(q) &&
+    /退休时.*(?:可用资金|还有多少钱|有多少钱)|那时候还有多少钱/.test(q) &&
     (/退休/.test(q) || /退休/.test(conversation))
   )
     return plainAnswer(
@@ -1372,7 +2061,7 @@ function localKnownAnswer(
           ['“压力较大”和“造成资金缺口”是两个不同结论。']
         )
       : plainAnswer('当前计划中没有购房安排。');
-  if (/计划什么时候买房/.test(q))
+  if (/(?:计划|我).*什么时候买房|什么时候.*买房/.test(q))
     return purchase?.acquiredMonth
       ? plainAnswer(
           `${purchase.name}计划在 ${formatMonthIndex(purchase.acquiredMonth)}购买。`
@@ -1669,10 +2358,9 @@ function localKnownAnswer(
       '各投资计划分别计算上下限差额，再按同一月份相加；本金不会重复计算。'
     );
   if (/投资本金会从当前现金中直接扣除/.test(q))
-    return plainAnswer(
-      '不会。投资计划只展示本金分配和收益情景，不会从正式可用资金中扣款。',
-      ['如要反映真实转账或追加投入，需要另行录入对应的正式账本变化。']
-    );
+    return plainAnswer('会在投资开始月从可用资金中预留。', [
+      '持有期间这部分本金不能用于日常开支，结束时本金转回可用资金；收益与亏损只显示为分析区间。',
+    ]);
   if (/投资收益为零.*正式结果/.test(q))
     return plainAnswer(
       `正式结果本来就不计投资收益：终点可用资金 ${formatCents(summary.endingAvailableCents)}。`
@@ -1843,7 +2531,7 @@ function localStructuralPatchDecision(
       },
     };
   }
-  if (/买房.*(?:推迟|改到)|把买房时间改到/.test(q)) {
+  if (/(?:买房|购房).*(?:推迟|提前|改到)|把(?:买房|购房)时间改到/.test(q)) {
     if (!purchase?.acquiredMonth)
       return plainAnswer('当前计划中没有可调整的购房计划。');
     const targetYear = q.match(/(20\d{2})\s*年/)?.[1];
@@ -1858,7 +2546,7 @@ function localStructuralPatchDecision(
       };
     return {
       type: 'tool',
-      reason: `把“${purchase.name}”${monthDelta > 0 ? '推迟' : '提前'} ${Math.abs(monthDelta / 12)} 年，先生成临时方案。`,
+      reason: `把“${purchase.name}”${monthDelta > 0 ? '推迟' : '提前'} ${Math.abs(monthDelta / 12)} 年，先生成临时试算方案。`,
       tool: {
         name: 'simulate_patch',
         arguments: {

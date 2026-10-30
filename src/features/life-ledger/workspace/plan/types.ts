@@ -29,4 +29,5 @@ export interface SectionProps {
   locale: string;
   copy: WorkspaceCopy;
   onChange: (updater: (plan: LifePlan) => LifePlan) => void;
+  onInvestmentAnalysis?: () => void;
 }

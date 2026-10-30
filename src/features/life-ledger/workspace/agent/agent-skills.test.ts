@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { it } from 'node:test';
 
 import { POST } from '../../../../app/api/life-ledger/assistant/route';
@@ -8,14 +10,19 @@ import { addMonths, createQuickLifePlan, moneyCents } from '../../domain';
 import { buildAgentContext, runReadOnlyAgentTool } from './agent-context';
 import { parseAgentDecision } from './agent-decision';
 import { selectSkillWithModel } from './model-skill-router';
-import { AGENT_SKILLS, modelToolDeclarations } from './skill-registry';
+import {
+  AGENT_SKILLS,
+  AGENT_TOOLS,
+  modelToolDeclarations,
+  skillForTool,
+} from './skill-registry';
 
 const plan = createQuickLifePlan();
 const result = calculateMonthlyLifePlan(plan);
 const context = buildAgentContext(result);
 
-it('publishes every executable Skill with a unique model declaration', () => {
-  const ids = AGENT_SKILLS.map((skill) => skill.id);
+it('publishes every executable tool with a unique model declaration', () => {
+  const ids = AGENT_TOOLS.map((tool) => tool.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(
     modelToolDeclarations().map((item) => item.function.name),
@@ -27,9 +34,67 @@ it('publishes every executable Skill with a unique model declaration', () => {
     'inspect_year',
     'compare_retirement_ages',
     'compare_child_timing',
+    'get_investment_capacity',
+    'lookup_city_costs',
+    'simulate_relocation_candidate',
     'simulate_patch',
     'simulate_scenario',
   ]);
+});
+
+it('groups tools into independently testable business Skills', () => {
+  assert.deepEqual(
+    AGENT_SKILLS.map((skill) => skill.id),
+    ['ledger-insight', 'scenario-planning', 'relocation-planning']
+  );
+  for (const tool of AGENT_TOOLS) {
+    const owners = AGENT_SKILLS.filter((skill) =>
+      skill.allowedTools.includes(tool.id)
+    );
+    assert.equal(
+      owners.length,
+      1,
+      `${tool.id} must belong to exactly one business Skill`
+    );
+    const skill = skillForTool(tool.id);
+    assert.ok(skill, `${tool.id} must belong to one business Skill`);
+    assert.ok(skill.procedure.length >= 3);
+    assert.ok(skill.successCriteria.length >= 2);
+    assert.ok(skill.failurePolicy.length >= 2);
+  }
+});
+
+it('keeps executable Skill metadata aligned with SKILL.md contracts', () => {
+  for (const skill of AGENT_SKILLS) {
+    const source = readFileSync(
+      path.resolve('agent-skills', skill.id, 'SKILL.md'),
+      'utf8'
+    );
+    assert.match(source, new RegExp(`name: ${skill.id}`));
+    assert.match(
+      source,
+      new RegExp(`version: ${skill.version.replaceAll('.', '\\.')}`)
+    );
+    assert.match(source, /## 输入/);
+    assert.match(source, /## 执行流程/);
+    assert.match(source, /## 停止与异常/);
+    assert.match(source, /## 验收/);
+    const evalSet = JSON.parse(
+      readFileSync(
+        path.resolve('agent-skills', skill.id, 'evals', 'evals.json'),
+        'utf8'
+      )
+    ) as {
+      skill_name?: string;
+      evals?: Array<{ prompt?: string; expectations?: string[] }>;
+    };
+    assert.equal(evalSet.skill_name, skill.id);
+    assert.ok((evalSet.evals?.length ?? 0) >= 2);
+    for (const item of evalSet.evals ?? []) {
+      assert.ok(item.prompt?.trim());
+      assert.ok((item.expectations?.length ?? 0) >= 2);
+    }
+  }
 });
 
 it('accepts DeepSeek-compatible tool calls and uses local calculations', async () => {
@@ -85,7 +150,7 @@ it('accepts DeepSeek-compatible tool calls and uses local calculations', async (
     );
     const sentBody = sent as unknown as Record<string, unknown>;
     assert.equal(sentBody.model, 'deepseek-flash');
-    assert.equal((sentBody.tools as unknown[]).length, AGENT_SKILLS.length);
+    assert.equal((sentBody.tools as unknown[]).length, AGENT_TOOLS.length);
     const userPayload = JSON.parse(
       (sentBody.messages as Array<{ content: string }>)[1].content
     ) as Record<string, unknown>;
@@ -123,7 +188,7 @@ it('rejects fabricated or malformed Skill arguments', () => {
   );
 });
 
-it('never promotes a model-written amount into a formal answer', async () => {
+it('falls back to structured local clarification and never promotes model-written amounts', async () => {
   const originalFetch = globalThis.fetch;
   const previousKey = process.env.DEEPSEEK_API_KEY;
   process.env.DEEPSEEK_API_KEY = 'test-key';
@@ -153,7 +218,8 @@ it('never promotes a model-written amount into a formal answer', async () => {
       decision: { type: string; answer?: string };
       mode: string;
     };
-    assert.equal(payload.mode, 'model-skills');
+    assert.equal(payload.mode, 'local-structured');
+    assert.equal(payload.decision.type, 'clarify');
     assert.equal(JSON.stringify(payload.decision).includes('999999999'), false);
   } finally {
     globalThis.fetch = originalFetch;

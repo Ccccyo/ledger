@@ -38,7 +38,7 @@
           "title": "Product",
           "children": [
             {
-              "title": "Start calculating",
+              "title": "Start planning",
               "url": "/#calculator",
               "target": "_self"
             },

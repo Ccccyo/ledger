@@ -17,7 +17,7 @@ export function RetirementSection({
       flow.ownerId === plan.primaryMemberId && flow.category === 'pension'
   );
   return (
-    <div className="grid max-w-3xl gap-5 sm:grid-cols-2">
+    <div className="grid max-w-3xl min-w-0 gap-5 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
       <MoneyEditor
         label={copy.plan.retirement_self_funded}
         hint={copy.plan.retirement_hint}

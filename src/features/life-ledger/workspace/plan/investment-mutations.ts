@@ -39,8 +39,9 @@ function withoutAssetId(scenario: InvestmentScenario): InvestmentScenario {
 
 /**
  * Older plans represented an investment by moving today's cash into a linked
- * investment asset. New plans keep the investment as a future, display-only
- * allocation. Editing or removing a legacy item restores that opening cash.
+ * investment asset. New plans reserve principal only for the configured future
+ * period, without rewriting today's asset list. Editing or removing a legacy
+ * item restores that opening cash.
  */
 function normalizeLegacyLinkedAsset(
   plan: LifePlan,
@@ -93,30 +94,35 @@ function normalizeLegacyLinkedAsset(
   };
 }
 
-function projectedOpeningAvailable(plan: LifePlan, month: MonthIndex): MoneyCents {
-  const row = calculateMonthlyLifePlan(plan).monthly.find((item) => item.month === month);
-  if (!row) {
-    throw new InvestmentAllocationError('invalid', 'Investment month is outside the plan.');
-  }
-  return row.openingAvailableCents;
-}
-
 export function availableInvestmentPrincipalCents(
   plan: LifePlan,
   startMonth: MonthIndex,
   excludeScenarioId?: string,
 ): MoneyCents {
-  const allocatedCents = (plan.metadata.investmentScenarios ?? [])
-    .filter(
-      (scenario) =>
-        scenario.id !== excludeScenarioId &&
-        scenario.startMonth <= startMonth &&
-        startMonth < scenario.endMonthExclusive,
-    )
-    .reduce((sum, scenario) => sum + scenario.principalCents, 0);
-
+  const calculationPlan = excludeScenarioId
+    ? {
+        ...plan,
+        metadata: {
+          ...plan.metadata,
+          investmentScenarios: (plan.metadata.investmentScenarios ?? []).filter(
+            (scenario) => scenario.id !== excludeScenarioId,
+          ),
+        },
+      }
+    : plan;
+  const row = calculateMonthlyLifePlan(calculationPlan).monthly.find(
+    (item) => item.month === startMonth,
+  );
+  if (!row) {
+    throw new InvestmentAllocationError('invalid', 'Investment month is outside the plan.');
+  }
   return moneyCents(
-    Math.max(0, projectedOpeningAvailable(plan, startMonth) - allocatedCents),
+    Math.max(
+      0,
+      row.openingAvailableCents +
+        row.investmentReleasedCents -
+        row.investmentAllocatedCents,
+    ),
   );
 }
 
@@ -125,24 +131,25 @@ function assertAllocationCapacity(plan: LifePlan, scenario: InvestmentScenario):
     (item) => item.id !== scenario.id,
   );
   const allScenarios = [...otherScenarios, scenario];
-  const boundaryMonths = new Set<MonthIndex>([scenario.startMonth]);
+  const candidatePlan = {
+    ...plan,
+    metadata: {
+      ...plan.metadata,
+      investmentScenarios: allScenarios,
+    },
+  };
+  const result = calculateMonthlyLifePlan(candidatePlan);
+  const allocationMonths = new Set(allScenarios.map((item) => item.startMonth));
 
-  for (const item of otherScenarios) {
+  for (const month of allocationMonths) {
+    const row = result.monthly.find((item) => item.month === month);
     if (
-      scenario.startMonth < item.startMonth &&
-      item.startMonth < scenario.endMonthExclusive
+      row &&
+      row.openingAvailableCents +
+        row.investmentReleasedCents -
+        row.investmentAllocatedCents <
+        0
     ) {
-      boundaryMonths.add(item.startMonth);
-    }
-  }
-
-  for (const month of boundaryMonths) {
-    const allocatedCents = allScenarios
-      .filter((item) => item.startMonth <= month && month < item.endMonthExclusive)
-      .reduce((sum, item) => sum + item.principalCents, 0);
-    const availableCents = Math.max(0, projectedOpeningAvailable(plan, month));
-
-    if (allocatedCents > availableCents) {
       throw new InvestmentAllocationError(
         'insufficient',
         'Investment principal exceeds projected available funds at the selected start.',

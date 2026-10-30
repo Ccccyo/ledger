@@ -30,11 +30,11 @@ export function SystemAnalysis({
           {copy.analysis.title}
         </h2>
       </header>
-      <ul className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
         {insights.map((insight) => (
           <li
             key={insight.ruleId}
-            className="bg-muted/45 border-border flex min-w-0 flex-col rounded-lg border p-4"
+            className="bg-background flex min-w-0 flex-col rounded-xl p-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,0.7)]"
           >
             <h3 className="text-base leading-snug font-semibold">
               {copy.analysis.rules[insight.ruleId].title}

@@ -94,7 +94,9 @@ describe('P1 monthly calculation core', () => {
         row.openingAvailableCents +
           row.liquidReturnCents +
           row.incomeCents -
-          row.expenseCents
+          row.expenseCents -
+          row.investmentAllocatedCents +
+          row.investmentReleasedCents
       );
       assert.equal(row.netCashFlowCents, row.incomeCents - row.expenseCents);
     });

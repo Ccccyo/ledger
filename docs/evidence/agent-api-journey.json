@@ -1,0 +1,105 @@
+{
+  "startedAt": "2026-10-25T17:42:25.669Z",
+  "baseUrl": "http://localhost:3111",
+  "checks": [
+    "The screenshot regressions now pass through real HTTP: the default adaptive route keeps “我想去上海” on the local structured fast path, a single-city origin is recovered from the next turn through working memory, architecture questions use system facts, investment capacity selects the correct tool, investment explanation answers directly, and complaint language enters feedback recovery.",
+    "HTTP route selected lookup_city_costs, MCP returned a sourced demo candidate, and the next step produced a read-only relocation simulation without mutating the baseline.",
+    "A follow-up using “那年” resolved to the prior explicit year and selected inspect_year with the preserved parameter.",
+    "Policy routing blocked confirmation bypass before any tool call.",
+    "Invalid city and household parameters were rejected with HTTP 400 before MCP execution."
+  ],
+  "timings": [
+    {
+      "name": "default-adaptive-single-city",
+      "wallMs": 76,
+      "serverMs": 23,
+      "mode": "local-structured"
+    },
+    {
+      "name": "city-choice-perception",
+      "wallMs": 22,
+      "serverMs": 4,
+      "mode": "local-structured"
+    },
+    {
+      "name": "single-city-relocation",
+      "wallMs": 15,
+      "serverMs": 2,
+      "mode": "local-structured"
+    },
+    {
+      "name": "single-city-relocation-follow-up",
+      "wallMs": 9,
+      "serverMs": 1,
+      "mode": "local-structured"
+    },
+    {
+      "name": "system-architecture",
+      "wallMs": 8,
+      "serverMs": 1,
+      "mode": "local-structured"
+    },
+    {
+      "name": "investment-capacity-perception",
+      "wallMs": 7,
+      "serverMs": 1,
+      "mode": "local-structured"
+    },
+    {
+      "name": "investment-explanation",
+      "wallMs": 8,
+      "serverMs": 1,
+      "mode": "local-structured"
+    },
+    {
+      "name": "feedback-recovery",
+      "wallMs": 8,
+      "serverMs": 1,
+      "mode": "local-structured"
+    },
+    {
+      "name": "city-route",
+      "wallMs": 12,
+      "serverMs": 3,
+      "mode": "local-structured"
+    },
+    {
+      "name": "city-mcp-http",
+      "wallMs": 92,
+      "serverMs": null,
+      "mode": "demo-mcp"
+    },
+    {
+      "name": "city-observation-route",
+      "wallMs": 14,
+      "serverMs": 6,
+      "mode": "local-fast-path"
+    },
+    {
+      "name": "explicit-year-route",
+      "wallMs": 15,
+      "serverMs": 3,
+      "mode": "local"
+    },
+    {
+      "name": "explicit-year-answer",
+      "wallMs": 22,
+      "serverMs": 17,
+      "mode": "local"
+    },
+    {
+      "name": "resolved-follow-up-route",
+      "wallMs": 8,
+      "serverMs": 3,
+      "mode": "local"
+    },
+    {
+      "name": "policy-fast-path",
+      "wallMs": 6,
+      "serverMs": 1,
+      "mode": "policy"
+    }
+  ],
+  "status": "passed",
+  "error": null
+}

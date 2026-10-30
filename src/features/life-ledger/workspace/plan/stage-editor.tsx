@@ -286,7 +286,7 @@ function EventForm({
         : copy.editor.monthly_extra;
   return (
     <form onSubmit={submit} noValidate className="max-w-xl space-y-3">
-      <div className="grid items-start gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 items-start gap-3 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>label]:min-w-0">
         <label
           className={`grid gap-1.5 text-sm ${stage === 'child' ? 'sm:col-span-2' : ''}`}
         >
@@ -405,7 +405,7 @@ function EventForm({
                 }
                 setAmountUnit(next);
               }}
-              className="text-muted-foreground bg-transparent text-xs outline-none"
+              className="text-muted-foreground ml-2 max-w-[45%] shrink-0 bg-transparent text-xs outline-none"
             >
               <option value="yuan">
                 {copy.common.currency}

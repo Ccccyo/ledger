@@ -72,7 +72,7 @@ export function LifeStageExpenses({
           ))}
         </div>
       </div>
-      <ol className="border-border mt-4 divide-y border-y">
+      <ol className="mt-4 grid gap-3">
         {stages.map((stage, index) => {
           const dominantAmount = stage.dominant
             ? stage.groups[stage.dominant]
@@ -83,7 +83,7 @@ export function LifeStageExpenses({
           return (
             <li
               key={stage.id}
-              className="grid min-w-0 gap-3 py-4 lg:grid-cols-[minmax(9rem,1.1fr)_minmax(16rem,2fr)_minmax(17rem,auto)] lg:items-center"
+              className="bg-background grid min-w-0 gap-4 rounded-xl px-4 py-4 shadow-[0_12px_30px_-28px_rgba(15,23,42,0.7)] 2xl:grid-cols-[minmax(9rem,1.1fr)_minmax(16rem,2fr)_minmax(17rem,auto)] 2xl:items-center"
             >
               <div>
                 <h3 className="font-medium">{phaseTitle(stage, index)}</h3>
@@ -129,12 +129,12 @@ export function LifeStageExpenses({
                     : copy.stages.no_expense}
                 </p>
               </div>
-              <dl className="grid min-w-0 grid-cols-3 gap-3 text-left tabular-nums lg:text-right">
+              <dl className="grid min-w-0 grid-cols-3 gap-3 text-left tabular-nums 2xl:text-right">
                 <div className="min-w-0">
                   <dt className="text-muted-foreground text-xs">
                     {copy.stages.monthly}
                   </dt>
-                  <dd className="mt-1 break-words text-sm font-semibold">
+                  <dd className="mt-1 text-sm font-semibold break-words">
                     {money(stage.monthlyAverageCents)}
                   </dd>
                 </div>
@@ -142,7 +142,7 @@ export function LifeStageExpenses({
                   <dt className="text-muted-foreground text-xs">
                     {copy.stages.annual}
                   </dt>
-                  <dd className="mt-1 break-words text-sm font-semibold">
+                  <dd className="mt-1 text-sm font-semibold break-words">
                     {money(stage.annualAverageCents)}
                   </dd>
                 </div>
@@ -150,7 +150,7 @@ export function LifeStageExpenses({
                   <dt className="text-muted-foreground text-xs">
                     {copy.stages.total}
                   </dt>
-                  <dd className="mt-1 break-words text-sm font-semibold">
+                  <dd className="mt-1 text-sm font-semibold break-words">
                     {money(stage.totalCents)}
                   </dd>
                 </div>

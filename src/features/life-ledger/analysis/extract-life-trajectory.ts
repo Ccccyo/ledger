@@ -5,8 +5,8 @@ export const LIFE_STAGES = [
   'career',
   'partner',
   'child',
-  'housing',
   'parents',
+  'housing',
   'retirement',
 ] as const;
 export type LifeStage = (typeof LIFE_STAGES)[number];

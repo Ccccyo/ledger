@@ -13,6 +13,8 @@ export interface CalculationTraceEntry {
   kind:
     | 'cash-flow'
     | 'liquid-return'
+    | 'investment-allocation'
+    | 'investment-release'
     | 'asset-return'
     | 'debt-interest'
     | 'debt-payment'
@@ -31,11 +33,15 @@ export interface MonthlyLedgerRow {
   age: number | null;
   phase: 'working' | 'retired';
   openingAvailableCents: MoneyCents;
+  openingReservedInvestmentCents: MoneyCents;
   incomeCents: MoneyCents;
   expenseCents: MoneyCents;
   liquidReturnCents: MoneyCents;
+  investmentAllocatedCents: MoneyCents;
+  investmentReleasedCents: MoneyCents;
   netCashFlowCents: MoneyCents;
   closingAvailableCents: MoneyCents;
+  reservedInvestmentCents: MoneyCents;
   nonLiquidAssetsCents: MoneyCents;
   debtBalanceCents: MoneyCents;
   netWorthCents: MoneyCents;
@@ -50,11 +56,15 @@ export interface AnnualLedgerRow {
   ageEnd: number | null;
   phase: 'working' | 'retired' | 'transition';
   openingAvailableCents: MoneyCents;
+  openingReservedInvestmentCents: MoneyCents;
   incomeCents: MoneyCents;
   expenseCents: MoneyCents;
   liquidReturnCents: MoneyCents;
+  investmentAllocatedCents: MoneyCents;
+  investmentReleasedCents: MoneyCents;
   netCashFlowCents: MoneyCents;
   closingAvailableCents: MoneyCents;
+  closingReservedInvestmentCents: MoneyCents;
   minimumAvailableCents: MoneyCents;
   closingNonLiquidAssetsCents: MoneyCents;
   closingDebtBalanceCents: MoneyCents;
@@ -92,7 +102,7 @@ export interface MonthlyCalculationSummary {
 }
 
 export interface MonthlyCalculationVersions {
-  calculation: '2.2.0';
+  calculation: '2.3.0';
   schema: '2.0.0';
   data: string;
   rules: 'monthly-cashflow-housing-2026-10';

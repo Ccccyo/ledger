@@ -105,7 +105,7 @@ export function saveStageEvent(
     ...plan,
     members:
       stage === 'partner' && !plan.members.some((m) => m.id === partnerId)
-        ? [...plan.members, { id: partnerId, name: '家人', role: 'partner' }]
+        ? [...plan.members, { id: partnerId, name: '伴侣', role: 'partner' }]
         : plan.members,
     standaloneCashFlows: existing
       ? plan.standaloneCashFlows.map((f) => (f.id === input.id ? flow : f))

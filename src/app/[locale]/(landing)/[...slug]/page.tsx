@@ -7,6 +7,13 @@ import { getLocalPage } from '@/shared/models/post';
 
 export const revalidate = 3600;
 
+const removedTemplatePageSlugs = new Set([
+  'docs',
+  'blog',
+  'updates',
+  'showcases',
+]);
+
 // dynamic page metadata
 export async function generateMetadata({
   params,
@@ -61,6 +68,10 @@ export async function generateMetadata({
   // dynamic page slug
   const dynamicPageSlug =
     typeof slug === 'string' ? slug : (slug as string[]).join('.') || '';
+
+  if (removedTemplatePageSlugs.has(dynamicPageSlug)) {
+    return notFound();
+  }
 
   const messageKey = `pages.${dynamicPageSlug}`;
   const t = await getTranslations({ locale, namespace: messageKey });
@@ -131,6 +142,10 @@ export default async function DynamicPage({
   // dynamic page slug
   const dynamicPageSlug =
     typeof slug === 'string' ? slug : (slug as string[]).join('.') || '';
+
+  if (removedTemplatePageSlugs.has(dynamicPageSlug)) {
+    return notFound();
+  }
 
   const messageKey = `pages.${dynamicPageSlug}`;
 

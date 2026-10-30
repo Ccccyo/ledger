@@ -10,9 +10,18 @@ it('chart groups conserve every cent and key years belong to the annual ledger',
     const result = calculateMonthlyLifePlan(fixture.plan);
     const rows = annualChartData(result);
     rows.forEach((r, i) => {
+      const months = result.monthly.filter((month) => month.year === r.year);
       assert.equal(
         EXPENSE_GROUPS.reduce((s, k) => s + r[k], 0),
         result.annual[i].expenseCents
+      );
+      assert.equal(
+        r.expense,
+        months.reduce((sum, month) => sum + month.expenseCents, 0)
+      );
+      assert.equal(
+        r.income,
+        months.reduce((sum, month) => sum + month.incomeCents, 0)
       );
       assert.equal(r.available, result.annual[i].closingAvailableCents);
       assert.equal(r.income, result.annual[i].incomeCents);

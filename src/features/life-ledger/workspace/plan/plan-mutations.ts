@@ -24,6 +24,7 @@ export function updateBucketSummary(
               ...bucket.summary,
               amountCents: moneyCents(amountCents),
             },
+            confirmedDetailedTotalCents: undefined,
           }
         : bucket
     ),
@@ -69,7 +70,8 @@ export function updateRetirementPension(
 export function updateCategoryDetail(
   plan: LifePlan,
   category: CashFlowCategory,
-  amountCents: number
+  amountCents: number,
+  name: string = category
 ): LifePlan {
   const suffix = 'working-expenses';
   return {
@@ -90,7 +92,7 @@ export function updateCategoryDetail(
             {
               ...bucket.summary,
               id: `${bucket.id}:${category}`,
-              name: category,
+              name,
               category,
               amountCents: moneyCents(amountCents),
             },
@@ -101,9 +103,10 @@ export function updateCategoryDetail(
         mode: 'detailed' as const,
         details,
         confirmedDetailedTotalCents:
-          total <= bucket.summary.amountCents
-            ? undefined
-            : bucket.confirmedDetailedTotalCents,
+          total > bucket.summary.amountCents &&
+          bucket.confirmedDetailedTotalCents === total
+            ? bucket.confirmedDetailedTotalCents
+            : undefined,
       };
     }),
     metadata: { ...plan.metadata, updatedAt: new Date().toISOString() },
@@ -113,16 +116,20 @@ export function updateCategoryDetail(
 export function confirmDetailedTotal(plan: LifePlan): LifePlan {
   return {
     ...plan,
-    cashFlowBuckets: plan.cashFlowBuckets.map((bucket) =>
-      bucket.id.endsWith('working-expenses')
-        ? {
-            ...bucket,
-            confirmedDetailedTotalCents: moneyCents(
-              bucket.details.reduce((sum, flow) => sum + flow.amountCents, 0)
-            ),
-          }
-        : bucket
-    ),
+    cashFlowBuckets: plan.cashFlowBuckets.map((bucket) => {
+      if (!bucket.id.endsWith('working-expenses') || !bucket.summary) {
+        return bucket;
+      }
+      const detailedTotal = moneyCents(
+        bucket.details.reduce((sum, flow) => sum + flow.amountCents, 0)
+      );
+      return {
+        ...bucket,
+        summary: { ...bucket.summary, amountCents: detailedTotal },
+        confirmedDetailedTotalCents: undefined,
+      };
+    }),
+    metadata: { ...plan.metadata, updatedAt: new Date().toISOString() },
   };
 }
 

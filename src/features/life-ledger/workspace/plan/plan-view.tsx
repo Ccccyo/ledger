@@ -50,9 +50,9 @@ const navigation: PlanSectionId[] = [
   'career',
   'partner',
   'child',
+  'parents',
   'housing',
   'investment',
-  'parents',
   'retirement',
   'events',
   'advanced',
@@ -64,12 +64,14 @@ export function PlanView({
   openSection,
   onOpenSection,
   onOverview,
+  onInvestmentAnalysis,
   embedded = false,
   ...props
 }: SectionProps & {
   openSection: PlanSectionId | '';
   onOpenSection: (id: PlanSectionId | '') => void;
   onOverview: () => void;
+  onInvestmentAnalysis: () => void;
   embedded?: boolean;
 }) {
   const active = openSection || 'assets';
@@ -135,7 +137,7 @@ export function PlanView({
           </button>
         </header>
       )}
-      <div className="grid items-start gap-5 md:grid-cols-[152px_minmax(0,1fr)] md:gap-6">
+      <div className="grid items-start gap-5 md:grid-cols-[164px_minmax(0,1fr)] md:gap-6">
         <nav
           aria-label={props.copy.trajectory.title}
           className={cn('md:sticky', embedded ? 'md:top-16' : 'md:top-32')}
@@ -154,24 +156,21 @@ export function PlanView({
               ))}
             </select>
           </label>
-          <ol className="hidden space-y-1 md:block">
-            {navigation.map((id, i) => {
+          <ol className="hidden space-y-2 md:block">
+            {navigation.map((id) => {
               const node = nodes.find((n) => n.targetSection === id);
               return (
-                <li
-                  key={id}
-                  className={i === 7 ? 'border-border mt-5 border-t pt-5' : ''}
-                >
+                <li key={id}>
                   <button
                     type="button"
                     aria-current={group === id ? 'step' : undefined}
                     onClick={() => navigate(id)}
                     className={cn(
                       button,
-                      'flex min-h-11 w-full items-center justify-between gap-2 px-3 text-left',
+                      'bg-background/60 flex min-h-11 w-full items-center justify-between gap-2 px-3 text-left shadow-[0_10px_28px_-26px_rgba(15,23,42,0.7)]',
                       group === id
-                        ? 'bg-primary/10 text-foreground font-semibold'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        ? 'bg-background text-primary ring-primary/15 font-semibold shadow-sm ring-1'
+                        : 'text-muted-foreground hover:bg-background hover:text-foreground'
                     )}
                   >
                     {label(id)}
@@ -189,21 +188,18 @@ export function PlanView({
         </nav>
         <div className="min-w-0">
           <section
-            className="bg-background border-border rounded-xl border p-4 sm:p-6"
+            className="bg-background rounded-2xl p-4 shadow-[0_24px_55px_-42px_rgba(15,23,42,0.75)] sm:p-6"
             aria-labelledby="plan-stage-heading"
           >
             <header className="mb-5">
               <h2 id="plan-stage-heading" className="text-xl font-semibold">
                 {label(group)}
               </h2>
-              <p className="text-muted-foreground mt-2 max-w-[60ch] text-sm leading-relaxed">
-                {props.copy.flow.hints[group]}
-              </p>
             </header>
             {group === 'assets' && (
               <nav
                 aria-label={props.copy.flow.baseline}
-                className="border-border mb-6 flex flex-wrap gap-x-5 border-b"
+                className="bg-muted/55 mb-6 grid grid-cols-2 gap-1 rounded-xl p-1 sm:grid-cols-4"
               >
                 {currentSections.map((id) => (
                   <button
@@ -213,10 +209,10 @@ export function PlanView({
                     onClick={() => navigate(id)}
                     className={cn(
                       button,
-                      'min-h-11 border-b-2 px-1',
+                      'min-h-10 rounded-lg px-2',
                       active === id
-                        ? 'border-primary text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground border-transparent'
+                        ? 'bg-background text-primary font-medium shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/65 hover:text-foreground'
                     )}
                   >
                     {props.copy.plan.sections[id]}
@@ -228,6 +224,7 @@ export function PlanView({
               key={active}
               {...props}
               section={active}
+              onInvestmentAnalysis={onInvestmentAnalysis}
               onDirty={(value) => {
                 dirty.current = value;
               }}
@@ -260,10 +257,12 @@ export function PlanView({
 function Editor({
   section,
   onDirty,
+  onInvestmentAnalysis,
   ...props
 }: SectionProps & {
   section: PlanSectionId;
   onDirty: (value: boolean) => void;
+  onInvestmentAnalysis: () => void;
 }) {
   const {
     state: { result, resultChange, pendingChange, calculationStatus },
@@ -274,6 +273,7 @@ function Editor({
     <div onChangeCapture={() => onDirty(true)}>
       <Component
         {...props}
+        onInvestmentAnalysis={onInvestmentAnalysis}
         onChange={(updater) => {
           setBefore(result);
           onDirty(false);

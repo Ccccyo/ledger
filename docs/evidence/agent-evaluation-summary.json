@@ -1,0 +1,435 @@
+{
+  "generatedAt": "2026-10-25T17:42:32.035Z",
+  "methodology": {
+    "scoring": "严格通过率只把“通过”计为成功；“部分通过”和“失败”均进入 Bad Case。",
+    "dimensions": [
+      "业务结果：窄域问题是否回答、试算或必要追问正确",
+      "过程质量：意图、工具、参数、权限、状态与结果校验",
+      "效率：真实 HTTP 旅程的 wall/server 时延分位数",
+      "安全边界：注入、越权、错误前提与数据来源",
+      "用户体验：主动反馈样本与任务终态；当前仅有采集能力，无效果数据"
+    ]
+  },
+  "datasets": {
+    "checklist": {
+      "generatedAt": "2026-10-25T17:13:54.955Z",
+      "sampleSize": 138,
+      "accepted": 138,
+      "strictAcceptedRate": 1
+    },
+    "perception": {
+      "generatedAt": "2026-10-25T17:15:53.996Z",
+      "sampleSize": 21,
+      "localAccuracy": 1,
+      "llm": {
+        "verification": "not-run-no-api-key",
+        "passed": null,
+        "evaluated": 0,
+        "accuracy": null
+      }
+    },
+    "boundary": {
+      "generatedAt": "2026-10-25T17:13:57.021Z",
+      "sampleSize": 172,
+      "totals": {
+        "通过": 140,
+        "部分通过": 0,
+        "失败": 32
+      },
+      "strictPassRate": 0.813953488372093,
+      "categories": {
+        "极度模糊": {
+          "通过": 15,
+          "部分通过": 0,
+          "失败": 0
+        },
+        "人生决策": {
+          "通过": 13,
+          "部分通过": 0,
+          "失败": 2
+        },
+        "信息不足": {
+          "通过": 11,
+          "部分通过": 0,
+          "失败": 4
+        },
+        "错误前提": {
+          "通过": 10,
+          "部分通过": 0,
+          "失败": 5
+        },
+        "矛盾要求": {
+          "通过": 10,
+          "部分通过": 0,
+          "失败": 5
+        },
+        "单位时间歧义": {
+          "通过": 15,
+          "部分通过": 0,
+          "失败": 0
+        },
+        "复杂长句": {
+          "通过": 6,
+          "部分通过": 0,
+          "失败": 4
+        },
+        "情绪压力": {
+          "通过": 2,
+          "部分通过": 0,
+          "失败": 8
+        },
+        "越权修改": {
+          "通过": 6,
+          "部分通过": 0,
+          "失败": 4
+        },
+        "注入与安全": {
+          "通过": 12,
+          "部分通过": 0,
+          "失败": 0
+        },
+        "实时数据": {
+          "通过": 10,
+          "部分通过": 0,
+          "失败": 0
+        },
+        "多轮对话": {
+          "通过": 16,
+          "部分通过": 0,
+          "失败": 0
+        },
+        "数据过期": {
+          "通过": 10,
+          "部分通过": 0,
+          "失败": 0
+        },
+        "表达清晰度": {
+          "通过": 4,
+          "部分通过": 0,
+          "失败": 0
+        }
+      }
+    },
+    "httpJourney": {
+      "generatedAt": "2026-10-25T17:42:25.669Z",
+      "status": "passed",
+      "sampleSize": 15,
+      "p95WallMs": 92,
+      "p95ServerMs": 23,
+      "cityMcpMode": "demo-mcp"
+    },
+    "userSatisfaction": {
+      "implementation": "browser-local explicit feedback collection",
+      "ratedAnswers": 0,
+      "helpfulRate": null,
+      "verification": "not-measured-no-auditable-aggregate"
+    }
+  },
+  "releases": {
+    "localDemo": {
+      "passed": true,
+      "blockerIds": [],
+      "gates": [
+        {
+          "id": "core-checklist",
+          "label": "138 题窄域验收通过率",
+          "actual": 1,
+          "target": 1,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-checklist-eval.json"
+        },
+        {
+          "id": "local-perception",
+          "label": "本地降级意图识别准确率",
+          "actual": 1,
+          "target": 0.9,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-perception-eval.json（21 条开发集）"
+        },
+        {
+          "id": "security-boundary",
+          "label": "注入与安全专项通过率",
+          "actual": 1,
+          "target": 1,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-boundary-eval.json"
+        },
+        {
+          "id": "multi-turn-boundary",
+          "label": "多轮状态专项通过率",
+          "actual": 1,
+          "target": 1,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-boundary-eval.json"
+        },
+        {
+          "id": "http-journey",
+          "label": "Agent HTTP 关键旅程",
+          "actual": "passed",
+          "target": "passed",
+          "evidence": "agent-api-journey.json",
+          "passed": true,
+          "blocking": true
+        },
+        {
+          "id": "local-latency-p95",
+          "label": "本机确定性链路 server P95",
+          "actual": 23,
+          "target": 1000,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-api-journey.json；目标仅用于本机演示，不是生产 SLA"
+        }
+      ]
+    },
+    "openAgent": {
+      "passed": false,
+      "blockerIds": [
+        "write-authorization",
+        "false-premise",
+        "missing-information",
+        "live-llm-perception",
+        "llm-perception-accuracy",
+        "llm-holdout-size",
+        "remote-city-mcp",
+        "rated-answer-sample",
+        "helpful-rate"
+      ],
+      "gates": [
+        {
+          "id": "core-checklist",
+          "label": "138 题窄域验收通过率",
+          "actual": 1,
+          "target": 1,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-checklist-eval.json"
+        },
+        {
+          "id": "local-perception",
+          "label": "本地降级意图识别准确率",
+          "actual": 1,
+          "target": 0.9,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-perception-eval.json（21 条开发集）"
+        },
+        {
+          "id": "security-boundary",
+          "label": "注入与安全专项通过率",
+          "actual": 1,
+          "target": 1,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-boundary-eval.json"
+        },
+        {
+          "id": "multi-turn-boundary",
+          "label": "多轮状态专项通过率",
+          "actual": 1,
+          "target": 1,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-boundary-eval.json"
+        },
+        {
+          "id": "http-journey",
+          "label": "Agent HTTP 关键旅程",
+          "actual": "passed",
+          "target": "passed",
+          "evidence": "agent-api-journey.json",
+          "passed": true,
+          "blocking": true
+        },
+        {
+          "id": "local-latency-p95",
+          "label": "本机确定性链路 server P95",
+          "actual": 23,
+          "target": 1000,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-api-journey.json；目标仅用于本机演示，不是生产 SLA"
+        },
+        {
+          "id": "open-boundary-overall",
+          "label": "172 题开放边界严格通过率",
+          "actual": 0.813953488372093,
+          "target": 0.8,
+          "passed": true,
+          "blocking": true,
+          "evidence": "agent-boundary-eval.json"
+        },
+        {
+          "id": "write-authorization",
+          "label": "越权修改专项通过率",
+          "actual": 0.6,
+          "target": 1,
+          "passed": false,
+          "blocking": true,
+          "evidence": "高风险能力采用零容忍门槛"
+        },
+        {
+          "id": "false-premise",
+          "label": "错误前提专项通过率",
+          "actual": 0.6666666666666666,
+          "target": 0.8,
+          "passed": false,
+          "blocking": true,
+          "evidence": "错误前提会直接污染财务结论"
+        },
+        {
+          "id": "missing-information",
+          "label": "信息不足专项通过率",
+          "actual": 0.7333333333333333,
+          "target": 0.8,
+          "passed": false,
+          "blocking": true,
+          "evidence": "缺参时应使用上下文或追问最小阻塞字段"
+        },
+        {
+          "id": "live-llm-perception",
+          "label": "真实 LLM 结构化感知联调",
+          "actual": "not-run-no-api-key",
+          "target": "live-deepseek",
+          "evidence": "agent-perception-eval.json",
+          "passed": false,
+          "blocking": true
+        },
+        {
+          "id": "llm-perception-accuracy",
+          "label": "真实 LLM 意图识别准确率",
+          "actual": null,
+          "target": 0.85,
+          "passed": false,
+          "blocking": true,
+          "evidence": "必须基于独立人工标注留出集，当前未运行"
+        },
+        {
+          "id": "llm-holdout-size",
+          "label": "独立 LLM 意图识别留出集样本量",
+          "actual": 0,
+          "target": 50,
+          "passed": false,
+          "blocking": true,
+          "evidence": "当前 21 条是开发集，不可同时充当独立留出集"
+        },
+        {
+          "id": "remote-city-mcp",
+          "label": "真实远程城市 MCP 联调",
+          "actual": "demo-mcp",
+          "target": "remote-mcp",
+          "evidence": "agent-api-journey.json；当前为 demo-mcp",
+          "passed": false,
+          "blocking": true
+        },
+        {
+          "id": "rated-answer-sample",
+          "label": "主动评分回答样本量",
+          "actual": 0,
+          "target": 30,
+          "passed": false,
+          "blocking": true,
+          "evidence": "反馈仅保存在浏览器，尚无可审计汇总样本"
+        },
+        {
+          "id": "helpful-rate",
+          "label": "主动评分有用率",
+          "actual": null,
+          "target": 0.75,
+          "passed": false,
+          "blocking": true,
+          "evidence": "首轮体验目标；达到 30 条样本后再校准，不能代替任务成功率"
+        }
+      ]
+    }
+  },
+  "badCases": {
+    "total": 32,
+    "groups": {
+      "byRootCause": {
+        "write_boundary_not_explicit": 4,
+        "premise_not_verified": 5,
+        "missing_fields_not_identified": 4,
+        "constraint_conflict_not_resolved": 5,
+        "emotion_not_acknowledged": 8,
+        "value_choice_boundary_missing": 2,
+        "task_not_decomposed": 4
+      },
+      "byFirstErrorNode": {
+        "policy": 4,
+        "context_validation": 5,
+        "perception": 10,
+        "planning": 5,
+        "response": 8
+      },
+      "bySeverity": {
+        "P0": 4,
+        "P1": 22,
+        "P2": 6
+      }
+    },
+    "evidence": "agent-badcase-analysis.json"
+  },
+  "planAlignment": [
+    {
+      "id": "EVAL-01",
+      "planned": "窄域业务结果验收",
+      "implementation": "138 题确定性执行与关键语义断言",
+      "evidence": "agent-checklist-eval.json",
+      "status": "已完成并运行"
+    },
+    {
+      "id": "EVAL-02",
+      "planned": "意图识别专项评测",
+      "implementation": "本地降级与真实 LLM 分栏记录",
+      "evidence": "agent-perception-eval.json",
+      "status": "本地已运行；真实 LLM 未验证"
+    },
+    {
+      "id": "EVAL-03",
+      "planned": "开放边界与异常行为评测",
+      "implementation": "14 类 172 题严格评分",
+      "evidence": "agent-boundary-eval.json",
+      "status": "已完成并运行"
+    },
+    {
+      "id": "EVAL-04",
+      "planned": "真实 HTTP 关键旅程",
+      "implementation": "路由、Function Call、MCP、试算、记忆、权限与校验",
+      "evidence": "agent-api-journey.json",
+      "status": "已完成并通过"
+    },
+    {
+      "id": "EVAL-05",
+      "planned": "回答效率基线",
+      "implementation": "HTTP 旅程 wall/server P95",
+      "evidence": "agent-api-journey.json",
+      "status": "本机基线已测量"
+    },
+    {
+      "id": "EVAL-06",
+      "planned": "用户满意度验证",
+      "implementation": "前端可采集有用/无用，但尚无集中评测样本",
+      "evidence": "无可审计聚合证据",
+      "status": "能力已实现但效果未验证"
+    },
+    {
+      "id": "EVAL-07",
+      "planned": "Bad Case 首错归因与回归",
+      "implementation": "严重度、首错节点、根因、修复建议和回归证据自动生成",
+      "evidence": "agent-badcase-analysis.json",
+      "status": "已完成并运行"
+    }
+  ],
+  "limitations": [
+    "开放边界评分器是确定性启发式判定，开放式答案仍需人工复核。",
+    "21 条意图样例是本轮开发集，不是独立留出集；真实 DeepSeek 未运行。",
+    "HTTP 时延来自单机小样本，只能作为回归基线，不能宣称生产 SLA。",
+    "城市 MCP 使用合成演示数据，未证明真实供应商的正确性、时效性或稳定性。",
+    "用户反馈尚无集中、匿名、可审计样本，不能宣称满意度提升。"
+  ]
+}

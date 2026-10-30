@@ -13,6 +13,10 @@ export type AnnualFlowCategory =
   | CashFlowCategory
   | 'liquid-return'
   | 'liquid-loss'
+  | 'investment-allocation'
+  | 'investment-release'
+  | 'investment-carried-in'
+  | 'investment-held'
   | 'opening-drawdown'
   | 'new-gap'
   | 'annual-surplus'
@@ -62,6 +66,28 @@ export interface AnnualSnapshotViewModel {
 
 const CENTER_ID = 'center:available-funds';
 const DEFAULT_SMALL_CATEGORY_RATIO = 0.03;
+const COMPACTABLE_CATEGORIES = new Set<AnnualFlowCategory>([
+  'salary',
+  'side_income',
+  'pension',
+  'housing',
+  'living',
+  'self_travel',
+  'self_hobbies',
+  'self_learning',
+  'self_wellness',
+  'self_social',
+  'child',
+  'parent',
+  'retirement',
+  'healthcare',
+  'tax',
+  'other',
+  'other-income',
+  'other-expense',
+  'unallocated-income',
+  'unallocated-expense',
+]);
 
 type CategoryAmount = {
   category: CashFlowCategory;
@@ -179,9 +205,13 @@ export function buildAnnualFlowDiagram(
   }
   for (const amount of [
     row.openingAvailableCents,
+    row.openingReservedInvestmentCents,
     row.incomeCents,
     row.expenseCents,
     row.liquidReturnCents,
+    row.investmentAllocatedCents,
+    row.investmentReleasedCents,
+    row.closingReservedInvestmentCents,
   ]) {
     if (!Number.isSafeInteger(amount))
       throw new Error('Annual flow amounts must be safe integers');
@@ -219,6 +249,38 @@ export function buildAnnualFlowDiagram(
       category: 'liquid-loss',
       amountCents: -row.liquidReturnCents,
       tone: 'expense',
+    });
+  }
+
+  if (row.investmentReleasedCents > 0) {
+    sources.push({
+      category: 'investment-release',
+      amountCents: row.investmentReleasedCents,
+      tone: 'income',
+    });
+  }
+  if (row.investmentAllocatedCents > 0) {
+    uses.push({
+      category: 'investment-allocation',
+      amountCents: row.investmentAllocatedCents,
+      tone: 'surplus',
+    });
+  }
+
+  const carriedInvestmentCents = Math.min(
+    row.openingReservedInvestmentCents,
+    row.closingReservedInvestmentCents
+  );
+  if (carriedInvestmentCents > 0) {
+    sources.push({
+      category: 'investment-carried-in',
+      amountCents: carriedInvestmentCents,
+      tone: 'neutral',
+    });
+    uses.push({
+      category: 'investment-held',
+      amountCents: carriedInvestmentCents,
+      tone: 'surplus',
     });
   }
 
@@ -309,6 +371,87 @@ export function buildAnnualFlowDiagram(
     ],
     sourceTotalCents,
     useTotalCents,
+  };
+}
+
+/**
+ * Reduces label density for the visual chart without changing the underlying
+ * annual ledger data. Structural items such as a funding gap, held investment
+ * principal, and the annual surplus always remain individually visible.
+ */
+export function compactAnnualFlowDiagram(
+  diagram: AnnualFlowDiagram,
+  maxNodesPerSide = 4
+): AnnualFlowDiagram {
+  if (!Number.isSafeInteger(maxNodesPerSide) || maxNodesPerSide < 2) {
+    throw new Error(
+      'Annual flow compact limit must be an integer of at least 2'
+    );
+  }
+
+  const compactSide = (
+    side: 'source' | 'use',
+    groupedCategory: 'other-income' | 'other-expense',
+    groupedTone: 'income' | 'expense'
+  ) => {
+    const sideNodes = diagram.nodes.filter((item) => item.side === side);
+    if (sideNodes.length <= maxNodesPerSide) return sideNodes;
+
+    const fixed = sideNodes.filter(
+      (item) => !COMPACTABLE_CATEGORIES.has(item.category)
+    );
+    const candidates = sideNodes
+      .filter((item) => COMPACTABLE_CATEGORIES.has(item.category))
+      .sort(
+        (a, b) =>
+          b.amountCents - a.amountCents || a.category.localeCompare(b.category)
+      );
+    const visibleCandidateCount = Math.max(
+      0,
+      maxNodesPerSide - fixed.length - 1
+    );
+    const visible = candidates.slice(0, visibleCandidateCount);
+    const grouped = candidates.slice(visibleCandidateCount);
+
+    if (grouped.length < 2) return sideNodes;
+
+    return [
+      ...fixed,
+      ...visible,
+      node(
+        side,
+        groupedCategory,
+        grouped.reduce((sum, item) => sum + item.amountCents, 0),
+        groupedTone
+      ),
+    ].sort(
+      (a, b) =>
+        b.amountCents - a.amountCents || a.category.localeCompare(b.category)
+    );
+  };
+
+  const sourceNodes = compactSide('source', 'other-income', 'income');
+  const useNodes = compactSide('use', 'other-expense', 'expense');
+  const center = diagram.nodes.find((item) => item.side === 'center');
+  if (!center)
+    throw new Error('Annual flow diagram is missing its center node');
+
+  return {
+    nodes: [...sourceNodes, center, ...useNodes],
+    links: [
+      ...sourceNodes.map((source) => ({
+        source: source.id,
+        target: center.id,
+        amountCents: source.amountCents,
+      })),
+      ...useNodes.map((use) => ({
+        source: center.id,
+        target: use.id,
+        amountCents: use.amountCents,
+      })),
+    ],
+    sourceTotalCents: diagram.sourceTotalCents,
+    useTotalCents: diagram.useTotalCents,
   };
 }
 

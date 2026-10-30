@@ -2,9 +2,7 @@
 
 import type { RefObject } from 'react';
 import { monthParts, type MonthIndex } from '@/features/life-ledger/domain';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
-
-import { cn } from '@/shared/lib/utils';
+import { ArrowRight } from 'lucide-react';
 
 import type { MonthlyCalculationResult } from '../calculation';
 import { BaselineMiniChart } from './baseline-mini-chart';
@@ -61,42 +59,29 @@ export function PersonalBaselineResult({
     <section
       ref={sectionRef}
       tabIndex={-1}
-      className="border-border bg-muted/35 -mx-5 mt-4 scroll-mt-24 border-y px-5 py-6 focus:outline-none sm:-mx-6 sm:px-6"
+      className="border-border/70 -mx-5 mt-5 scroll-mt-24 border-t px-5 pt-7 focus:outline-none sm:-mx-7 sm:px-7"
       aria-live="polite"
       aria-labelledby={`${config.id || 'calculator'}-result-title`}
     >
-      <div className="flex items-start gap-3">
-        <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-xl">
-          <ShieldCheck className="size-4.5" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-muted-foreground text-xs font-medium">
-            {config.p2_result_label}
-          </p>
-          <h3
-            id={`${config.id || 'calculator'}-result-title`}
-            className="text-foreground mt-1 max-w-[54ch] text-base leading-relaxed font-semibold"
-          >
-            {conclusion}
-          </h3>
-        </div>
+      <div>
+        <p className="text-primary text-xs font-semibold">
+          {config.p2_result_label}
+        </p>
+        <h3
+          id={`${config.id || 'calculator'}-result-title`}
+          className="text-foreground mt-1.5 max-w-[52ch] text-lg leading-snug font-semibold tracking-tight"
+        >
+          {conclusion}
+        </h3>
       </div>
 
-      <dl className="border-border mt-6 grid border-y sm:grid-cols-2">
-        {metrics.map((metric, index) => (
-          <div
-            key={metric.label}
-            className={cn(
-              'py-4 sm:px-4',
-              index > 0 && 'border-border max-sm:border-t sm:border-l',
-              index === 0 && 'sm:pl-0',
-              index === metrics.length - 1 && 'sm:pr-0'
-            )}
-          >
+      <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="bg-muted/45 rounded-2xl p-4">
             <dt className="text-muted-foreground text-[11px] font-medium">
               {metric.label}
             </dt>
-            <dd className="text-foreground mt-1.5 text-sm font-semibold tabular-nums">
+            <dd className="text-foreground mt-2 text-base font-semibold tabular-nums">
               {metric.value}
             </dd>
           </div>
@@ -105,28 +90,26 @@ export function PersonalBaselineResult({
 
       <BaselineMiniChart config={config} result={result} />
 
-      <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
-        {interpolate(config.p2_timeline_summary, {
-          age: input.currentAge,
-          retireAge: input.retirementAge,
-          endAge: input.endAge,
-        })}
-      </p>
-
-      <details className="border-border mt-4 border-t pt-4 text-xs">
-        <summary className="text-foreground hover:text-primary cursor-pointer font-medium focus-visible:outline-none">
-          {config.assumptions_title}
-        </summary>
-        <p className="text-muted-foreground mt-2 max-w-[70ch] leading-relaxed">
-          {config.p2_assumptions}
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {interpolate(config.p2_timeline_summary, {
+            age: input.currentAge,
+            retireAge: input.retirementAge,
+            endAge: input.endAge,
+          })}
         </p>
-      </details>
+        <details className="text-xs sm:text-right">
+          <summary className="text-foreground hover:text-primary cursor-pointer font-medium focus-visible:outline-none">
+            {config.assumptions_title}
+          </summary>
+          <p className="text-muted-foreground mt-2 max-w-[62ch] text-left leading-relaxed sm:text-right">
+            {config.p2_assumptions}
+          </p>
+        </details>
+      </div>
 
-      <div className="border-border mt-5 border-t pt-5">
-        <p className="text-muted-foreground max-w-[70ch] text-xs leading-relaxed">
-          {config.p2_estimate_note}
-        </p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="bg-primary/[0.06] mt-6 rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h4 className="text-foreground text-sm font-semibold">
               {config.continue_title}
@@ -136,10 +119,11 @@ export function PersonalBaselineResult({
             </p>
           </div>
           <button
+            id={`${config.id || 'calculator'}-continue`}
             type="button"
             onClick={onContinue}
             disabled={isDirty}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/30 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:ring-4 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary/30 inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-[background-color,transform] focus-visible:ring-4 focus-visible:outline-none active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45"
           >
             {config.continue_button}
             <ArrowRight className="size-4" aria-hidden="true" />

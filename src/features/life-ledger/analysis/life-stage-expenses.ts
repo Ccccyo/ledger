@@ -13,7 +13,16 @@ export const STAGE_EXPENSE_GROUPS = [
 export type StageExpenseGroup = (typeof STAGE_EXPENSE_GROUPS)[number];
 
 const groupFor = (category: CashFlowCategory): StageExpenseGroup =>
-  ['living', 'healthcare', 'tax'].includes(category)
+  [
+    'living',
+    'self_travel',
+    'self_hobbies',
+    'self_learning',
+    'self_wellness',
+    'self_social',
+    'healthcare',
+    'tax',
+  ].includes(category)
     ? 'living'
     : category === 'housing'
       ? 'housing'

@@ -33,7 +33,7 @@
         {
           "title": "产品",
           "children": [
-            { "title": "开始计算", "url": "/#calculator", "target": "_self" },
+            { "title": "开始规划", "url": "/#calculator", "target": "_self" },
             { "title": "怎么计算", "url": "/#how-it-works", "target": "_self" },
             { "title": "能算什么", "url": "/#features", "target": "_self" },
             { "title": "常见问题", "url": "/#faq", "target": "_self" }

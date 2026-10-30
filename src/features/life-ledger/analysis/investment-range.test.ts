@@ -34,7 +34,7 @@ function scenario(
 }
 
 describe('investment display range', () => {
-  it('changes only the display band and leaves the formal calculation unchanged', () => {
+  it('reserves principal in the formal ledger and adds returns only to the display band', () => {
     const plan = createQuickLifePlan({
       id: 'investment-band',
       currentSavingsYuan: 300_000,
@@ -52,6 +52,7 @@ describe('investment display range', () => {
       before.summary.endingAvailableCents
     );
     assert.equal(formal.summary.firstGapMonth, before.summary.firstGapMonth);
+    assert.equal(formal.monthly[0].reservedInvestmentCents, yuan(100_000));
     const range = calculateInvestmentRange(formal);
     assert.equal(range.length, formal.annual.length);
     assert.ok(range.some((row) => row.lowerCents < row.principalCents));
@@ -99,7 +100,8 @@ describe('investment display range', () => {
     const firstYear = calculateInvestmentRange(formal)[0];
     assert.equal(
       firstYear.principalCents,
-      formal.annual[0].closingAvailableCents
+      formal.annual[0].closingAvailableCents +
+        formal.annual[0].closingReservedInvestmentCents
     );
     assert.ok(firstYear.upperCents > firstYear.principalCents);
   });

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Area,
   CartesianGrid,
@@ -35,13 +34,22 @@ export function ScenarioChart({
   const money = moneyFormatter(locale);
   const scenarios = result.input.metadata.investmentScenarios ?? [];
   const hasInvestments = scenarios.length > 0;
-  const [selectedInvestmentId, setSelectedInvestmentId] = useState<
-    string | null
-  >(scenarios[0]?.id ?? null);
-  const selectedInvestment =
-    scenarios.find((scenario) => scenario.id === selectedInvestmentId) ??
-    scenarios[0] ??
-    null;
+  const investmentSpan = hasInvestments
+    ? {
+        start: scenarios.reduce(
+          (earliest, scenario) =>
+            scenario.startMonth < earliest ? scenario.startMonth : earliest,
+          scenarios[0]!.startMonth
+        ),
+        end: scenarios.reduce(
+          (latest, scenario) =>
+            scenario.endMonthExclusive > latest
+              ? scenario.endMonthExclusive
+              : latest,
+          scenarios[0]!.endMonthExclusive
+        ),
+      }
+    : null;
   const data = calculateInvestmentRange(result).map((row) => ({
     ...row,
     gainRange: [
@@ -86,8 +94,10 @@ export function ScenarioChart({
 
   return (
     <section
+      id="investment-range-analysis"
+      tabIndex={-1}
       aria-labelledby="scenario-chart-heading"
-      className="bg-background border-border rounded-xl border p-4 sm:p-5"
+      className="bg-background scroll-mt-28 rounded-2xl p-4 shadow-[0_24px_55px_-44px_rgba(15,23,42,0.75)] outline-none sm:p-5"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -123,66 +133,24 @@ export function ScenarioChart({
           )}
         </div>
       </div>
-      {hasInvestments && (
-        <div className="border-border bg-muted/25 mt-4 rounded-lg border px-3 py-2.5">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <span className="text-muted-foreground text-xs font-medium">
-              {copy.scenarios.schedule}
-            </span>
-            {scenarios.map((scenario) => {
-              const selected = selectedInvestment?.id === scenario.id;
-              return (
-                <button
-                  type="button"
-                  key={scenario.id}
-                  aria-pressed={selected}
-                  onClick={() => setSelectedInvestmentId(scenario.id)}
-                  className={`inline-flex min-h-9 flex-wrap items-center gap-2 rounded-full border px-3 py-1.5 text-left text-xs transition-colors focus-visible:ring-2 focus-visible:ring-[#2f805d]/35 focus-visible:outline-none ${
-                    selected
-                      ? 'border-[#2f805d]/45 bg-[#2f805d]/8 shadow-sm'
-                      : 'bg-background border-border hover:border-[#2f805d]/30'
-                  }`}
-                >
-                  <span className="font-medium">{scenario.name}</span>
-                  <span className="text-[#2f805d]">
-                    ● {formatMonth(scenario.startMonth)}{' '}
-                    {copy.scenarios.start_node}
-                  </span>
-                  <span className="text-muted-foreground" aria-hidden="true">
-                    →
-                  </span>
-                  <span className="text-[#8f5c46]">
-                    ● {formatMonth(addMonths(scenario.endMonthExclusive, -1))}{' '}
-                    {copy.scenarios.end_node}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {selectedInvestment && (
-            <div className="border-border text-muted-foreground mt-2 flex flex-wrap gap-x-5 gap-y-1 border-t pt-2 text-xs">
-              <span>
-                {copy.scenarios.selected}:{' '}
-                <strong className="text-foreground font-medium">
-                  {selectedInvestment.name}
-                </strong>
-              </span>
-              <span>
-                {copy.investment.principal}:{' '}
-                <strong className="text-foreground font-medium tabular-nums">
-                  {money(selectedInvestment.principalCents)}
-                </strong>
-              </span>
-              <span>{copy.investment.risks[selectedInvestment.riskLevel]}</span>
-              <span>
-                {copy.scenarios.annual_range}:{' '}
-                <strong className="text-foreground font-medium tabular-nums">
-                  {selectedInvestment.lowerAnnualReturnBps / 100}% —{' '}
-                  {selectedInvestment.upperAnnualReturnBps / 100}%
-                </strong>
-              </span>
-            </div>
-          )}
+      {investmentSpan && (
+        <div className="border-border/70 mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2.5 text-sm">
+          <span className="text-muted-foreground">
+            {copy.scenarios.schedule}
+          </span>
+          <span className="font-medium">
+            {copy.scenarios.investment_count.replace(
+              '{count}',
+              String(scenarios.length)
+            )}
+          </span>
+          <span className="text-muted-foreground" aria-hidden="true">
+            ·
+          </span>
+          <span className="tabular-nums">
+            {formatMonth(investmentSpan.start)} —{' '}
+            {formatMonth(addMonths(investmentSpan.end, -1))}
+          </span>
         </div>
       )}
       <div className="mt-3 h-64 sm:h-72" aria-hidden="true">
@@ -310,22 +278,16 @@ export function ScenarioChart({
               isAnimationActive={false}
             />
             {markers.map((marker) => {
-              const selected = selectedInvestment
-                ? marker.ids.includes(selectedInvestment.id)
-                : false;
               return (
                 <ReferenceDot
                   key={`${marker.year}-${marker.kind}`}
                   x={marker.year}
                   y={marker.y}
-                  r={selected ? 6 : 4.5}
+                  r={4.5}
                   fill={marker.kind === 'start' ? '#2f805d' : '#a66f57'}
-                  fillOpacity={selectedInvestment && !selected ? 0.35 : 1}
                   stroke="var(--background)"
                   strokeWidth={2}
                   ifOverflow="extendDomain"
-                  cursor="pointer"
-                  onClick={() => setSelectedInvestmentId(marker.ids[0] ?? null)}
                 />
               );
             })}

@@ -27,7 +27,7 @@ import type {
 } from './monthly-types';
 
 export const MONTHLY_CALCULATION_VERSIONS = Object.freeze({
-  calculation: '2.2.0' as const,
+  calculation: '2.3.0' as const,
   schema: '2.0.0' as const,
   data: '2026.10.0',
   rules: 'monthly-cashflow-housing-2026-10' as const,
@@ -152,6 +152,7 @@ function simulate(
   );
   const monthly: MonthlyLedgerRow[] = [];
   const traces: CalculationTraceEntry[] = [];
+  let reservedInvestment = moneyCents(0);
   const liquidNegativeRate = monthlyRateFromAnnualBps(
     plan.assumptions.annualCashGapCostBps
   );
@@ -166,6 +167,44 @@ function simulate(
     const incomeByCategory: CategoryTotals = {};
     const expenseByCategory: CategoryTotals = {};
     const openingAvailable = available;
+    const openingReservedInvestment = reservedInvestment;
+    const investmentAllocated = moneyCents(
+      (plan.metadata.investmentScenarios ?? [])
+        .filter((scenario) => scenario.startMonth === month)
+        .reduce((sum, scenario) => sum + scenario.principalCents, 0)
+    );
+    const investmentReleased = moneyCents(
+      (plan.metadata.investmentScenarios ?? [])
+        .filter((scenario) => scenario.endMonthExclusive === month)
+        .reduce((sum, scenario) => sum + scenario.principalCents, 0)
+    );
+    if (investmentAllocated > 0) {
+      const id = `month:${month}:investment-allocation`;
+      traces.push({
+        id,
+        month,
+        kind: 'investment-allocation',
+        rule: 'reserve-investment-principal-at-start',
+        amountCents: investmentAllocated,
+      });
+      traceIds.push(id);
+    }
+    if (investmentReleased > 0) {
+      const id = `month:${month}:investment-release`;
+      traces.push({
+        id,
+        month,
+        kind: 'investment-release',
+        rule: 'release-investment-principal-at-end',
+        amountCents: investmentReleased,
+      });
+      traceIds.push(id);
+    }
+    reservedInvestment = addMoney(
+      reservedInvestment,
+      investmentAllocated,
+      -investmentReleased
+    );
     const liquidReturn = roundMoney(
       openingAvailable * (openingAvailable >= 0 ? 0 : liquidNegativeRate)
     );
@@ -316,19 +355,34 @@ function simulate(
     }
 
     const netCashFlow = addMoney(income, -expenses);
-    available = addMoney(openingAvailable, liquidReturn, netCashFlow);
-    const netWorth = addMoney(available, nonLiquidAssets, -debtBalance);
+    available = addMoney(
+      openingAvailable,
+      liquidReturn,
+      netCashFlow,
+      -investmentAllocated,
+      investmentReleased
+    );
+    const netWorth = addMoney(
+      available,
+      nonLiquidAssets,
+      reservedInvestment,
+      -debtBalance
+    );
     monthly.push({
       month,
       year: monthParts(month).year,
       age: ageAt(plan, month),
       phase: month < plan.retirementMonth ? 'working' : 'retired',
       openingAvailableCents: openingAvailable,
+      openingReservedInvestmentCents: openingReservedInvestment,
       incomeCents: income,
       expenseCents: expenses,
       liquidReturnCents: liquidReturn,
+      investmentAllocatedCents: investmentAllocated,
+      investmentReleasedCents: investmentReleased,
       netCashFlowCents: netCashFlow,
       closingAvailableCents: available,
+      reservedInvestmentCents: reservedInvestment,
       nonLiquidAssetsCents: nonLiquidAssets,
       debtBalanceCents: debtBalance,
       netWorthCents: netWorth,
@@ -370,11 +424,20 @@ export function aggregateAnnualLedger(
       ageEnd: last.age,
       phase: first.phase === last.phase ? first.phase : 'transition',
       openingAvailableCents: first.openingAvailableCents,
+      openingReservedInvestmentCents:
+        first.openingReservedInvestmentCents,
       incomeCents: addMoney(...rows.map((row) => row.incomeCents)),
       expenseCents: addMoney(...rows.map((row) => row.expenseCents)),
       liquidReturnCents: addMoney(...rows.map((row) => row.liquidReturnCents)),
+      investmentAllocatedCents: addMoney(
+        ...rows.map((row) => row.investmentAllocatedCents)
+      ),
+      investmentReleasedCents: addMoney(
+        ...rows.map((row) => row.investmentReleasedCents)
+      ),
       netCashFlowCents: addMoney(...rows.map((row) => row.netCashFlowCents)),
       closingAvailableCents: last.closingAvailableCents,
+      closingReservedInvestmentCents: last.reservedInvestmentCents,
       minimumAvailableCents: moneyCents(
         Math.min(
           first.openingAvailableCents,

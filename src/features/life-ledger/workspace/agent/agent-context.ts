@@ -52,6 +52,7 @@ export function buildAgentContext(
     currentAge: ageAt(plan.baseMonth),
     retirementAge: ageAt(plan.retirementMonth),
     endAge: ageAt(plan.endMonthExclusive),
+    householdSize: Math.max(1, plan.members.length),
     summary: {
       firstGapMonth: result.summary.firstGapMonth,
       firstGapYear: result.summary.firstGapYear,
@@ -198,8 +199,20 @@ export function toAgentAnnualRow(
 
 export function runReadOnlyAgentTool(
   result: MonthlyCalculationResult,
-  tool: Exclude<AgentToolCall, { name: 'simulate_patch' | 'simulate_scenario' }>
+  tool: AgentToolCall
 ): AgentObservation {
+  if (
+    tool.name === 'simulate_patch' ||
+    tool.name === 'simulate_scenario' ||
+    tool.name === 'simulate_relocation_candidate' ||
+    tool.name === 'lookup_city_costs'
+  ) {
+    return {
+      tool: tool.name,
+      ok: false,
+      error: 'This tool requires the Agent runtime executor.',
+    };
+  }
   if (tool.name === 'read_overview') {
     return {
       tool: tool.name,
@@ -260,6 +273,53 @@ export function runReadOnlyAgentTool(
         error: error instanceof Error ? error.message : 'Comparison failed.',
       };
     }
+  }
+  if (tool.name === 'get_investment_capacity') {
+    const { startMonth, endMonthExclusive } = tool.arguments;
+    if (
+      startMonth < result.input.baseMonth ||
+      endMonthExclusive > result.input.endMonthExclusive ||
+      endMonthExclusive <= startMonth
+    ) {
+      return {
+        tool: tool.name,
+        ok: false,
+        error: 'Investment period is outside this plan.',
+      };
+    }
+    const startRow = result.monthly.find((row) => row.month === startMonth);
+    const holdingRows = result.monthly.filter(
+      (row) => row.month >= startMonth && row.month < endMonthExclusive
+    );
+    if (!startRow || holdingRows.length === 0) {
+      return {
+        tool: tool.name,
+        ok: false,
+        error: 'Investment period is outside this plan.',
+      };
+    }
+    const availableAtStartCents = Math.max(
+      0,
+      startRow.openingAvailableCents +
+        startRow.investmentReleasedCents -
+        startRow.investmentAllocatedCents
+    );
+    const minimumDuringHoldingCents = Math.min(
+      ...holdingRows.map((row) => row.closingAvailableCents)
+    );
+    return {
+      tool: tool.name,
+      ok: true,
+      result: {
+        startMonth,
+        endMonthExclusive,
+        availableAtStartCents,
+        gapFreeAdditionalCents: Math.max(
+          0,
+          Math.min(availableAtStartCents, minimumDuringHoldingCents)
+        ),
+      },
+    };
   }
   if (tool.name === 'inspect_year') {
     const row = result.annual.find((item) => item.year === tool.arguments.year);

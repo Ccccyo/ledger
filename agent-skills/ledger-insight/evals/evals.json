@@ -1,0 +1,27 @@
+{
+  "skill_name": "ledger-insight",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "你觉得我可以再投入多少本金？当前计划里只有一笔投资。",
+      "expected_output": "读取已有投资期间并计算不产生资金缺口的追加本金边界。",
+      "files": [],
+      "expectations": [
+        "调用 get_investment_capacity",
+        "最终回答区分现金流边界与投资建议",
+        "不重复询问计划中已经存在的投资期间"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "投资本金会怎样影响可用资金？",
+      "expected_output": "解释本金投入、可用资金和非确定性收益区间之间的关系。",
+      "files": [],
+      "expectations": [
+        "直接回答原理",
+        "不错误追问用户准备投入多少本金",
+        "不承诺投资收益"
+      ]
+    }
+  ]
+}

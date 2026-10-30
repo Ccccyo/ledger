@@ -1,4 +1,11 @@
-import type { AgentObservation } from '../workspace/agent/agent-types';
+import type {
+  AgentMemoryContext,
+  AgentMessageFeedback,
+  AgentObservation,
+  AgentShortTermState,
+  AgentTurnTrace,
+} from '../workspace/agent/agent-types';
+import { inferMemoryKind } from '../workspace/agent/memory-query';
 import { openLifeLedgerDatabase } from './plan-repository';
 
 export interface StoredAgentTask {
@@ -10,18 +17,20 @@ export interface StoredAgentTask {
     content: string;
     evidence?: string[];
     caveats?: string[];
+    trace?: AgentTurnTrace;
+    feedback?: AgentMessageFeedback;
   }>;
   activeQuestion: string | null;
   step: number;
   observations: AgentObservation[];
+  traceSteps?: AgentTurnTrace[];
+  sessionState?: AgentShortTermState;
   status: 'idle' | 'running' | 'interrupted';
   updatedAt: string;
 }
 
-export interface StoredAgentMemory {
-  id: string;
+export interface StoredAgentMemory extends AgentMemoryContext {
   planId: string;
-  text: string;
   createdAt: string;
 }
 
@@ -84,9 +93,17 @@ export async function listAgentMemories(
   const database = await openLifeLedgerDatabase();
   try {
     const transaction = database.transaction('agentMemories', 'readonly');
-    return await requested<StoredAgentMemory[]>(
+    const memories = await requested<StoredAgentMemory[]>(
       transaction.objectStore('agentMemories').index('planId').getAll(planId)
     );
+    return memories.map((memory) => ({
+      ...memory,
+      kind: memory.kind ?? inferMemoryKind(memory.text),
+      source: memory.source ?? 'user_confirmed',
+      status: memory.status ?? 'active',
+      effectiveFrom: memory.effectiveFrom ?? memory.createdAt,
+      expiresAt: memory.expiresAt ?? null,
+    }));
   } finally {
     database.close();
   }

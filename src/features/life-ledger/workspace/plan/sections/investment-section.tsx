@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { ArrowUpRight, Plus, Trash2 } from 'lucide-react';
 
 import {
   addMonths,
@@ -14,13 +14,15 @@ import {
 import { markPlanDraftChanged } from '../../navigation';
 import { moneyFormatter } from '../fields';
 import {
+  availableInvestmentPrincipalCents,
+  InvestmentAllocationError,
   removeInvestmentScenario,
   saveInvestmentScenario,
 } from '../investment-mutations';
 import type { SectionProps } from '../types';
 
 const control =
-  'border-input bg-background focus-visible:ring-primary/30 h-11 w-full rounded-lg border px-3 text-sm focus-visible:ring-4 focus-visible:outline-none';
+  'border-input bg-background focus-visible:ring-primary/30 h-11 w-full min-w-0 rounded-lg border px-3 text-sm focus-visible:ring-4 focus-visible:outline-none';
 const presets: Record<
   Exclude<InvestmentRiskLevel, 'custom'>,
   [number, number]
@@ -38,13 +40,13 @@ export function InvestmentSection(props: SectionProps) {
   );
   return (
     <div className="space-y-5">
-      <p className="text-muted-foreground max-w-[65ch] text-sm leading-relaxed">
-        {copy.investment.principal_basis}
-      </p>
       {items.length > 0 && (
-        <ul className="divide-border divide-y">
+        <ul className="space-y-3">
           {items.map((item) => (
-            <li key={item.id} className="py-4 first:pt-0">
+            <li
+              key={item.id}
+              className="border-border/75 bg-background rounded-xl border p-4 shadow-[0_16px_32px_-28px_rgba(15,23,42,0.7)]"
+            >
               {editing === item.id ? (
                 <InvestmentForm
                   {...props}
@@ -53,17 +55,21 @@ export function InvestmentSection(props: SectionProps) {
                 />
               ) : (
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {moneyFormatter(locale)(item.principalCents)} ·{' '}
-                      {copy.investment.risks[item.riskLevel]} ·{' '}
-                      {item.lowerAnnualReturnBps / 100}% —{' '}
-                      {item.upperAnnualReturnBps / 100}%
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="mt-1 text-xl font-semibold tracking-tight tabular-nums">
+                      {moneyFormatter(locale)(item.principalCents)}
                     </p>
-                    <p className="text-muted-foreground mt-1 text-xs">
-                      {formatMonth(item.startMonth)} —{' '}
-                      {formatMonth(addMonths(item.endMonthExclusive, -1))}
+                    <p className="text-muted-foreground mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                      <span>{copy.investment.risks[item.riskLevel]}</span>
+                      <span>
+                        {item.lowerAnnualReturnBps / 100}% —{' '}
+                        {item.upperAnnualReturnBps / 100}%
+                      </span>
+                      <span>
+                        {formatMonth(item.startMonth)} —{' '}
+                        {formatMonth(addMonths(item.endMonthExclusive, -1))}
+                      </span>
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -108,6 +114,30 @@ export function InvestmentSection(props: SectionProps) {
           </button>
         )
       )}
+      {props.onInvestmentAnalysis && (
+        <div className="group/analysis relative">
+          <button
+            type="button"
+            aria-describedby="investment-analysis-guide"
+            onClick={props.onInvestmentAnalysis}
+            className="border-border bg-background hover:border-primary/30 hover:bg-primary/[0.025] focus-visible:ring-primary/25 flex min-h-14 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-[0_14px_30px_-28px_rgba(15,23,42,0.75)] transition-colors focus-visible:ring-4 focus-visible:outline-none"
+          >
+            <span className="min-w-0 flex-1 text-sm font-medium tracking-tight">
+              {copy.investment.view_analysis}
+            </span>
+            <span className="bg-primary/8 text-primary grid size-8 shrink-0 place-items-center rounded-full transition-transform group-hover/analysis:translate-x-0.5 group-hover/analysis:-translate-y-0.5">
+              <ArrowUpRight className="size-4" aria-hidden="true" />
+            </span>
+          </button>
+          <span
+            id="investment-analysis-guide"
+            role="tooltip"
+            className="bg-background text-foreground border-border pointer-events-none absolute bottom-[calc(100%+0.5rem)] left-3 z-30 max-w-xs rounded-lg border px-3 py-2 text-xs leading-relaxed opacity-0 shadow-xl transition-opacity group-focus-within/analysis:opacity-100 group-hover/analysis:opacity-100"
+          >
+            {copy.investment.analysis_guide}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -115,6 +145,7 @@ export function InvestmentSection(props: SectionProps) {
 function InvestmentForm({
   plan,
   copy,
+  locale,
   onChange,
   item,
   onClose,
@@ -142,6 +173,20 @@ function InvestmentForm({
     const [year, month] = value.split('-').map(Number);
     return monthIndex(year, month);
   };
+  const [start, setStart] = useState(
+    formatMonth(item?.startMonth ?? plan.baseMonth)
+  );
+  const availableAtStart = useMemo(() => {
+    try {
+      return availableInvestmentPrincipalCents(
+        plan,
+        parseMonth(start),
+        item?.id
+      );
+    } catch {
+      return null;
+    }
+  }, [item?.id, plan, start]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -153,14 +198,23 @@ function InvestmentForm({
         riskLevel: risk,
         lowerAnnualPercent: Number(lower),
         upperAnnualPercent: Number(upper),
-        startMonth: parseMonth(String(data.get('start'))),
+        startMonth: parseMonth(start),
         endMonthExclusive: addMonths(parseMonth(String(data.get('end'))), 1),
       };
       saveInvestmentScenario(plan, input);
       onChange((current) => saveInvestmentScenario(current, input));
       onClose();
-    } catch {
-      setError(copy.investment.error);
+    } catch (cause) {
+      setError(
+        cause instanceof InvestmentAllocationError &&
+          cause.code === 'insufficient' &&
+          availableAtStart !== null
+          ? copy.investment.error_funds.replace(
+              '{amount}',
+              moneyFormatter(locale)(availableAtStart)
+            )
+          : copy.investment.error
+      );
     }
   };
   return (
@@ -170,7 +224,7 @@ function InvestmentForm({
       className="max-w-2xl space-y-4"
       noValidate
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-[repeat(2,minmax(0,1fr))] [&>div]:min-w-0 [&>label]:min-w-0">
         <label className="grid gap-1.5 text-sm">
           {copy.investment.name}
           <input
@@ -219,7 +273,7 @@ function InvestmentForm({
             ))}
           </select>
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-[repeat(2,minmax(0,1fr))] gap-3 [&>label]:min-w-0">
           <label className="grid gap-1.5 text-sm">
             {copy.investment.lower}
             <input
@@ -259,7 +313,11 @@ function InvestmentForm({
             required
             min={formatMonth(plan.baseMonth)}
             max={formatMonth(addMonths(plan.endMonthExclusive, -1))}
-            defaultValue={formatMonth(item?.startMonth ?? plan.baseMonth)}
+            value={start}
+            onChange={(event) => {
+              setStart(event.target.value);
+              setError('');
+            }}
             className={control}
           />
         </label>
@@ -278,6 +336,14 @@ function InvestmentForm({
           />
         </label>
       </div>
+      {availableAtStart !== null && (
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {copy.investment.available_at_start.replace(
+            '{amount}',
+            moneyFormatter(locale)(availableAtStart)
+          )}
+        </p>
+      )}
       <p className="text-muted-foreground text-xs leading-relaxed">
         {copy.investment.range_hint}
       </p>

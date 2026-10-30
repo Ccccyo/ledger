@@ -28,12 +28,12 @@ import type { WorkspaceCopy } from '../workspace-types';
 import { BalanceChart } from './balance-chart';
 
 const colors = [
-  '#4874B8',
-  '#BE6742',
-  '#3C8A69',
-  '#B48A28',
-  '#747B8B',
-  '#AC6084',
+  '#6B1E2B',
+  '#56622E',
+  '#E7B559',
+  '#8C8177',
+  '#B76170',
+  '#89945F',
 ];
 export function PlanCharts({
   result,
@@ -87,14 +87,11 @@ export function PlanCharts({
     <div className="grid gap-5">
       <section
         aria-labelledby="balance-chart-heading"
-        className="bg-background border-border order-1 min-w-0 rounded-xl border p-4 sm:p-5"
+        className="bg-muted/30 order-1 min-w-0 rounded-xl p-4 sm:p-5"
       >
         <h2 id="balance-chart-heading" className="text-lg font-semibold">
           {copy.charts.balances}
         </h2>
-        <p className="text-muted-foreground mt-2 text-sm">
-          {copy.charts.balance_hint}
-        </p>
         <BalanceChart
           rows={rows}
           retirement={retirement}
@@ -103,7 +100,7 @@ export function PlanCharts({
           locale={locale}
           milestones={milestoneGroups}
         />
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground mt-1 text-[11px] leading-relaxed">
           {copy.charts.minimum
             .replace(
               '{year}',
@@ -125,15 +122,15 @@ export function PlanCharts({
       </section>
       <section
         aria-labelledby="expense-chart-heading"
-        className="bg-background border-border order-2 min-w-0 rounded-xl border p-4 sm:p-5"
+        className="bg-muted/30 order-2 min-w-0 rounded-xl p-4 sm:p-5"
       >
         <h2 id="expense-chart-heading" className="text-lg font-semibold">
-          {compareFlows ? copy.charts.compare_flows : copy.charts.expenses}
+          {copy.charts.annual_flows}
         </h2>
         <div
           className="mt-2 flex flex-wrap gap-1"
           role="group"
-          aria-label={copy.charts.compare_flows}
+          aria-label={copy.charts.annual_flows}
         >
           {[false, true].map((value) => (
             <button
@@ -162,11 +159,31 @@ export function PlanCharts({
                 margin={{ top: 18, right: 4, left: 0, bottom: 0 }}
               >
                 <defs>
-                  <linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#5f8f78" stopOpacity={0.2} />
+                  <linearGradient
+                    id="income-flow-shade"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="0%" stopColor="#56622E" stopOpacity={0.28} />
                     <stop
                       offset="100%"
-                      stopColor="#5f8f78"
+                      stopColor="#56622E"
+                      stopOpacity={0.02}
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    id="expense-flow-shade"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="0%" stopColor="#6B1E2B" stopOpacity={0.22} />
+                    <stop
+                      offset="100%"
+                      stopColor="#6B1E2B"
                       stopOpacity={0.02}
                     />
                   </linearGradient>
@@ -201,23 +218,28 @@ export function PlanCharts({
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar
-                  dataKey="expense"
-                  name={copy.ledger.expense}
-                  fill="#a97962"
-                  fillOpacity={0.62}
-                  radius={[2, 2, 0, 0]}
-                  isAnimationActive={false}
-                />
                 <Area
                   type="monotone"
                   dataKey="income"
                   name={copy.ledger.income}
-                  stroke="#5f8f78"
+                  stroke="#56622E"
                   strokeWidth={2.5}
-                  fill="url(#incomeFill)"
+                  fill="url(#income-flow-shade)"
                   dot={false}
-                  activeDot={{ r: 4 }}
+                  activeDot={{ r: 4, strokeWidth: 2 }}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  name={copy.ledger.expense}
+                  stroke="#6B1E2B"
+                  strokeWidth={2.5}
+                  fill="url(#expense-flow-shade)"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2 }}
+                  connectNulls
                   isAnimationActive={false}
                 />
               </ComposedChart>

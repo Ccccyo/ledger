@@ -6,6 +6,7 @@ import { createQuickLifePlan, moneyCents, monthParts } from '../domain';
 import {
   buildAnnualFlowDiagram,
   buildAnnualSnapshot,
+  compactAnnualFlowDiagram,
   selectInitialSnapshotYear,
 } from './annual-snapshot';
 
@@ -16,11 +17,15 @@ function annualRow(patch: Partial<AnnualLedgerRow> = {}): AnnualLedgerRow {
     ageEnd: 35,
     phase: 'working',
     openingAvailableCents: moneyCents(0),
+    openingReservedInvestmentCents: moneyCents(0),
     incomeCents: moneyCents(1000),
     expenseCents: moneyCents(600),
     liquidReturnCents: moneyCents(100),
+    investmentAllocatedCents: moneyCents(0),
+    investmentReleasedCents: moneyCents(0),
     netCashFlowCents: moneyCents(400),
     closingAvailableCents: moneyCents(500),
+    closingReservedInvestmentCents: moneyCents(0),
     minimumAvailableCents: moneyCents(0),
     closingNonLiquidAssetsCents: moneyCents(0),
     closingDebtBalanceCents: moneyCents(0),
@@ -95,6 +100,47 @@ describe('annual snapshot adapter', () => {
     );
   });
 
+  it('shows reserved investment principal as a use of funds', () => {
+    const diagram = buildAnnualFlowDiagram(
+      annualRow({
+        investmentAllocatedCents: moneyCents(300),
+        closingAvailableCents: moneyCents(200),
+        closingReservedInvestmentCents: moneyCents(300),
+      })
+    );
+    assert.equal(diagram.sourceTotalCents, diagram.useTotalCents);
+    assert.equal(
+      diagram.nodes.find((node) => node.category === 'investment-allocation')
+        ?.amountCents,
+      300
+    );
+    assert.equal(
+      diagram.nodes.find((node) => node.category === 'annual-surplus')
+        ?.amountCents,
+      200
+    );
+  });
+
+  it('carries held investment principal through every intervening year', () => {
+    const diagram = buildAnnualFlowDiagram(
+      annualRow({
+        openingReservedInvestmentCents: moneyCents(300),
+        closingReservedInvestmentCents: moneyCents(300),
+      })
+    );
+    assert.equal(diagram.sourceTotalCents, diagram.useTotalCents);
+    assert.equal(
+      diagram.nodes.find((node) => node.category === 'investment-carried-in')
+        ?.amountCents,
+      300
+    );
+    assert.equal(
+      diagram.nodes.find((node) => node.category === 'investment-held')
+        ?.amountCents,
+      300
+    );
+  });
+
   it('groups small categories without losing cents', () => {
     const diagram = buildAnnualFlowDiagram(
       annualRow({
@@ -118,6 +164,69 @@ describe('annual snapshot adapter', () => {
     );
     assert.equal(diagram.sourceTotalCents, 1000);
     assert.equal(diagram.useTotalCents, 1000);
+  });
+
+  it('compacts a crowded chart without changing either side total', () => {
+    const full = buildAnnualFlowDiagram(
+      annualRow({
+        incomeCents: moneyCents(198_000),
+        expenseCents: moneyCents(105_000),
+        liquidReturnCents: moneyCents(0),
+        netCashFlowCents: moneyCents(93_000),
+        closingAvailableCents: moneyCents(93_000),
+        incomeByCategory: {
+          salary: moneyCents(180_000),
+          other: moneyCents(18_000),
+        },
+        expenseByCategory: {
+          self_wellness: moneyCents(54_000),
+          self_hobbies: moneyCents(27_000),
+          retirement: moneyCents(10_000),
+          living: moneyCents(6_000),
+          self_travel: moneyCents(5_000),
+          self_learning: moneyCents(3_000),
+        },
+      })
+    );
+    const compacted = compactAnnualFlowDiagram(full, 4);
+    const uses = compacted.nodes.filter((node) => node.side === 'use');
+
+    assert.equal(uses.length, 4);
+    assert.equal(
+      uses.find((node) => node.category === 'other-expense')?.amountCents,
+      moneyCents(24_000)
+    );
+    assert.equal(
+      uses.reduce((sum, node) => sum + node.amountCents, 0),
+      full.useTotalCents
+    );
+    assert.equal(compacted.sourceTotalCents, compacted.useTotalCents);
+  });
+
+  it('keeps structural flow nodes visible when compacting categories', () => {
+    const full = buildAnnualFlowDiagram(
+      annualRow({
+        incomeCents: moneyCents(500),
+        expenseCents: moneyCents(1000),
+        liquidReturnCents: moneyCents(0),
+        openingAvailableCents: moneyCents(100),
+        netCashFlowCents: moneyCents(-500),
+        closingAvailableCents: moneyCents(-400),
+        minimumAvailableCents: moneyCents(-400),
+        incomeByCategory: {
+          salary: moneyCents(350),
+          side_income: moneyCents(100),
+          other: moneyCents(50),
+        },
+        expenseByCategory: { living: moneyCents(1000) },
+      })
+    );
+    const compacted = compactAnnualFlowDiagram(full, 2);
+
+    assert.ok(
+      compacted.nodes.some((node) => node.category === 'opening-drawdown')
+    );
+    assert.ok(compacted.nodes.some((node) => node.category === 'new-gap'));
   });
 
   it('copies annual ledger facts without recalculating page values', () => {

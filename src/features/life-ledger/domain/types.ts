@@ -35,6 +35,11 @@ export type CashFlowCategory =
   | 'pension'
   | 'housing'
   | 'living'
+  | 'self_travel'
+  | 'self_hobbies'
+  | 'self_learning'
+  | 'self_wellness'
+  | 'self_social'
   | 'child'
   | 'parent'
   | 'retirement'
@@ -149,11 +154,11 @@ export interface PlanVersions {
 
 export type InvestmentRiskLevel = 'low' | 'medium' | 'high' | 'custom';
 
-/** Display-only investment range. Formal calculations always use principal. */
+/** Investment principal is reserved from spending; returns remain a display-only range. */
 export interface InvestmentScenario {
   id: string;
   name: string;
-  /** Legacy link. New scenarios reserve future available principal without moving today's assets. */
+  /** Legacy link. New scenarios reserve future available principal without rewriting opening assets. */
   assetId?: string;
   principalCents: MoneyCents;
   riskLevel: InvestmentRiskLevel;

@@ -24,22 +24,18 @@ export function WorkspaceTabs({
 }) {
   return (
     <nav
-      className="border-border bg-background/95 sticky top-16 z-30 hidden border-b backdrop-blur md:block"
+      className="bg-background/90 sticky top-16 z-30 hidden py-2 backdrop-blur md:block"
       aria-label={copy.tabs.label}
     >
       <div
-        className="bg-muted/35 relative mx-auto grid h-16 w-full max-w-[1800px] grid-cols-2 p-2 sm:px-6"
+        className="bg-muted/40 relative mx-auto grid h-14 w-[calc(100%-2rem)] max-w-[1768px] grid-cols-2 rounded-2xl p-1.5 sm:w-[calc(100%-3rem)]"
         role="tablist"
         aria-label={copy.tabs.label}
       >
         <span
           aria-hidden="true"
-          className="bg-border absolute top-4 bottom-4 left-1/2 w-px"
-        />
-        <span
-          aria-hidden="true"
           className={cn(
-            'bg-background absolute top-2 bottom-2 left-2 w-[calc(50%-0.5rem)] rounded-xl shadow-[0_10px_28px_-20px_rgba(15,118,78,0.7)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:left-6 sm:w-[calc(50%-1.5rem)]',
+            'bg-background absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-0.375rem)] rounded-xl shadow-[0_8px_24px_-18px_rgba(15,118,78,0.65)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
             tab === 'analysis' && 'translate-x-full'
           )}
         />

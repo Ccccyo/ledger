@@ -1,4 +1,5 @@
 import type { PlanPatch } from '../../analysis/action-patches';
+import type { CityCostCandidate, HousingMode } from './city-cost-types';
 
 export interface AgentAnnualRow {
   year: number;
@@ -35,6 +36,7 @@ export interface LifeLedgerAgentContext {
   currentAge: number | null;
   retirementAge: number | null;
   endAge: number | null;
+  householdSize: number;
   summary: {
     firstGapMonth: number | null;
     firstGapYear: number | null;
@@ -129,8 +131,153 @@ export type AgentToolCall =
       name: 'compare_retirement_ages';
       arguments: { ages: number[] };
     }
+  | {
+      name: 'get_investment_capacity';
+      arguments: {
+        startMonth: number;
+        endMonthExclusive: number;
+      };
+    }
+  | {
+      name: 'lookup_city_costs';
+      arguments: {
+        fromCity: string;
+        toCity: string;
+        householdSize: number;
+        housingMode: HousingMode;
+      };
+    }
+  | {
+      name: 'simulate_relocation_candidate';
+      arguments: { relocationId: string };
+    }
   | { name: 'simulate_patch'; arguments: { patch: PlanPatch } }
   | { name: 'simulate_scenario'; arguments: { patches: PlanPatch[] } };
+
+export interface AgentQueryResolution {
+  originalQuestion: string;
+  resolvedQuestion: string;
+  intent:
+    | 'plan_fact'
+    | 'simulation'
+    | 'city_cost_lookup'
+    | 'state_query'
+    | 'safety_boundary'
+    | 'conversation'
+    | 'unknown';
+  referencedEntity: {
+    type: 'retirement' | 'purchase' | 'relocation' | 'investment' | 'year';
+    id: string | null;
+    label: string;
+  } | null;
+  cityPair: { fromCity: string; toCity: string } | null;
+  unresolved: string[];
+  preservedTerms: string[];
+}
+
+export type AgentSemanticIntent =
+  | 'safety_boundary'
+  | 'crisis_support'
+  | 'capability'
+  | 'system_explanation'
+  | 'conversation'
+  | 'feedback'
+  | 'plan_overview'
+  | 'plan_fact'
+  | 'plan_explanation'
+  | 'investment_capacity'
+  | 'investment_scenario'
+  | 'retirement_assessment'
+  | 'city_choice'
+  | 'city_cost_comparison'
+  | 'relocation_simulation'
+  | 'plan_change'
+  | 'state_query'
+  | 'unknown';
+
+export type AgentBusinessSkillId =
+  | 'ledger-insight'
+  | 'scenario-planning'
+  | 'relocation-planning';
+
+export interface AgentPerception {
+  version: '1.0.0';
+  source: 'rule' | 'model' | 'fallback';
+  intent: AgentSemanticIntent;
+  confidence: 'high' | 'medium' | 'low';
+  goal: string;
+  entities: {
+    cities: string[];
+    years: number[];
+    ages: number[];
+    amountsCents: number[];
+    durationsYears: number[];
+  };
+  constraints: string[];
+  missingFields: string[];
+  ambiguities: string[];
+  suggestedSkillId: AgentBusinessSkillId | null;
+}
+
+export interface AgentPlanStep {
+  id: string;
+  kind: 'answer' | 'clarify' | 'tool' | 'confirm';
+  tool: AgentToolCall['name'] | null;
+  purpose: string;
+  completionCondition: string;
+}
+
+export interface AgentPlan {
+  version: '1.0.0';
+  goal: string;
+  skillId: AgentBusinessSkillId | null;
+  status: 'ready' | 'needs_input' | 'blocked' | 'complete';
+  steps: AgentPlanStep[];
+  stopReason: string | null;
+}
+
+export interface AgentWorkingMemory {
+  version: '1.0.0';
+  taskId: string;
+  planHash: string;
+  goal: string;
+  intent: AgentSemanticIntent;
+  skillId: AgentBusinessSkillId | null;
+  slots: AgentPerception['entities'];
+  constraints: string[];
+  missingFields: string[];
+  ambiguities: string[];
+  status:
+    | 'collecting'
+    | 'ready'
+    | 'executing'
+    | 'awaiting_confirmation'
+    | 'completed'
+    | 'failed';
+  updatedAt: string;
+}
+
+export interface AgentShortTermState {
+  version: '1.0.0';
+  planHash: string;
+  activeIntent: AgentQueryResolution['intent'] | null;
+  referencedEntity: AgentQueryResolution['referencedEntity'];
+  referencedYear: number | null;
+  pendingCityCandidate: CityCostCandidate | null;
+  lastToolFingerprints: string[];
+  workingMemory?: AgentWorkingMemory | null;
+  updatedAt: string;
+}
+
+export interface AgentMemoryContext {
+  id: string;
+  text: string;
+  kind: 'communication' | 'decision_preference' | 'constraint';
+  source: 'user_confirmed';
+  status: 'active' | 'superseded' | 'deleted';
+  effectiveFrom: string;
+  expiresAt: string | null;
+}
 
 export type AgentDecision =
   | {
@@ -147,6 +294,7 @@ export interface AgentObservation {
   ok: boolean;
   result?: unknown;
   error?: string;
+  durationMs?: number;
 }
 
 export interface AgentHistoryMessage {
@@ -162,13 +310,47 @@ export interface AgentTurnRequest {
   context: LifeLedgerAgentContext;
   history: AgentHistoryMessage[];
   observations: AgentObservation[];
-  preferences?: string[];
+  memories?: AgentMemoryContext[];
+  sessionState?: AgentShortTermState;
   step: number;
   /**
-   * Strict mode never calls an external language model. Enhanced mode may send
-   * only the separately constructed expression payload after user consent.
-   * Autonomous mode may share the compact context and tool observations with
-   * DeepSeek, but only after separate consent; it never writes a plan.
+   * Local mode never calls an external language model. Enhanced mode sends
+   * only the separately constructed expression payload. Autonomous mode is
+   * the product default and may share compact context and tool observations
+   * with DeepSeek when configured; it never writes a plan. The UI discloses
+   * this behavior and lets the user persist a local-mode choice.
    */
   expressionMode?: AgentExpressionMode;
+}
+
+export interface AgentTurnTrace {
+  id: string;
+  totalMs: number;
+  perceptionMs: number;
+  planningMs: number;
+  perceptionSource: AgentPerception['source'];
+  intent: AgentSemanticIntent;
+  confidence: AgentPerception['confidence'];
+  skillId: AgentBusinessSkillId | null;
+  decisionType: AgentDecision['type'];
+  tool: AgentToolCall['name'] | null;
+  fallbackReason: string | null;
+  /** Client-observed duration across every API step and local tool call. */
+  endToEndMs?: number;
+  stepCount?: number;
+  toolCallCount?: number;
+  outcome?: 'answer' | 'clarify' | 'proposal' | 'error' | 'timeout';
+}
+
+export type AgentFeedbackReason =
+  | 'misunderstood'
+  | 'incorrect'
+  | 'unclear'
+  | 'slow'
+  | 'other';
+
+export interface AgentMessageFeedback {
+  rating: 'helpful' | 'not_helpful';
+  reason: AgentFeedbackReason | null;
+  createdAt: string;
 }
